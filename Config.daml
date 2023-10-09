@@ -1,0 +1,57 @@
+﻿<ArcGIS defaultAssembly="ArcSWAT3.dll" defaultNamespace="ArcSWAT3" xmlns="http://schemas.esri.com/DADF/Registry" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://schemas.esri.com/DADF/Registry file:///C:/Users/Chris/AppData/Local/Programs/ArcGIS/Pro/bin/ArcGIS.Desktop.Framework.xsd">
+  <AddInInfo id="{c0ba4fb8-0911-4188-9dc2-b57230e6b969}" version="1.0" desktopVersion="3.0.36056">
+    <Name>ArcSWAT3</Name>
+    <Description>ArcSWAT3 description</Description>
+    <Image>Install/Images/QSWAT32.png</Image>
+    <Author>Chris George</Author>
+    <Company>TAMU</Company>
+    <Date>10/13/2022 11:50:51 AM</Date>
+    <Subject>Geoprocessing</Subject>
+    <!-- Note subject can be one or more of these topics:
+                    Content, Framework, Editing, Geodatabase, Geometry, Geoprocessing, Layouts, Map Authoring, Map Exploration -->
+  </AddInInfo>
+  <modules>
+    <insertModule id="ArcSWAT3_Module" className="Module1" autoLoad="true" caption="Module1">
+      <!-- uncomment to have the control hosted on a separate tab-->
+      <tabs>
+        <tab id="ArcSWAT3_Tab1" caption="ArcSWAT" keytip="X">
+          <group refID="ArcSWAT3_Group1" />
+        </tab>
+      </tabs>
+      <groups>
+        <!-- comment this out if you have no controls on the Addin tab to avoid
+              an empty group-->
+        <group id="ArcSWAT3_Group1" caption="ArcSWAT" appearsOnAddInTab="false" keytip="X1">
+          <!-- host controls within groups -->
+          <button refID="ArcSWAT3_ArcSWAT3StartButton" size="large" />
+          <!-- <tool refID="ArcSWAT3_MapTool1" size="large" />
+          <tool refID="ArcSWAT3_MapTool1" size="large" /> -->
+          <!-- <tool refID="ArcSWAT3_PointTool" size="large" /> -->
+          <!-- <button refID="ArcSWAT3_Button3" size="large" /> -->
+        </group>
+      </groups>
+      <controls>
+        <!-- add your controls here -->
+        <button id="ArcSWAT3_ArcSWAT3StartButton" caption="Start ArcSWAT" className="ArcSWAT3StartButton" loadOnClick="true" smallImage="Install/Images/QSWAT16.png" largeImage="Install/Images/QSWAT32.png" keytip="X2">
+          <tooltip heading="Start ArcSWAT">Start the ArcSWAT plugin<disabledText /></tooltip>
+        </button>
+        <tool id="ArcSWAT3_PointTool" caption="Draw Point" className="PointTool" categoryRefID="esri_embeddableControls" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GenericButtonRed16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GenericButtonRed32.png" condition="esri_mapping_mapPane" keytip="X3">
+          <tooltip heading="Draw point">Left click to make point<disabledText /></tooltip>
+        </tool>
+        <!-- <tool id="ArcSWAT3_PolygonTool" caption="Select subbasins" className="PolygonTool" categoryRefID="esri_embeddableControls" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GenericButtonRed16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GenericButtonRed32.png" condition="esri_mapping_mapPane">
+			<tooltip heading="Select subbasins">Left click to select subbasin<disabledText /></tooltip>
+		</tool> -->
+      </controls>
+    </insertModule>
+  </modules>
+  <categories>
+    <updateCategory refID="esri_embeddableControls">
+      <!-- <insertComponent id="ArcSWAT3_SelectPoint" className="SelectPointViewModel">
+        <content className="SelectPointView" />
+      </insertComponent> -->
+      <!-- <insertComponent id="ArcSWAT3_SelectPolygon" className="SelectPolygonViewModel">
+		    <content className="SelectPolygonView" />
+	    </insertComponent> -->
+    </updateCategory>
+  </categories>
+</ArcGIS>
