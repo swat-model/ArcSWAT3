@@ -974,6 +974,7 @@ namespace ArcSWAT3
                         this.cleanUp(3);
                         return;
                     }
+                    // use of slope.tif as name of slope file unaffected by burning in used by demProcessed check in main form
                     var slopeFile = @base + "slope" + suffix;
                     var angleFile = @base + "angle" + suffix;
                     await Utils.removeLayer(slopeFile);
@@ -4436,15 +4437,17 @@ namespace ArcSWAT3
 
 
         private void showTaudem_CheckedChanged(object sender, EventArgs e) {
-            var ok = FrameworkApplication.Current.MainWindow.Focus();
-            if (!ok) {
-                Utils.error("Failed to set focus", this._gv.isBatch);
-            }
-            if (this.showTaudem.Checked) {
-                SendKeys.Send("^%(S)");
-            } else {
-                SendKeys.Send("^%(C)");
-            }
+            // removed this as setting focus fails and SendKeys not allowed because 'Not handling Windows messages'
+            // does not seem necessary anyway
+            //var ok = FrameworkApplication.Current.MainWindow.Focus();
+            //if (!ok) {
+            //    Utils.error("Failed to set focus", this._gv.isBatch);
+            //}
+            //if (this.showTaudem.Checked) {
+            //    SendKeys.Send("^%(S)");
+            //} else {
+            //    SendKeys.Send("^%(C)");
+            //}
             //var tool = FrameworkApplication.ActiveTool;
             //var tab = FrameworkApplication.ActiveTab;
             //Utils.information("Current tool is " + tool + ".", this._gv.isBatch);

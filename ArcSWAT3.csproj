@@ -20,12 +20,54 @@
     <Compile Remove="selectsubs.py.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Remove="LayoutTemplates\LayoutTemplate1Landscape.pagx" />
+    <None Remove="LayoutTemplates\LayoutTemplate1Portrait.pagx" />
+    <None Remove="LayoutTemplates\LayoutTemplate2Landscape.pagx" />
+    <None Remove="LayoutTemplates\LayoutTemplate2Portrait.pagx" />
+    <None Remove="LayoutTemplates\LayoutTemplate3Landscape.pagx" />
+    <None Remove="LayoutTemplates\LayoutTemplate3Portrait.pagx" />
+    <None Remove="LayoutTemplates\LayoutTemplate4Landscape.pagx" />
+    <None Remove="LayoutTemplates\LayoutTemplate4Portrait.pagx" />
+    <None Remove="LayoutTemplates\LayoutTemplate6Landscape.pagx" />
+    <None Remove="LayoutTemplates\LayoutTemplate6Portrait.pagx" />
+  </ItemGroup>
+  <ItemGroup>
     <Content Include="Config.daml" />
     <Content Include="Images\QSWAT16.png">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Images\QSWAT32.png">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="LayoutTemplates\LayoutTemplate1Landscape.pagx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="LayoutTemplates\LayoutTemplate1Portrait.pagx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="LayoutTemplates\LayoutTemplate2Landscape.pagx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="LayoutTemplates\LayoutTemplate2Portrait.pagx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="LayoutTemplates\LayoutTemplate3Landscape.pagx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="LayoutTemplates\LayoutTemplate3Portrait.pagx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="LayoutTemplates\LayoutTemplate4Landscape.pagx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="LayoutTemplates\LayoutTemplate4Portrait.pagx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="LayoutTemplates\LayoutTemplate6Landscape.pagx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="LayoutTemplates\LayoutTemplate6Portrait.pagx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Resource Include="Images\AddInDesktop16.png" />
     <Resource Include="Images\AddInDesktop32.png" />

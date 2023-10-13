@@ -255,11 +255,12 @@ namespace ArcSWAT3
             } else {
                 (fromGRASS, found) = proj.readBoolEntry("", "delin/fromGRASS", false);
             }
-            if (!string.IsNullOrEmpty(TNCDir)) {
-                proj.writeEntry(title, "delin/TNCDir", TNCDir);
-            } else { 
-                (TNCDir, found) = proj.readEntry("", "delin/TNCDir", "");
-            }
+            //TODO
+            //if (!string.IsNullOrEmpty(TNCDir)) {
+            //    proj.writeEntry(title, "delin/TNCDir", TNCDir);
+            //} else { 
+            //    (TNCDir, found) = proj.readEntry("", "delin/TNCDir", "");
+            //}
             //this._gv.plugin_dir = this.plugin_dir;
             //this._odlg.projPath.repaint();
             this._odlg._gv = this._gv;
@@ -390,6 +391,10 @@ namespace ArcSWAT3
             }
             this._gv.demFile = demFile;
             await QueuedTask.Run(() => {
+                // set extent to DEM as otherwise defaults to full globe
+                var demExtent = demLayer.QueryExtent();
+                var map = MapView.Active.Map;
+                map.SetCustomFullExtent(demExtent);
                 dynamic nodata = demLayer.GetRaster().GetNoDataValue();
                 var typ = nodata.GetType();
                 if (typ.IsArray) {
@@ -465,6 +470,11 @@ namespace ArcSWAT3
                 if (File.Exists(unburnedslp)) {
                     this._gv.slopeFile = unburnedslp;
                 }
+            }
+            // if slope file was based on burned-in dem, replace with one produced without burning in
+            var noBurnSlopeFile = @base + "slope.tif";
+            if (Utils.isUpToDate(this._gv.slopeFile, noBurnSlopeFile)) {
+                this._gv.slopeFile = noBurnSlopeFile;
             }
             if (!File.Exists(this._gv.slopeFile)) {
                 Utils.loginfo("demProcessed failed: no slope raster");

@@ -367,6 +367,8 @@ namespace ArcSWAT3 {
             this.animationTemplate = "";
             //# flag to show when user has perhaps changed the animation template
             this.animationTemplateDirty = false;
+            // layout animation not possible in ArcSWAT
+            this._dlg.removeAnimationMode();
             // empty animation and png directories
             this.clearAnimationDir();
             this.clearPngDir();
@@ -610,7 +612,12 @@ namespace ArcSWAT3 {
         // Set current database and connection to it; put table names in PoutputCombo.
         public virtual void setupDb() {
             this.resultsFileUpToDate = false;
-            this.scenario = this._dlg.PscenariosCombo.SelectedItem.ToString();
+            var scen = this._dlg.PscenariosCombo.SelectedItem;
+            if (scen is not null) {
+                this.scenario = scen.ToString();
+            } else { 
+                this.scenario = this._dlg.PscenariosCombo.Text;
+            }
             this.setConnection(this.scenario);
             var scenDir = Utils.join(this._gv.scenariosDir, this.scenario);
             var txtInOutDir = Utils.join(scenDir, Parameters._TXTINOUT);
@@ -1311,7 +1318,12 @@ namespace ArcSWAT3 {
                 using (var reader = DBUtils.getReader(this.conn, sql)) {
                     while (reader.Read()) {
                         // index is subbasin number unless multiple hrus, when it is the integer parsing of HRUGIS
-                        var index = reader.GetInt32(0);
+                        int index = 0;
+                        if (table == "hru") {
+                            index = Convert.ToInt32(reader.GetString(0));
+                        } else {
+                            index = reader.GetInt32(0);
+                        }
                         // fudge to deal with WHERE x = n problem 
                         if (whereNum > 0) {
                             if (index != whereNum) {
@@ -2001,18 +2013,21 @@ namespace ArcSWAT3 {
 
         // Make renderer with Jenks algorithm using vals of var, setting colour rampe to ramp, inverted if invert
         public virtual async Task<CIMClassBreaksRenderer> makeJenksRenderer(List<double> vals, CIMColorRamp ramp, string vari, bool useLine) {
+            //List<double> val5 = new List<double>() { 1, 2, 4, 5, 6 };
+            //var cbs = JenksFisher.CreateJenksFisherBreaksArray(val5, 2);
+            var upperBound = vals.Max();
             var count = 5;
-            // need 6 breaks for 5 bands
-            var cbreaks = JenksFisher.CreateJenksFisherBreaksArray(vals, count + 1);
+            // algoritm provides lower bounds for breaks
+            var cbreaks = JenksFisher.CreateJenksFisherBreaksArray(vals, count);
             Utils.loginfo(string.Format("Breaks: {0}", cbreaks.ToString()));
             var colours = await QueuedTask.Run(() => ColorFactory.Instance.GenerateColorsFromColorRamp(ramp, count));
             var classBreaks = new List<CIMClassBreak>();
             foreach (var i in Enumerable.Range(0, count)) {
                 // adjust min and max by 1% to avoid rounding errors causing values to be outside the range
                 var minVal = i == 0 ? cbreaks[0] * 0.99 : cbreaks[i];
-                var maxVal = i == count - 1 ? cbreaks[count] * 1.01 : cbreaks[i + 1];
+                var maxVal = i == count - 1 ? upperBound * 1.01 : cbreaks[i + 1];
                 var colour = colours[i];
-                classBreaks.Add(this.makeSymbologyForRange(minVal, maxVal, colour, 4, useLine));
+                classBreaks.Add(this.makeSymbologyForRange(minVal, maxVal, colour, 3, useLine));
             }
             var renderer = new CIMClassBreaksRenderer() { 
                 Breaks = classBreaks.ToArray(),
@@ -2168,7 +2183,6 @@ namespace ArcSWAT3 {
                 this.internalChangeToRivRenderer = false;
                 this.keepRivColours = keepColours;
             }
-            var varShort = selectVar.Substring(0, Math.Min(10, selectVar.Length));
             var tip = string.Format("\"{0}: \" + Text($feature.{1})", selectVar, selectVarShort);
             Utils.setMapTip(this.currentResultsLayer, selectVarShort, tip);
         }
@@ -2982,7 +2996,7 @@ namespace ArcSWAT3 {
                 return;
             }
             if (this.scenario1 != "") {
-                var _ = this.makeCompareResults();
+                var _ = await this.makeCompareResults();
                 return;
             }
             
@@ -3015,7 +3029,7 @@ namespace ArcSWAT3 {
         //         2.  Results for scenario 2
         //         3.  Results for difference scenario 2 - scenario 1
         //         4.  Results for % change from 1 to 2
-        //         Assumes self.scenario1 and self.scenario2 are differen existing scenarios directories.
+        //         Assumes self.scenario1 and self.scenario2 are different existing scenarios directories.
         public virtual async Task<bool> makeCompareResults() {
             FeatureLayer layer4 = null;
             FeatureLayer layer3 = null;
@@ -3117,7 +3131,9 @@ namespace ArcSWAT3 {
                         glayer1.CreateField(varField, 1);
                     }
                 }
-                layer1 = LayerFactory.Instance.CreateLayer(new Uri(file1), resultsGroup, 0, legend1) as FeatureLayer;
+                await QueuedTask.Run(() => {
+                    layer1 = LayerFactory.Instance.CreateLayer(new Uri(file1), resultsGroup, 0, legend1) as FeatureLayer;
+                });
                 addedLayers.Add(layer1);
             }
             if (needLayer2) {
@@ -3132,7 +3148,9 @@ namespace ArcSWAT3 {
                         glayer2.CreateField(varField, 1);
                     }
                 }
-                layer2 = LayerFactory.Instance.CreateLayer(new Uri(file2), resultsGroup, 0, legend2) as FeatureLayer;
+                await QueuedTask.Run(() => {
+                    layer2 = LayerFactory.Instance.CreateLayer(new Uri(file2), resultsGroup, 0, legend2) as FeatureLayer;
+                });
                 addedLayers.Add(layer2);
             }
             if (needLayer3) {
@@ -3148,7 +3166,9 @@ namespace ArcSWAT3 {
                         glayer3.CreateField(varField, 1);
                     }
                 }
-                layer3 = LayerFactory.Instance.CreateLayer(new Uri(diffFile), resultsGroup, 0, legend3) as FeatureLayer;
+                await QueuedTask.Run(() => {
+                    layer3 = LayerFactory.Instance.CreateLayer(new Uri(diffFile), resultsGroup, 0, legend3) as FeatureLayer;
+                });
                 addedLayers.Add(layer3);
             }
             if (needLayer4) {
@@ -3164,7 +3184,9 @@ namespace ArcSWAT3 {
                         glayer4.CreateField(varField, 1);
                     }
                 }
-                layer4 = LayerFactory.Instance.CreateLayer(new Uri(changeFile), resultsGroup, 0, legend4) as FeatureLayer;
+                await QueuedTask.Run(() => {
+                    layer4 = LayerFactory.Instance.CreateLayer(new Uri(changeFile), resultsGroup, 0, legend4) as FeatureLayer;
+                });
                 addedLayers.Add(layer4);
             }
             bool useLine = false;
@@ -3196,7 +3218,7 @@ namespace ArcSWAT3 {
             }
             List<double> allVals;
             bool invertRamp34;
-            (allVals, invertRamp34) = await this.updateCompareLayers(layer1, layer2, layer3, layer4, selectVar);
+            (allVals, invertRamp34) = await this.updateCompareLayers(layer1, layer2, layer3, layer4, selectVar, selectVarShort);
             if (allVals is null) {
                 removeComparisonLayers(addedLayers);
                 return false;
@@ -3251,7 +3273,8 @@ namespace ArcSWAT3 {
             FeatureLayer layer2,
             FeatureLayer layer3,
             FeatureLayer layer4,
-            string vari) {
+            string selectVar,
+            string selectVarShort) {
             double val2 = 0;
             double val1 = 0;
             double data = 0;
@@ -3262,10 +3285,9 @@ namespace ArcSWAT3 {
             if (this.hasAreas) {
                 var areaIndex = await this._gv.topo.getIndex(layer1, Visualise._AREA);
             }
-            var varIndex = await this._gv.topo.getIndex(layer1, vari);
             // collect resultsData
             this.summariseData("scenario1", true);
-            // summariseData puts data in self.resultsData, so save this before running again
+            // summariseData puts data in this.staticResultsData, so save this before running again
             // need to copy data, not just a pointer to it
             var data1 = this.copyStaticResultsData();
             this.summariseData("scenario2", true);
@@ -3283,6 +3305,7 @@ namespace ArcSWAT3 {
                 using (var ds = Ogr.Open(fileName, 1)) {
                     var glayer = ds.GetLayerByIndex(0);
                     var defn = glayer.GetLayerDefn();
+                    var varIndex = defn.GetFieldIndex(selectVarShort);
                     do {
                         var f = glayer.GetNextFeature();
                         if (f is null) { break; }
@@ -3311,7 +3334,7 @@ namespace ArcSWAT3 {
                             bool ok = true;
                             if (!data1.TryGetValue(sub, out subData)) {
                                 ok = false;
-                            } else if (!subData.TryGetValue(vari, out data)) {
+                            } else if (!subData.TryGetValue(selectVar, out data)) {
                                 ok = false;
                             }
                             if (!ok) {
@@ -3320,7 +3343,7 @@ namespace ArcSWAT3 {
                                 } else {
                                     @ref = string.Format("subbasin {0}", sub);
                                 }
-                                Utils.error(string.Format("Cannot get data for variable {0} in {1} in first scenario", vari, @ref), this._gv.isBatch);
+                                Utils.error(string.Format("Cannot get data for variable {0} in {1} in first scenario", selectVar, @ref), this._gv.isBatch);
                                 return (null, false);
                             }
                             allVals.Add(data);
@@ -3328,7 +3351,7 @@ namespace ArcSWAT3 {
                             bool ok = true;
                             if (!this.staticResultsData.TryGetValue(sub, out subData)) {
                                 ok = false;
-                            } else if (!subData.TryGetValue(vari, out data)) {
+                            } else if (!subData.TryGetValue(selectVar, out data)) {
                                 ok = false;
                             }
                             if (!ok) {
@@ -3337,7 +3360,7 @@ namespace ArcSWAT3 {
                                 } else {
                                     @ref = string.Format("subbasin {0}", sub);
                                 }
-                                Utils.error(string.Format("Cannot get data for variable {0} in {1} in second scenario", vari, @ref), this._gv.isBatch);
+                                Utils.error(string.Format("Cannot get data for variable {0} in {1} in second scenario", selectVar, @ref), this._gv.isBatch);
                                 return (null, false);
                             }
                             allVals.Add(data);
@@ -3345,7 +3368,7 @@ namespace ArcSWAT3 {
                             bool ok = true;
                             if (!data1.TryGetValue(sub, out subData)) {
                                 ok = false;
-                            } else if (!subData.TryGetValue(vari, out val1)) {
+                            } else if (!subData.TryGetValue(selectVar, out val1)) {
                                 ok = false;
                             }
                             if (!ok) {
@@ -3354,12 +3377,12 @@ namespace ArcSWAT3 {
                                 } else {
                                     @ref = string.Format("subbasin {0}", sub);
                                 }
-                                Utils.error(string.Format("Cannot get data for variable {0} in {1} in first scenario", vari, @ref), this._gv.isBatch);
+                                Utils.error(string.Format("Cannot get data for variable {0} in {1} in first scenario", selectVar, @ref), this._gv.isBatch);
                                 return (null, false);
                             }
                             if (!this.staticResultsData.TryGetValue(sub, out subData)) {
                                 ok = false;
-                            } else if (!subData.TryGetValue(vari, out val2)) {
+                            } else if (!subData.TryGetValue(selectVar, out val2)) {
                                 ok = false;
                             }
                             if (!ok) {
@@ -3368,7 +3391,7 @@ namespace ArcSWAT3 {
                                 } else {
                                     @ref = string.Format("subbasin {0}", sub);
                                 }
-                                Utils.error(string.Format("Cannot get data for variable {0} in {1} in second scenario", vari, @ref), this._gv.isBatch);
+                                Utils.error(string.Format("Cannot get data for variable {0} in {1} in second scenario", selectVar, @ref), this._gv.isBatch);
                                 return (null, false);
                             }
                             if (layer == layer3) {
@@ -3381,6 +3404,7 @@ namespace ArcSWAT3 {
                             }
                         }
                         f.SetField(varIndex, data);
+                        glayer.SetFeature(f);
 
                     } while (true);
                 }
@@ -3919,16 +3943,16 @@ namespace ArcSWAT3 {
                 }
                 dataRow[4] = "";
             } else if (colChanged == 2) {
-                dataRow[2] = this._dlg.PsubPlot.SelectedItem.ToString();
+                dataRow[2] = this._dlg.PsubPlot.Text;
                 if ((string)dataRow[1] == "hru") {
                     dataRow[3] = "";
                 } else {
                     dataRow[3] = "-";
                 }
             } else if (colChanged == 3) {
-                dataRow[3] = this._dlg.PhruPlot.SelectedItem.ToString();
+                dataRow[3] = this._dlg.PhruPlot.Text;
             } else {
-                dataRow[4] = this._dlg.PvariablePlot.SelectedItem.ToString();
+                dataRow[4] = this._dlg.PvariablePlot.Text;
             }
         }
 

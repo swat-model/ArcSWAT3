@@ -87,7 +87,7 @@
             this.label12 = new System.Windows.Forms.Label();
             this.composePortrait = new System.Windows.Forms.RadioButton();
             this.composeLandscape = new System.Windows.Forms.RadioButton();
-            this.groupBox2 = new System.Windows.Forms.GroupBox();
+            this.animationMode = new System.Windows.Forms.GroupBox();
             this.printAnimation = new System.Windows.Forms.RadioButton();
             this.canvasAnimation = new System.Windows.Forms.RadioButton();
             this.animationSetup = new System.Windows.Forms.GroupBox();
@@ -133,7 +133,7 @@
             ((System.ComponentModel.ISupportInitialize)(this.slider)).BeginInit();
             this.composeOptions.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.composeCount)).BeginInit();
-            this.groupBox2.SuspendLayout();
+            this.animationMode.SuspendLayout();
             this.animationSetup.SuspendLayout();
             this.tabPage3.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.tableWidget)).BeginInit();
@@ -594,7 +594,7 @@
             this.tabPage2.Controls.Add(this.playCommand);
             this.tabPage2.Controls.Add(this.rewindCommand);
             this.tabPage2.Controls.Add(this.composeOptions);
-            this.tabPage2.Controls.Add(this.groupBox2);
+            this.tabPage2.Controls.Add(this.animationMode);
             this.tabPage2.Controls.Add(this.animationSetup);
             this.tabPage2.Location = new System.Drawing.Point(4, 24);
             this.tabPage2.Name = "tabPage2";
@@ -786,16 +786,16 @@
             this.composeLandscape.Text = "Landscape";
             this.composeLandscape.UseVisualStyleBackColor = true;
             // 
-            // groupBox2
+            // animationMode
             // 
-            this.groupBox2.Controls.Add(this.printAnimation);
-            this.groupBox2.Controls.Add(this.canvasAnimation);
-            this.groupBox2.Location = new System.Drawing.Point(14, 78);
-            this.groupBox2.Name = "groupBox2";
-            this.groupBox2.Size = new System.Drawing.Size(191, 57);
-            this.groupBox2.TabIndex = 1;
-            this.groupBox2.TabStop = false;
-            this.groupBox2.Text = "Animation mode";
+            this.animationMode.Controls.Add(this.printAnimation);
+            this.animationMode.Controls.Add(this.canvasAnimation);
+            this.animationMode.Location = new System.Drawing.Point(14, 78);
+            this.animationMode.Name = "animationMode";
+            this.animationMode.Size = new System.Drawing.Size(191, 57);
+            this.animationMode.TabIndex = 1;
+            this.animationMode.TabStop = false;
+            this.animationMode.Text = "Animation mode";
             // 
             // printAnimation
             // 
@@ -1129,8 +1129,8 @@
             this.composeOptions.ResumeLayout(false);
             this.composeOptions.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.composeCount)).EndInit();
-            this.groupBox2.ResumeLayout(false);
-            this.groupBox2.PerformLayout();
+            this.animationMode.ResumeLayout(false);
+            this.animationMode.PerformLayout();
             this.animationSetup.ResumeLayout(false);
             this.animationSetup.PerformLayout();
             this.tabPage3.ResumeLayout(false);
@@ -1195,7 +1195,7 @@
         private System.Windows.Forms.Label label12;
         private System.Windows.Forms.RadioButton composePortrait;
         private System.Windows.Forms.RadioButton composeLandscape;
-        private System.Windows.Forms.GroupBox groupBox2;
+        private System.Windows.Forms.GroupBox animationMode;
         private System.Windows.Forms.RadioButton printAnimation;
         private System.Windows.Forms.RadioButton canvasAnimation;
         private System.Windows.Forms.GroupBox animationSetup;

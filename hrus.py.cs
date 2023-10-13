@@ -1451,7 +1451,7 @@ namespace ArcSWAT3 {
             Band hrusRasterBand = null;
             // prepare slope bands grid
             // remove old one since may not be wanted: will be recalculated if it is needed
-            this._gv.slopeBandsFile = Path.ChangeExtension(this._gv.slopeFile, null) + "_bands.tif";
+            this._gv.slopeBandsFile = Path.ChangeExtension(this._gv.demFile, null) + "slope_bands.tif";
             await Utils.removeLayerAndFiles(this._gv.slopeBandsFile);
             if (!this._gv.useGridModel && this._gv.db.slopeLimits.Count > 0) {
                 proj = slopeDs.GetProjection();

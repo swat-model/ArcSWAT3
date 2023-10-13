@@ -16,6 +16,7 @@ using ArcGIS.Desktop.Core;
 using ArcGIS.Desktop.Mapping;
 using System.Data.SQLite;
 using System.Reflection;
+using ArcGIS.Core.Data.UtilityNetwork.Trace;
 
 namespace ArcSWAT3
 {
@@ -346,7 +347,7 @@ namespace ArcSWAT3
             //# Topology object
             this.topo = new Topology(isBatch, isHUC, isHAWQS, fromGRASS, this.forTNC, this.TNCCatchmentThreshold);
             var projFile = Project.Current.Name;
-            var projPath = Project.Current.HomeFolderPath;
+            var projPath = Project.Current.Path;
             // avoid / on Windows because of SWAT Editor
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
@@ -354,10 +355,10 @@ namespace ArcSWAT3
             }
             //# Project name
             // Project.Current.Name finishes with .aprx, which we need to remove
-            int posn = Project.Current.Name.LastIndexOf(".");
-            this.projName = Project.Current.Name.Substring(0, posn);
+            int posn = projFile.LastIndexOf(".");
+            this.projName = projFile.Substring(0, posn);
             //# Project directory
-            this.projDir = Project.Current.HomeFolderPath;
+            this.projDir = Path.GetDirectoryName(projPath);
             // Proj
             this.proj = new Proj(this);
             //# flag to show if a TNC project is running on a catchment or the whole continent
@@ -737,7 +738,12 @@ namespace ArcSWAT3
                 } else if (key == refDbKey) {
                         item.SetAttributeValue("value", this.db.dbRefFile);
                     } else if (key == soilDbKey) {
-                        if (this.db.useSSURGO) {
+                    // in case this is a restart need to get SSURGO setting from project config data
+                    var found = false;
+                    Proj proj = this.proj;
+                    var title = this.projName;
+                    (this.db.useSSURGO, found) = proj.readBoolEntry(title, "soil/useSSURGO", false);
+                    if (this.db.useSSURGO) {
                             soilDb = Parameters._SSURGODB;
                         } else {
                             soilDb = Parameters._USSOILDB;

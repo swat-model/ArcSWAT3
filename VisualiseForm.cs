@@ -21,6 +21,11 @@ namespace ArcSWAT3
             this._parent = parent;
         }
 
+        public void removeAnimationMode() {
+            this.animationMode.Visible = false;
+            this.composeOptions.Visible = false;
+        }
+
         public void setCompare(bool enabled) {
             this.compareGroup.Visible = enabled;
         }

@@ -1089,7 +1089,8 @@ namespace ArcSWAT3
             var pathProExe = System.IO.Path.GetDirectoryName(new System.Uri(Assembly.GetEntryAssembly().Location).AbsolutePath);
             if (pathProExe == null) return "";
             pathProExe = Uri.UnescapeDataString(pathProExe);
-            pathProExe = System.IO.Path.Combine(pathProExe, @"Python\envs\arcswat_env3");
+            //pathProExe = System.IO.Path.Combine(pathProExe, @"Python\envs\arcswat_env3");
+            pathProExe = System.IO.Path.Combine(pathProExe, @"Python\envs\arcgispro-py3");
             // Create and format process command string.
             // NOTE:  Path to Python script is below, "K:\Users\Public\QSWAT3\QSWAT3\runArcSWAT.py", which can be kept or updated based on the location you place it.
             //var myCommand = String.Format(@"/c """"{0}"" ""{1}""""",
@@ -2257,6 +2258,50 @@ namespace ArcSWAT3
             });
         }
 
+        // symbology for watershed file
+        public static Task colourWatershed(FeatureLayer featureLayer, GlobalVars gv) {
+            // collect symbols from arcSWAT3Style
+            CIMSymbolReference subbasinRef = null;
+            CIMSymbolReference upstreamRef = null;
+            return QueuedTask.Run(() => {
+                var subbasin = gv.arcSWAT3Style.SearchSymbols(StyleItemType.PolygonSymbol, "Subbasin")[0].Symbol as CIMPolygonSymbol;
+                var upstream = gv.arcSWAT3Style.SearchSymbols(StyleItemType.PolygonSymbol, "Upstream")[0].Symbol as CIMPolygonSymbol;
+                subbasinRef = subbasin.MakeSymbolReference();
+                upstreamRef = upstream.MakeSymbolReference();
+                var subbasinValues = new List<CIMUniqueValue> { new CIMUniqueValue { FieldValues = new string[] { "true" } } };
+                CIMUniqueValueClass subbasinValueClass = new CIMUniqueValueClass {
+                    Editable = true,
+                    Label = "Subbasin",
+                    Symbol = subbasinRef,
+                    Visible = true,
+                    Values = subbasinValues.ToArray()
+                };
+                var upstreamValues = new List<CIMUniqueValue> { new CIMUniqueValue { FieldValues = new string[] { "false" } } };
+                CIMUniqueValueClass upstreamValueClass = new CIMUniqueValueClass {
+                    Editable = true,
+                    Label = "Upstream",
+                    Symbol = upstreamRef,
+                    Visible = true,
+                    Values = upstreamValues.ToArray()
+                };
+                var listClasses = new List<CIMUniqueValueClass>() { subbasinValueClass, upstreamValueClass };
+                var uvg = new CIMUniqueValueGroup {
+                    Classes = listClasses.ToArray()
+                };
+                var listUniqueValueGroups = new List<CIMUniqueValueGroup> { uvg };
+                var expressionInfo = new CIMExpressionInfo {
+                    Expression = "$feature.Subbasin == null || $feature.Subbasin > 0",
+                    Title = "Watershed"
+                };
+                var uvr = new CIMUniqueValueRenderer {
+                    ValueExpressionInfo = expressionInfo,
+                    UseDefaultSymbol = true,
+                    Groups = listUniqueValueGroups.ToArray()
+                };
+                featureLayer.SetRenderer(uvr);
+            });
+        }
+
         // Layer colouring function for landuse grid.
 
         public async static void colourLanduses(RasterLayer layer, GlobalVars gv) {
@@ -2325,7 +2370,7 @@ namespace ArcSWAT3
                     var colours = ColorFactory.Instance.GenerateColorsFromColorRamp(ramp, total_colours);
                     foreach (int i in Enumerable.Range(0, total_colours)) {
                         classes[i].Color = colours[i];
-                        if (gv.db.landuseCodes.Count > 0) {
+                        if (gv.db.soilNames.Count > 0) {
                             var value = Convert.ToInt32(classes[i].Values[0]);
                             classes[i].Label = gv.db.soilNames[value];
                         }
@@ -2411,7 +2456,12 @@ namespace ArcSWAT3
         public async static void ApplySymbolToFeatureLayerAsync(FeatureLayer featureLayer, int ft, GlobalVars gv) {
             if (ft == FileTypes._OUTLETS) {
                 await colourPoints(featureLayer, gv);
+                return;
+            } else if (ft == FileTypes._WATERSHED || ft == FileTypes._EXISTINGWATERSHED) {
+                await colourWatershed(featureLayer, gv);
+                return;
             }
+
             Tuple<StyleItemType, string> pair = getTypeAndName(ft);
             if (pair is null) { return; }
             var symbolType = pair.Item1;

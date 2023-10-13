@@ -407,10 +407,19 @@ namespace ArcSWAT3
 
         // Return true if table exists in db
         public bool tableExists(string table, string db) {
-        this.connect();
-        var schema = conn.GetSchema("TABLES");
-        var myTable = schema.Select(String.Format("TABLE_NAME='{0}'", table));
-        return myTable.Length > 0;
+            var conn = this.connectDb(db);
+            if (conn is null) return false;
+            bool needToClose = false;
+            if (conn.State != ConnectionState.Open) {
+                conn.Open();
+                needToClose = true;
+            }
+            var schema = conn.GetSchema("TABLES");
+            var myTable = schema.Select(String.Format("TABLE_NAME='{0}'", table));
+            if (needToClose) {
+                conn.Close();
+            }
+            return myTable.Length > 0;
         }
         
         // Create SQL select statement.
@@ -500,11 +509,11 @@ namespace ArcSWAT3
             if (conn.State != System.Data.ConnectionState.Open) conn.Open();
             if (conn is SQLiteConnection) {
                 var cmd = new SQLiteCommand(sql, (SQLiteConnection)conn);
-                return cmd.ExecuteReader();
+                return cmd.ExecuteReader() as SQLiteDataReader;
             }
             { 
                 var cmd = new OleDbCommand(sql, (OleDbConnection)conn);
-                return cmd.ExecuteReader();
+                return cmd.ExecuteReader() as OleDbDataReader;
             }
         }
         
@@ -1871,21 +1880,47 @@ namespace ArcSWAT3
             var table = "config_" + parts[0];
             var field = parts[1];
             if (field == "table") { field = "tabl"; } // table is an SQL reserved word
-            var sql = "SELECT " + field + " FROM " + table + ";";
+            var sql = "SELECT " + field + " FROM " + table;
+            // code used for debugging
+            //var sql0 = "SELECT * FROM " + table;
+            //var adapter = new OleDbDataAdapter(sql0, gv.db.conn as OleDbConnection);
+            //var values = new DataSet();
+            //adapter.Fill(values, "Data");
+            //object[] vals = new object[30];
+            //foreach (DataRow r in values.Tables["Data"].Rows) {
+            //    for (int i = 0; i < r.ItemArray.Length; i++) {
+            //        vals[i] = r.ItemArray[i];
+            //    }
+            //}
             try {
-                var reader = DBUtils.getReader(gv.db.conn, sql);
-                if (reader.HasRows) {
-                    reader.Read();
-                    var result = reader.GetString(0);
-                    if (string.IsNullOrEmpty(result)) {
+                using (var reader = DBUtils.getReader(gv.db.conn, sql)) {
+                    if (reader.HasRows) {
+                        reader.Read();
+                        string result = null;
+                        try {
+                            var value = reader.GetValue(0);
+                            if (value != null) {
+                                var typ = value.GetType();
+                                if (typ == typeof(string)) {
+                                    result = value.ToString();
+                                }
+                            }
+                        } catch { 
+                            var errRes = reader.GetValue(0);
+                            var typ = errRes.GetType();
+                        }
+                        reader.Close();
+                        if (string.IsNullOrEmpty(result)) {
+                            return Tuple.Create(deflt, false);
+                        }
+                        if (!string.IsNullOrEmpty(title)) {
+                            result = Uri.UnescapeDataString(Path.Combine(gv.projDir, result));
+                        }
+                        return Tuple.Create(result, true);
+                    } else {
+                        reader.Close();
                         return Tuple.Create(deflt, false);
                     }
-                    if (!string.IsNullOrEmpty(title)) {
-                        result = Uri.UnescapeDataString(Path.Combine(gv.projDir, result));
-                    }
-                    return Tuple.Create(result, true);
-                } else {
-                    return Tuple.Create(deflt, false);
                 }
             } catch {
                 return Tuple.Create(deflt, false);
@@ -1900,12 +1935,13 @@ namespace ArcSWAT3
             var field = parts[1];
             var sql = "SELECT " + field + " FROM " + table + ";";
             try {
-                var reader = DBUtils.getReader(gv.db.conn, sql);
-                if (reader.HasRows) {
-                    reader.Read();
-                    return Tuple.Create(reader.GetBoolean(0), true);
-                } else {
-                    return Tuple.Create(deflt, false);
+                using (var reader = DBUtils.getReader(gv.db.conn, sql)) {
+                    if (reader.HasRows) {
+                        reader.Read();
+                        return Tuple.Create(reader.GetBoolean(0), true);
+                    } else {
+                        return Tuple.Create(deflt, false);
+                    }
                 }
             } catch {
                 return Tuple.Create(deflt, false);
@@ -1920,12 +1956,13 @@ namespace ArcSWAT3
             var field = parts[1];
             var sql = "SELECT " + field + " FROM " + table + ";";
             try {
-                var reader = DBUtils.getReader(this.gv.db.conn, sql);
-                if (reader.HasRows) {
-                    reader.Read();
-                    return Tuple.Create(Convert.ToInt32(reader.GetValue(0)), true);
-                } else {
-                    return Tuple.Create(deflt, false);
+                using (var reader = DBUtils.getReader(this.gv.db.conn, sql)) {
+                    if (reader.HasRows) {
+                        reader.Read();
+                        return Tuple.Create(Convert.ToInt32(reader.GetValue(0)), true);
+                    } else {
+                        return Tuple.Create(deflt, false);
+                    }
                 }
             } catch {
                 return Tuple.Create(deflt, false);
