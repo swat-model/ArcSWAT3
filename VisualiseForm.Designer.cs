@@ -1105,6 +1105,7 @@
             this.Controls.Add(this.periodBox);
             this.Controls.Add(this.outputBox);
             this.Controls.Add(this.scenarioBox);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "VisualiseForm";
             this.Text = "Visualise Results";
             this.KeyUp += new System.Windows.Forms.KeyEventHandler(this.VisualiseForm_KeyUp);

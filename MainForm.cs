@@ -15,7 +15,7 @@ using System.Drawing;
 using System.IO;
 using Path = System.IO.Path;
 using System.Windows.Forms;
-using System.Threading;
+using System.Threading.Tasks;
 using ArcGIS.Core.Data.UtilityNetwork.Trace;
 using ArcGIS.Core.Internal.CIM;
 using ArcGIS.Desktop.Reports;
@@ -200,13 +200,13 @@ namespace ArcSWAT3
             }
         }
 
-        private void OKButton_Click(object sender, EventArgs e) {
-            this._parent.finish(DialogResult.OK);
+        private async void OKButton_Click(object sender, EventArgs e) {
+            await this._parent.finish(DialogResult.OK);
             this.Close();
         }
 
-        private void cancelButton_Click(object sender, EventArgs e) {
-            this._parent.finish(DialogResult.Cancel);
+        private async void cancelButton_Click(object sender, EventArgs e) {
+            await this._parent.finish(DialogResult.Cancel);
             this.Close();
         }
 
@@ -223,16 +223,16 @@ namespace ArcSWAT3
             this._parent.startEditor();
         }
 
-        private void existingButton_Click(object sender, EventArgs e) {
-            this._parent.existingProject();
+        private async void existingButton_Click(object sender, EventArgs e) {
+            await this._parent.existingProject();
         }
 
-        private void newButton_Click(object sender, EventArgs e) {
-            this._parent.newProject();
+        private async void newButton_Click(object sender, EventArgs e) {
+            await this._parent.newProject();
         }
 
-        private void visualiseButton_Click(object sender, EventArgs e) {
-            this._parent.visualise();
+        private async void visualiseButton_Click(object sender, EventArgs e) {
+            await this._parent.visualise();
         }
     }
 }

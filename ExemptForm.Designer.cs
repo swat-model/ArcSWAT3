@@ -25,6 +25,7 @@
         /// the contents of this method with the code editor.
         /// </summary>
         private void InitializeComponent() {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(ExemptForm));
             this.chooseBox = new System.Windows.Forms.ComboBox();
             this.label1 = new System.Windows.Forms.Label();
             this.exemptBox = new System.Windows.Forms.ListBox();
@@ -112,6 +113,7 @@
             this.Controls.Add(this.exemptBox);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.chooseBox);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "ExemptForm";
             this.Text = "Exempt landuses";
             this.ResumeLayout(false);

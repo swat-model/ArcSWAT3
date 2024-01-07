@@ -995,6 +995,7 @@
             this.Controls.Add(this.mergeGroup);
             this.Controls.Add(this.tabWidget);
             this.Controls.Add(this.demGroup);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.Name = "DelinForm";
             this.Text = "Delineate Watershed";

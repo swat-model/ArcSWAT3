@@ -25,6 +25,7 @@
         /// the contents of this method with the code editor.
         /// </summary>
         private void InitializeComponent() {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(CompareScenariosForm));
             this.scenario1 = new System.Windows.Forms.ComboBox();
             this.scenario2 = new System.Windows.Forms.ComboBox();
             this.label1 = new System.Windows.Forms.Label();
@@ -98,6 +99,7 @@
             this.Controls.Add(this.label1);
             this.Controls.Add(this.scenario2);
             this.Controls.Add(this.scenario1);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "CompareScenariosForm";
             this.Text = "Compare scenarios";
             this.ResumeLayout(false);

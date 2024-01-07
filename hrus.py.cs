@@ -252,7 +252,7 @@ namespace ArcSWAT3 {
         // Read landuse and soil data from files 
         //         or from previous run stored in project database.
         //         
-        public async void readFiles() {
+        public async Task readFiles() {
             string soil;
             string luse;
             this._gv.writeMasterProgress(-1, 0);
@@ -384,7 +384,7 @@ namespace ArcSWAT3 {
                     if (this._gv.isBatch) {
                         Utils.information("Writing landuse and soil report ...", true);
                     }
-                    this.CreateHRUs.printBasins(false);
+                    await this.CreateHRUs.printBasins(false);
                 }
                 this._dlg.hideProgressBar();
             }
@@ -1007,7 +1007,7 @@ namespace ArcSWAT3 {
         }
 
         // Create HRUs.
-        public async void calcHRUs() {
+        public async Task calcHRUs() {
             // if this is done in task readFiles seems to be called too early
             if (!this._gv.useGridModel && this._gv.db.slopeLimits.Count > 0) {
                 RasterLayer slopeBandsLayer = (await Utils.getLayerByFilename(this._gv.slopeBandsFile, FileTypes._SLOPEBANDS, this._gv, null, Utils._SLOPE_GROUP_NAME)).Item1 as RasterLayer;
@@ -1063,10 +1063,10 @@ namespace ArcSWAT3 {
                     time2 = DateTime.Now;
                     Utils.loginfo(string.Format("Writing hrus and uncomb tables took {0} seconds", Convert.ToInt32(time2.Subtract(time1).TotalSeconds)));
                 } else {
-                    this.CreateHRUs.printBasins(true);
+                    await this.CreateHRUs.printBasins(true);
                 }
                 time1 = DateTime.Now;
-                this.CreateHRUs.writeWatershedTable();
+                await this.CreateHRUs.writeWatershedTable();
                 time2 = DateTime.Now;
                 Utils.loginfo(string.Format("Writing Watershed table took {0} seconds", Convert.ToInt32(time2.Subtract(time1).TotalSeconds)));
                 this._gv.writeMasterProgress(-1, 1);
@@ -2793,7 +2793,7 @@ namespace ArcSWAT3 {
                     var baseName = Path.ChangeExtension(Path.GetFileName(this._gv.fullHRUsFile), null);
                     var mapLayer = await QueuedTask.Run(() => LayerFactory.Instance.CreateLayer(new Uri(this._gv.fullHRUsFile), group, index, String.Format("{0} ({1})", legend, baseName)));
                     FileTypes.ApplySymbolToFeatureLayerAsync((FeatureLayer)mapLayer, ft, this._gv);
-                    Utils.setMapTip((FeatureLayer)mapLayer, ft);
+                    await Utils.setMapTip((FeatureLayer)mapLayer, ft);
                 }
                 return true;
             } else {
@@ -4267,7 +4267,7 @@ namespace ArcSWAT3 {
         //         
         //         Also writes hrus and uncomb tables if withHRUs.
         //         
-        public void printBasins(bool withHRUs) {
+        public async Task printBasins(bool withHRUs) {
             var fileName = withHRUs ? Parameters._HRUSREPORT : Parameters._BASINREPORT;
             var path = Utils.join(this._gv.textDir, fileName);
             var hrusCsvFile = Utils.join(this._gv.gridDir, Parameters._HRUSCSV);
@@ -4277,7 +4277,7 @@ namespace ArcSWAT3 {
             using (StreamWriter hrusCsv = new StreamWriter(hrusCsvFile, false)) {
 
                 // Print report on crops, soils, and slopes for subbasin.
-                void printBasinsDetails(
+                async Task printBasinsDetails(
                     double basinHa,
                     bool withHRUs) {
 
@@ -4538,7 +4538,7 @@ namespace ArcSWAT3 {
                         //if (!OK) {
                         //    Utils.error("Cannot commit changes to FullHRUs shapefile", this._gv.isBatch);
                         //}
-                        this.writeActHRUs(fullHRUsLayer, hrugisIndx);
+                        await this.writeActHRUs(fullHRUsLayer, hrugisIndx);
                     }
                 }
 
@@ -4706,7 +4706,7 @@ namespace ArcSWAT3 {
                         clearSQL = "DELETE FROM " + table;
                         this._gv.db.execNonQuery(clearSQL);
                     }
-                    printBasinsDetails(basinHa, true);
+                    await printBasinsDetails(basinHa, true);
                     //if (this._gv.isHUC || this._gv.isHAWQS) {
                     //    conn.commit();
                     //} else {
@@ -4714,7 +4714,7 @@ namespace ArcSWAT3 {
                     //    this._gv.db.hashDbTable(conn, "uncomb");
                     //}
                 } else {
-                    printBasinsDetails(basinHa, false);
+                    await printBasinsDetails(basinHa, false);
                 }
                 this._reportsCombo.Visible = true;
                 if (withHRUs) {
@@ -5026,7 +5026,7 @@ namespace ArcSWAT3 {
 
 
         // Create and load the actual HRUs file.
-        public async void writeActHRUs(OSGeo.OGR.Layer fullHRUsLayer, int hrugisIndx) {
+        public async Task writeActHRUs(OSGeo.OGR.Layer fullHRUsLayer, int hrugisIndx) {
             var actHRUsBasename = "hru2";
             var actHRUsFilename = actHRUsBasename + ".shp";
             Utils.copyShapefile(this._gv.fullHRUsFile, actHRUsBasename, this._gv.shapesDir);
@@ -5040,11 +5040,11 @@ namespace ArcSWAT3 {
                 if (group is not null) {
                     var mapLayer = await QueuedTask.Run(() => LayerFactory.Instance.CreateLayer(new Uri(actHRUsFile), group, index, String.Format("{0} ({1})", legend, actHRUsBasename)));
                     FileTypes.ApplySymbolToFeatureLayerAsync((FeatureLayer)mapLayer, ft, this._gv);
-                    Utils.setMapTip((FeatureLayer)mapLayer, ft);
+                    await Utils.setMapTip((FeatureLayer)mapLayer, ft);
                 }
                 // remove visibility from FullHRUs layer
                 var layer = Utils.getLayerByLegend(Utils._FULLHRUSLEGEND);
-                Utils.setLayerVisibility(layer, false);
+                await Utils.setLayerVisibility(layer, false);
                 // copy actual HRUs file as template for visualisation
                 Utils.copyShapefile(actHRUsFile, Parameters._HRUS, this._gv.tablesOutDir);
             }
@@ -5077,7 +5077,7 @@ namespace ArcSWAT3 {
         }
 
         // Write Watershed table in project database, make subs1.shp in shapes directory, and copy as results template to TablesOut directory.
-        public async void writeWatershedTable() {
+        public async Task writeWatershedTable() {
             var subsFile = Utils.join(this._gv.tablesOutDir, Parameters._SUBS + ".shp");
             await Utils.removeLayerAndFiles(subsFile);
             var parms = Geoprocessing.MakeValueArray(this._gv.tablesOutDir, Parameters._SUBS + ".shp", "POLYGON");
@@ -5305,7 +5305,7 @@ namespace ArcSWAT3 {
                     subs1Layer.SetExpanded(false);
                 });
                 if (wshedLayer is not null) {
-                    Utils.setLayerVisibility(wshedLayer, false);
+                    await Utils.setLayerVisibility(wshedLayer, false);
                 }
             }
         }

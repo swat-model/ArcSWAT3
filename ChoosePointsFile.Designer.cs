@@ -25,6 +25,7 @@
         /// the contents of this method with the code editor.
         /// </summary>
         private void InitializeComponent() {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(ChoosePointsFile));
             this.label1 = new System.Windows.Forms.Label();
             this.currentbutton = new System.Windows.Forms.Button();
             this.newButton = new System.Windows.Forms.Button();
@@ -83,11 +84,11 @@
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(277, 147);
-            this.ControlBox = false;
             this.Controls.Add(this.cancelButton);
             this.Controls.Add(this.newButton);
             this.Controls.Add(this.currentbutton);
             this.Controls.Add(this.label1);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "ChoosePointsFile";
             this.Text = "Select inlets/outlets file to draw on";
             this.ResumeLayout(false);

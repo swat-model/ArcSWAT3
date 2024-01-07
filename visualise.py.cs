@@ -379,7 +379,7 @@ namespace ArcSWAT3 {
         }
 
         // Initialise the visualise form.
-        public virtual async void init() {
+        public virtual async Task init() {
             this.setSummary();
             this.fillScenarios();
             this._dlg.PscenariosCombo.SelectedIndex = this._dlg.PscenariosCombo.Items.IndexOf("Default");
@@ -389,7 +389,7 @@ namespace ArcSWAT3 {
             this._dlg.PtabWidget.SelectedIndex = 0;
             this.changeAnimationMode();
             this.setupPlot();
-            this.setBackgroundLayers();
+            await this.setBackgroundLayers();
             // check we have streams and watershed
             var group = Utils.getGroupLayerByName(Utils._WATERSHED_GROUP_NAME);
             //if (this._gv.forTNC) {
@@ -510,9 +510,9 @@ namespace ArcSWAT3 {
         }
 
         // Do visualisation.
-        public virtual void run() {
+        public virtual async Task run() {
             Cursor.Current = Cursors.WaitCursor;
-            this.init();
+            await this.init();
             Cursor.Current = Cursors.Default;
             this._dlg.Show();
         }
@@ -551,7 +551,7 @@ namespace ArcSWAT3 {
         // Reduce visible layers to channels, LSUs, HRUs, aquifers and subbasins by making all others not visible,
         //         loading LSUs, HRUs, aquifers if necessary.
         //         Leave Results group in case we already have some layers there.
-        public virtual async void setBackgroundLayers() {
+        public virtual async Task setBackgroundLayers() {
             Func<string, bool> keepVisible;
             var slopeGroup = Utils.getGroupLayerByName(Utils._SLOPE_GROUP_NAME);
             if (slopeGroup is not null) {
@@ -968,10 +968,10 @@ namespace ArcSWAT3 {
         }
 
         // Close the db connection, timer, clean up from animation, and close the form.
-        public virtual void doClose() {
+        public virtual async Task doClose() {
             this.animateTimer.Stop();
             // remove animation layers
-            Utils.clearAnimationGroup();
+            await Utils.clearAnimationGroup();
             // empty animation and png directories
             this.clearAnimationDir();
             this.clearPngDir();
@@ -1846,7 +1846,7 @@ namespace ArcSWAT3 {
             } else {
                 this.rivResultsLayer = currentResultsLayer;
             }
-            this.updateResultsFile();
+            await this.updateResultsFile();
             //cast(QgsVectorLayer, QgsProject.instance().addMapLayer(this.currentResultsLayer, false));
             //var resultsGroup = root.findGroup(Utils._RESULTS_GROUP_NAME);
             //Debug.Assert(resultsGroup is not null);
@@ -1873,7 +1873,7 @@ namespace ArcSWAT3 {
         }
 
         // Write resultsData to resultsFile.
-        public virtual async void updateResultsFile() {
+        public virtual async Task updateResultsFile() {
             string @ref;
             int sub;
             FeatureLayer layer = this.useSubs() ? this.subResultsLayer : this.useHRUs() ? this.hruResultsLayer : this.rivResultsLayer;
@@ -1943,7 +1943,7 @@ namespace ArcSWAT3 {
         }
 
         //// Write resultsData to resultsFile.
-        //public virtual async void updateResultsFile() {
+        //public virtual async Task updateResultsFile() {
         //    string @ref;
         //    int sub;
         //    FeatureLayer layer = this.useSubs() ? this.subResultsLayer : this.useHRUs() ? this.hruResultsLayer : this.rivResultsLayer;
@@ -2043,7 +2043,7 @@ namespace ArcSWAT3 {
         //         If keepColours is true the existing colour ramp and number of classes can be reused
         //         When layer is supplied (for scenario comparisons) its name is used
         //         
-        public virtual async void colourResultsFile(FeatureLayer layer = null, CIMClassBreaksRenderer renderer = null, CIMColorRamp ramp = null) {
+        public virtual async Task colourResultsFile(FeatureLayer layer = null, CIMClassBreaksRenderer renderer = null, CIMColorRamp ramp = null) {
             bool keepColours = false;
             CIMSymbol symbol;
             var haveLayer = layer is not null;
@@ -2171,7 +2171,7 @@ namespace ArcSWAT3 {
                 // TODO
                 //this.clearMapTitle();
                 //this.mapTitle = MapTitle(canvas, this.title, layer);
-                MapView.Active.Redraw(true);
+                //MapView.Active.Redraw(true);
             });
             if (this.useSubs()) {
                 this.internalChangeToSubRenderer = false;
@@ -2184,7 +2184,7 @@ namespace ArcSWAT3 {
                 this.keepRivColours = keepColours;
             }
             var tip = string.Format("\"{0}: \" + Text($feature.{1})", selectVar, selectVarShort);
-            Utils.setMapTip(this.currentResultsLayer, selectVarShort, tip);
+            await Utils.setMapTip(this.currentResultsLayer, selectVarShort, tip);
         }
 
         // Add any extra fields to variableList.
@@ -2306,8 +2306,8 @@ namespace ArcSWAT3 {
         //         
         //         Assumes allAnimateVals is suitably populated.
         //         
-        public virtual async void colourAnimationLayer(bool useLine) {
-            double transparency = useLine ? 35 : 0;
+        public virtual async Task colourAnimationLayer(bool useLine) {
+            double transparency = useLine ? 0 : 35;
             CIMColorRamp ramp;
             ramp = await this.chooseColorRamp(this.table, this.animateVar);
             var renderer = await this.makeJenksRenderer(this.allAnimateVals, ramp, this.animateVar, useLine);
@@ -2628,7 +2628,7 @@ namespace ArcSWAT3 {
                     return;
                 }
                 if (this.capturing) {
-                    this.capture();
+                    await this.capture();
                 }
                 var dat = this.sliderValToDate();
                 var date = this.dateToString(dat);
@@ -2710,7 +2710,9 @@ namespace ArcSWAT3 {
                     });
                 }
                 await Project.Current.SaveEditsAsync();
-                await QueuedTask.Run(() => MapView.Active.Redraw(false));
+                //await QueuedTask.Run(() => {
+                //    MapView.Active.Redraw(false);
+                //});
                 this._dlg.PdateLabel.Refresh();
             //} catch (Exception) {
             //    this.animating = false;
@@ -2719,11 +2721,11 @@ namespace ArcSWAT3 {
         }
 
         // Make image file of current canvas.
-        public virtual async void capture() {
+        public virtual async Task capture() {
             if (this.animateLayer is null) {
                 return;
             }
-            await QueuedTask.Run(() => MapView.Active.Redraw(false));
+            //await QueuedTask.Run(() => MapView.Active.Redraw(false));
             this.currentStillNumber += 1;
             var @base = Path.ChangeExtension(this.stillFileBase, null);
             var suffix = Path.GetExtension(this.stillFileBase);
@@ -2769,7 +2771,7 @@ namespace ArcSWAT3 {
                 await QueuedTask.Run(() => {
                     var PNG = new PNGFormat();
                     PNG.Resolution = 300;
-                    PNG.OutputFileName = this.stillFileBase;
+                    PNG.OutputFileName = nextStillFile;
                     if (PNG.ValidateOutputFilePath()) {
                         MapView.Active.Export(PNG);
                     } else {
@@ -2930,7 +2932,7 @@ namespace ArcSWAT3 {
         }
 
         // Main tab has changed.  Show/hide Animation group.
-        public virtual async void modeChange() {
+        public virtual async Task modeChange() {
             var expandAnimation = this._dlg.PtabWidget.SelectedIndex == 1;
             var animationGroup = Utils.getGroupLayerByName(Utils._ANIMATION_GROUP_NAME);
             Debug.Assert(animationGroup is not null);
@@ -2940,9 +2942,9 @@ namespace ArcSWAT3 {
         }
 
         // Make single results file or comparison results files if self.scenarios1 is not empty.
-        public virtual void makeResults0() {
+        public virtual async Task makeResults0() {
             if (this.scenario1 == "") {
-                this.makeResults();
+                await this.makeResults();
                 return;
             }
             var currentScenario = this.scenario;
@@ -2952,14 +2954,14 @@ namespace ArcSWAT3 {
             var outFile = Utils.join(outDir, this.table + "results.shp");
             this._dlg.PresultsFileEdit.Text = outFile;
             this.setConnection(this.scenario);
-            this.makeResults();
+            await this.makeResults();
             this.scenario = this.scenario2;
             scenDir = Utils.join(this._gv.scenariosDir, this.scenario);
             outDir = Utils.join(scenDir, Parameters._TABLESOUT);
             outFile = Utils.join(outDir, this.table + "results.shp");
             this._dlg.PresultsFileEdit.Text = outFile;
             this.setConnection(this.scenario);
-            this.makeResults();
+            await this.makeResults();
             // restore current scenario and results shapefile
             this.scenario = currentScenario;
             scenDir = Utils.join(this._gv.scenariosDir, this.scenario);
@@ -2975,7 +2977,7 @@ namespace ArcSWAT3 {
         //         Only creates a new file if the variables have changed.
         //         If variables unchanged, only makes and writes summary data if necessary.
         //         
-        public virtual async void makeResults() {
+        public virtual async Task makeResults() {
             if (this.table == "") {
                 Utils.information("Please choose a SWAT output table", this._gv.isBatch);
                 return;
@@ -3013,14 +3015,14 @@ namespace ArcSWAT3 {
             }
             if (this.resultsFileUpToDate && this.resultsLayerExists()) {
                 if (this.summaryChanged) {
-                    this.updateResultsFile();
+                    await this.updateResultsFile();
                 }
             } else if (await this.createResultsFile()) {
                 this.resultsFileUpToDate = true;
             } else {
                 return;
             }
-            this.colourResultsFile();
+            await this.colourResultsFile();
             Cursor.Current = Cursors.Default;
         }
 
@@ -3104,7 +3106,7 @@ namespace ArcSWAT3 {
             var needLayer4 = true;
             if (changeFileExists) {
                 layer4 = (await Utils.getLayerByFilename(changeFile, ft, null, null, null)).Item1 as FeatureLayer;
-                if (layer3 is not null) {
+                if (layer4 is not null) {
                     needLayer4 = false;
                 }
             } else {
@@ -3254,10 +3256,10 @@ namespace ArcSWAT3 {
             var renderer2 = CIMClassBreaksRenderer.Clone(renderer1) as CIMClassBreaksRenderer;
             //renderer2 = await self.makeJenksRenderer(allVals, ramp12, selectVar, useLine)
             var ramp34 = await this.makeComparisonRamp();
-            this.colourResultsFile(layer: layer1, renderer: renderer1);
-            this.colourResultsFile(layer: layer2, renderer: renderer2);
-            this.colourResultsFile(layer: layer3, ramp: ramp34);
-            this.colourResultsFile(layer: layer4, ramp: ramp34);
+            await this.colourResultsFile(layer: layer1, renderer: renderer1);
+            await this.colourResultsFile(layer: layer2, renderer: renderer2);
+            await this.colourResultsFile(layer: layer3, ramp: ramp34);
+            await this.colourResultsFile(layer: layer4, ramp: ramp34);
             return true;
         }
 
@@ -3427,7 +3429,7 @@ namespace ArcSWAT3 {
         }
 
         // Create layout by opening template file.
-        public async void printResults() {
+        public async Task printResults() {
             string templ;
             // choose template file 
             var count = this._dlg.PprintCount.Value;
@@ -3502,7 +3504,7 @@ namespace ArcSWAT3 {
         //         set speed accoring to spin box;
         //         set slider at minimum and display data for start time.
         //         
-        public virtual async void setupAnimateLayer() {
+        public virtual async Task setupAnimateLayer() {
             if (this._dlg.PanimationVariableCombo.SelectedItem.ToString() == "") {
                 return;
             }
@@ -3536,7 +3538,7 @@ namespace ArcSWAT3 {
                 this._dlg.Pslider.Minimum = 1;
                 this._dlg.Pslider.Maximum = animateLength;
                 bool useLine = this.table != "sub" && this.table != "hru";
-                this.colourAnimationLayer(useLine);
+                await this.colourAnimationLayer(useLine);
                 this._dlg.Pslider.Value = 1;
                 var sleep = this._dlg.PspinBox.Value;
                 this.changeSpeed(sleep);
@@ -4295,17 +4297,26 @@ namespace ArcSWAT3 {
         //    canvas.refresh();
         //}
 
-        public void changeAnimation(object sender, PropertyChangedEventArgs e) {
-            this.setAnimateLayer();
+        public async void changeAnimation(object sender, PropertyChangedEventArgs e) {
+            await this.setAnimateLayer();
         }
         
         // Set self.animateLayer to first visible layer in Animations group, retitle as appropriate.
-        public virtual void setAnimateLayer() {
+        public async Task setAnimateLayer() {
             var animationLayers = Utils.getLayersInGroup(Utils._ANIMATION_GROUP_NAME, visible: true);
             if (animationLayers.Count == 0) {
                 this.animateLayer = null;
                 this.setResultsLayer();
                 return;
+            }
+            // expand the animation layer and hide the results group maps
+            var animationGroup = Utils.getGroupLayerByName(Utils._ANIMATION_GROUP_NAME);
+            if (!animationGroup.IsExpanded) {
+                await QueuedTask.Run(() => { animationGroup.SetExpanded(true); });
+            }
+            var resultsGroup = Utils.getGroupLayerByName(Utils._RESULTS_GROUP_NAME);
+            if (resultsGroup.IsVisible) {
+                await QueuedTask.Run(() => { resultsGroup.SetVisibility(false); });
             }
             // TODO
             this.animateLayer = animationLayers[0] as FeatureLayer;
@@ -4341,11 +4352,16 @@ namespace ArcSWAT3 {
         }
         
         // Set self.currentResultsLayer to first visible layer in Results group, retitle as appropriate.
-        public virtual void setResultsLayer() {
+        public async void setResultsLayer() {
             // only change results layer and title if there are no visible animate layers
             var animationLayers = Utils.getLayersInGroup(Utils._ANIMATION_GROUP_NAME, visible: true);
             if (animationLayers.Count > 0) {
                 return;
+            }
+            // make sure results group is visible, since running animations may have made it invisible
+            var resultsGroup = Utils.getGroupLayerByName(Utils._RESULTS_GROUP_NAME);
+            if (!resultsGroup.IsVisible) {
+                await QueuedTask.Run(() => { resultsGroup.SetVisibility(true); });
             }
             //TODO
             //this.clearMapTitle();
@@ -4368,7 +4384,7 @@ namespace ArcSWAT3 {
             }
         }
         
-        // Remove shape files from animation directory.
+        // Remove shape files (all components) from animation directory.
         public virtual void clearAnimationDir() {
             if (Directory.Exists(this._gv.animationDir)) {
                 var pattern = "*.shp";
@@ -4376,7 +4392,7 @@ namespace ArcSWAT3 {
                 matcher.AddInclude(pattern);
                 foreach (var f in matcher.GetResultsInFullPath(this._gv.animationDir)) {
                     try {
-                        File.Delete(f);
+                        Utils.removeFiles(f);
                     }
                     catch (Exception) {
                         continue;

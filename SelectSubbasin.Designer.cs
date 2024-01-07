@@ -29,11 +29,11 @@
             this.label1 = new System.Windows.Forms.Label();
             this.checkBox = new System.Windows.Forms.CheckBox();
             this.groupBox = new System.Windows.Forms.GroupBox();
-            this.label2 = new System.Windows.Forms.Label();
-            this.areaButton = new System.Windows.Forms.RadioButton();
-            this.percentButton = new System.Windows.Forms.RadioButton();
-            this.threshold = new System.Windows.Forms.TextBox();
             this.pushButton = new System.Windows.Forms.Button();
+            this.threshold = new System.Windows.Forms.TextBox();
+            this.percentButton = new System.Windows.Forms.RadioButton();
+            this.areaButton = new System.Windows.Forms.RadioButton();
+            this.label2 = new System.Windows.Forms.Label();
             this.cancelButton = new System.Windows.Forms.Button();
             this.saveButton = new System.Windows.Forms.Button();
             this.groupBox.SuspendLayout();
@@ -44,7 +44,7 @@
             this.label1.AutoSize = true;
             this.label1.Location = new System.Drawing.Point(24, 18);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(363, 240);
+            this.label1.Size = new System.Drawing.Size(364, 240);
             this.label1.TabIndex = 0;
             this.label1.Text = resources.GetString("label1.Text");
             // 
@@ -73,27 +73,22 @@
             this.groupBox.TabStop = false;
             this.groupBox.Text = "Select by threshold";
             // 
-            // label2
+            // pushButton
             // 
-            this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(6, 28);
-            this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(343, 45);
-            this.label2.TabIndex = 0;
-            this.label2.Text = "Set a threshold for small subbasins, either as an area in hectares \r\nor as a perc" +
-    "entage of the mean subbasin area.   Click the Select \r\nbutton to select subbasin" +
-    "s below the threshold.";
+            this.pushButton.Location = new System.Drawing.Point(263, 97);
+            this.pushButton.Name = "pushButton";
+            this.pushButton.Size = new System.Drawing.Size(75, 23);
+            this.pushButton.TabIndex = 4;
+            this.pushButton.Text = "Select";
+            this.pushButton.UseVisualStyleBackColor = true;
+            this.pushButton.Click += new System.EventHandler(this.pushButton_Click);
             // 
-            // areaButton
+            // threshold
             // 
-            this.areaButton.AutoSize = true;
-            this.areaButton.Location = new System.Drawing.Point(13, 82);
-            this.areaButton.Name = "areaButton";
-            this.areaButton.Size = new System.Drawing.Size(73, 19);
-            this.areaButton.TabIndex = 1;
-            this.areaButton.TabStop = true;
-            this.areaButton.Text = "Area (ha)";
-            this.areaButton.UseVisualStyleBackColor = true;
+            this.threshold.Location = new System.Drawing.Point(180, 94);
+            this.threshold.Name = "threshold";
+            this.threshold.Size = new System.Drawing.Size(66, 23);
+            this.threshold.TabIndex = 3;
             // 
             // percentButton
             // 
@@ -106,22 +101,27 @@
             this.percentButton.Text = "Percentage of mean area";
             this.percentButton.UseVisualStyleBackColor = true;
             // 
-            // threshold
+            // areaButton
             // 
-            this.threshold.Location = new System.Drawing.Point(180, 94);
-            this.threshold.Name = "threshold";
-            this.threshold.Size = new System.Drawing.Size(66, 23);
-            this.threshold.TabIndex = 3;
+            this.areaButton.AutoSize = true;
+            this.areaButton.Location = new System.Drawing.Point(13, 82);
+            this.areaButton.Name = "areaButton";
+            this.areaButton.Size = new System.Drawing.Size(73, 19);
+            this.areaButton.TabIndex = 1;
+            this.areaButton.TabStop = true;
+            this.areaButton.Text = "Area (ha)";
+            this.areaButton.UseVisualStyleBackColor = true;
             // 
-            // pushButton
+            // label2
             // 
-            this.pushButton.Location = new System.Drawing.Point(263, 97);
-            this.pushButton.Name = "pushButton";
-            this.pushButton.Size = new System.Drawing.Size(75, 23);
-            this.pushButton.TabIndex = 4;
-            this.pushButton.Text = "Select";
-            this.pushButton.UseVisualStyleBackColor = true;
-            this.pushButton.Click += new System.EventHandler(this.pushButton_Click);
+            this.label2.AutoSize = true;
+            this.label2.Location = new System.Drawing.Point(6, 28);
+            this.label2.Name = "label2";
+            this.label2.Size = new System.Drawing.Size(343, 45);
+            this.label2.TabIndex = 0;
+            this.label2.Text = "Set a threshold for small subbasins, either as an area in hectares \r\nor as a perc" +
+    "entage of the mean subbasin area.   Click the Select \r\nbutton to select subbasin" +
+    "s below the threshold.";
             // 
             // cancelButton
             // 
@@ -153,6 +153,7 @@
             this.Controls.Add(this.groupBox);
             this.Controls.Add(this.checkBox);
             this.Controls.Add(this.label1);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "SelectSubbasin";
             this.Text = "Select subbasins for merging";
             this.groupBox.ResumeLayout(false);

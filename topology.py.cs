@@ -1258,7 +1258,6 @@ namespace ArcSWAT3 {
         // to the next segment is greater than the vertical distance to this one.
         // The next segment is one with an increased index if the nearest point is an end,
         // and the one with a decreased index if the nearest point is a start.
-        // Return the segment plus true if the nearest point is the segment start
         //         
         public static Coordinate2D nearestStreamPoint(FeatureLayer streamLayer, Coordinate2D point) {
             int bestSegmentIndex = -1;
@@ -1911,7 +1910,7 @@ namespace ArcSWAT3 {
                     // add layer1 in place of stream reaches layer
                     var riv1Layer = (await Utils.getLayerByFilename(riv1File, FileTypes._REACHES, gv, streamLayer, Utils._WATERSHED_GROUP_NAME)).Item1 as FeatureLayer;
                     if (streamLayer is not null) {
-                        Utils.setLayerVisibility(streamLayer, false);
+                        await Utils.setLayerVisibility(streamLayer, false);
                     }
                     this.setPenWidth(wid2Data, rivFile, gv);
                     return riv1Layer;
@@ -2140,8 +2139,8 @@ namespace ArcSWAT3 {
             if (this.basinToLink.TryGetValue(basin, out link))
             return this.upstreamFromInlets.Contains(link); else return false;
         }
-        
-        // Convert a QgsPointXY to latlong coordinates and return it.
+
+        // Convert a Coordinate2D to latlong coordinates and return it.
         public Coordinate2D pointToLatLong(Coordinate2D point) {
             var crsTransform = ProjectionTransformation.Create(this.crsProject, this.crsLatLong, this.demExtent);
             var inGeom = new MapPointBuilderEx(point.X, point.Y).ToGeometry();

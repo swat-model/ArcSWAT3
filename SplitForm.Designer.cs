@@ -25,6 +25,7 @@
         /// the contents of this method with the code editor.
         /// </summary>
         private void InitializeComponent() {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(SplitForm));
             this.newCombo = new System.Windows.Forms.ComboBox();
             this.splitCombo = new System.Windows.Forms.ComboBox();
             this.label1 = new System.Windows.Forms.Label();
@@ -177,6 +178,7 @@
             this.Controls.Add(this.label1);
             this.Controls.Add(this.splitCombo);
             this.Controls.Add(this.newCombo);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "SplitForm";
             this.Text = "Split landuses";
             ((System.ComponentModel.ISupportInitialize)(this.table)).EndInit();

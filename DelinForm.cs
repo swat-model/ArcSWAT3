@@ -163,12 +163,12 @@ namespace ArcSWAT3
             };
         }
 
-        private void selectDemButton_Click(object sender, EventArgs e) {
-            this.btnSetDEM();
+        private async void selectDemButton_Click(object sender, EventArgs e) {
+            await this.btnSetDEM();
         }
 
-        private void burnButton_Click(object sender, EventArgs e) {
-            this.btnSetBurn();
+        private async void burnButton_Click(object sender, EventArgs e) {
+            await this.btnSetBurn();
         }
 
         private void checkBurn_CheckedChanged(object sender, EventArgs e) {
@@ -185,7 +185,7 @@ namespace ArcSWAT3
         }
 
         // Set connections to controls; read project delineation data.
-        public void init() {
+        public async Task init() {
             //var settings = QSettings();
             //try {
             //    this.numProcesses.setValue(Convert.ToInt32(settings.value("/QSWAT/NumProcesses")));
@@ -227,11 +227,15 @@ namespace ArcSWAT3
             this.areaUnitsBox.Items.Add(Parameters._SQMILES);
             this.areaUnitsBox.Items.Add(Parameters._ACRES);
             this.areaUnitsBox.Items.Add(Parameters._SQFEET);
+            // set area units initially to hectares
+            this.areaUnitsBox.SelectedItem = Parameters._HECTARES;
             //this.areaUnitsBox.activated.connect(this.changeAreaOfCell);
             this.horizontalCombo.Items.Add(Parameters._METRES);
             this.horizontalCombo.Items.Add(Parameters._FEET);
             this.horizontalCombo.Items.Add(Parameters._DEGREES);
             this.horizontalCombo.Items.Add(Parameters._UNKNOWN);
+            // set horizontal unit default to metres
+            this.horizontalCombo.SelectedItem = Parameters._METRES;
             this.verticalCombo.Items.Add(Parameters._METRES);
             this.verticalCombo.Items.Add(Parameters._FEET);
             this.verticalCombo.Items.Add(Parameters._CM);
@@ -242,16 +246,14 @@ namespace ArcSWAT3
             this.verticalCombo.SelectedIndex = this.verticalCombo.Items.IndexOf(Parameters._METRES);
             //this.verticalCombo.activated.connect(this.setVerticalUnits);
             //this.snapThreshold.setValidator(QIntValidator());
-            this.readProj();
             // initally disable numCells, area and areaUnitsBox (enabled only after loading DEM, when cell-area conversion possible)
             this.numCells.Enabled = false;
             this.area.Enabled = false;
             this.areaUnitsBox.Enabled = false;
-            // set area units initially to hectares
-            this.areaUnitsBox.SelectedItem = Parameters._HECTARES;
             // burn not enabled until use burn checked
             this.selectBurn.Enabled = false;
             this.burnButton.Enabled = false;
+            await this.readProj();
             this.setMergeResGroups();
             this.checkMPI();
             // allow for cancellation without being considered an error
@@ -272,8 +274,8 @@ namespace ArcSWAT3
         }
 
         // Do delineation; check done and save topology data.  Return OK if delineation done and no errors, 2 if not delineated and nothing done, else 0.
-        public void run() {
-            this.init();
+        public async Task run() {
+            await this.init();
             //if (this._gv.useGridModel) {
             //    this.useGrid.Checked = true;
             //    this.GridBox.Checked = true;
@@ -349,7 +351,7 @@ namespace ArcSWAT3
         //         checks delineation is complete, calculates flow distances,
         //         runs topology setup.  Sets delineationFinishedOK to true if all completed successfully.
         //         
-        public async void finishDelineation() {
+        public async Task finishDelineation() {
             FeatureLayer extraOutletLayer;
             FeatureLayer outletLayer;
             FeatureLayer wshedLayer;
@@ -483,7 +485,7 @@ namespace ArcSWAT3
         }
 
         // Open and load DEM; set default threshold.
-        public async void btnSetDEM() {
+        public async Task btnSetDEM() {
             var pair = await Utils.openAndLoadFile(FileTypes._DEM, this.selectDem, this._gv.sourceDir, this._gv, null, Utils._WATERSHED_GROUP_NAME);
             string demFile = pair.Item1;
             RasterLayer demMapLayer = pair.Item2 as RasterLayer;
@@ -512,7 +514,7 @@ namespace ArcSWAT3
 
         // hillshade in ArcGIS done with relief colorizer for DEM
         ////  Create hillshade layer and load.
-        //public async void addHillshade(string demFile, RasterLayer demMapLayer, object gv) {
+        //public async Task addHillshade(string demFile, RasterLayer demMapLayer, object gv) {
         //    var hillshadeFile = Path.ChangeExtension(demFile) + "/hillshade.tif";
         //    if (!Utils.isUpToDate(demFile, hillshadeFile)) {
         //        // run gdaldem to generate hillshade.tif
@@ -549,7 +551,7 @@ namespace ArcSWAT3
         //}
 
         // Open and load stream network to burn in.
-        public async void btnSetBurn() {
+        public async Task btnSetBurn() {
             var pair = await Utils.openAndLoadFile(FileTypes._BURN, this.selectBurn, this._gv.sourceDir, this._gv, null, Utils._WATERSHED_GROUP_NAME);
             string burnFile = pair.Item1;
             FeatureLayer burnLayer = pair.Item2 as FeatureLayer;
@@ -563,7 +565,7 @@ namespace ArcSWAT3
         }
 
         // Open and load inlets/outlets shapefile.
-        public async void btnSetOutlets() {
+        public async Task btnSetOutlets() {
             TextBox box;
             if (this._gv.existingWshed) {
                 //Debug.Assert(this.tabWidget.SelectedIndex == 1);
@@ -588,7 +590,7 @@ namespace ArcSWAT3
         }
 
         // Open and load existing watershed shapefile.
-        public async void btnSetWatershed() {
+        public async Task btnSetWatershed() {
             var pair = await Utils.openAndLoadFile(FileTypes._EXISTINGWATERSHED, this.selectWshed, this._gv.sourceDir, this._gv, null, Utils._WATERSHED_GROUP_NAME);
             string wshedFile = pair.Item1;
             FeatureLayer wshedLayer = pair.Item2 as FeatureLayer;
@@ -602,7 +604,7 @@ namespace ArcSWAT3
         }
 
         // Open and load existing stream reach shapefile.
-        public async void btnSetStreams() {
+        public async Task btnSetStreams() {
             var pair = await Utils.openAndLoadFile(FileTypes._STREAMS, this.selectNet, this._gv.sourceDir, this._gv, null, Utils._WATERSHED_GROUP_NAME);
             string streamFile = pair.Item1;
             FeatureLayer streamLayer = pair.Item2 as FeatureLayer;
@@ -616,26 +618,26 @@ namespace ArcSWAT3
         }
 
         // Run Taudem to create stream reach network.
-        public void runTauDEM1() {
-            this.runTauDEM(null, false);
+        public async Task runTauDEM1() {
+            await this.runTauDEM(null, false);
         }
 
         // Run TauDEM to create watershed shapefile.
-        public async void runTauDEM2() {
+        public async Task runTauDEM2() {
             // first remove any existing shapesDir inlets/outlets file as will
             // probably be inconsistent with new subbasins
             await Utils.removeLayerByLegend(Utils._EXTRALEGEND);
             this._gv.extraOutletFile = "";
             this.extraReservoirBasins.Clear();
             if (!this.useOutlets.Checked) {
-                this.runTauDEM(null, true);
+                await this.runTauDEM(null, true);
             } else {
                 var outletFile = this.selectOutlets.Text;
                 if (outletFile == "" || !File.Exists(outletFile)) {
                     Utils.error("Please select an inlets/outlets file", this._gv.isBatch);
                     return;
                 }
-                this.runTauDEM(outletFile, true);
+                await this.runTauDEM(outletFile, true);
             }
         }
 
@@ -650,7 +652,7 @@ namespace ArcSWAT3
         }
 
         // Run TauDEM.
-        public async void runTauDEM(string outletFile, bool makeWshed) {
+        public async Task runTauDEM(string outletFile, bool makeWshed) {
             Layer subLayer;
             string ad8File;
             string delineationDem;
@@ -997,7 +999,7 @@ namespace ArcSWAT3
                     this._gv.outletFile = "";
                 }
                 var wshedFile = @base + "wshed.shp";
-                this.createWatershedShapefile(wFile, wshedFile);
+                await this.createWatershedShapefile(wFile, wshedFile);
                 this._gv.wshedFile = wshedFile;
                 //if (this.GridBox.Checked) {
                 //    this.createGridShapefile(demLayer, pFile, ad8File, wFile);
@@ -1014,7 +1016,7 @@ namespace ArcSWAT3
         }
 
         // Do delineation from existing stream network and subbasins.
-        public async void runExisting() {
+        public async Task runExisting() {
             this.delineationFinishedOK = false;
             var demFile = this.selectDem.Text;
             if (demFile == "" || !File.Exists(demFile)) {
@@ -1426,7 +1428,7 @@ namespace ArcSWAT3
         // Allow user to create inlets/outlets in current shapefile 
         //         or a new one.
         //         
-        public async void drawOutlets() {
+        public async Task drawOutlets() {
             DialogResult result;
             //SelectPointViewModel vm = new SelectPointViewModel(null, false);
             //this.mapTool = new PointTool();
@@ -1462,12 +1464,12 @@ namespace ArcSWAT3
                 return;
             }
             var outletForm = new OutletForm();
-            outletForm.setup(this.drawOutletLayer, this);
+            await outletForm.setup(this.drawOutletLayer, this);
             outletForm.Show();
         }
 
         // return function from OutletForm
-        public async void addOutlets(bool ok) {
+        public async Task addOutlets(bool ok) {
             if (ok) {
                 if (this.drawCurrent) {
                     // add features to current outlet layer
@@ -1501,7 +1503,7 @@ namespace ArcSWAT3
         }
 
         // Allow user to select points in inlets/outlets layer.
-        public async void doSelectOutlets() {
+        public async Task doSelectOutlets() {
             this.selFromLayer = null;
             List<Layer> layers = (List<Layer>)MapView.Active.GetSelectedLayers().ToList();
             Layer layer = layers.Count == 1 ? layers[0] : null;
@@ -1539,7 +1541,7 @@ namespace ArcSWAT3
             selectPoint.Show();
         }
 
-        public async void selectPoints(bool saveSelected) {
+        public async Task selectPoints(bool saveSelected) {
             if (!saveSelected) {
                 await MapView.Active.ClearSketchAsync();
                 await QueuedTask.Run(() => {
@@ -1596,7 +1598,7 @@ namespace ArcSWAT3
             }
             this._gv.outletFile = selFile;
             // make old outlet layer invisible
-            Utils.setLayerVisibility(selFromLayer, false);
+            await Utils.setLayerVisibility(selFromLayer, false);
             // remove any existing selected layer
             await Utils.removeLayerByLegend(Utils._SELECTEDLEGEND);
             // load new outletFile
@@ -1625,7 +1627,7 @@ namespace ArcSWAT3
         }
 
         // Allow user to select subbasins to which reservoirs should be added.
-        public async void selectReservoirs() {
+        public async Task selectReservoirs() {
             var ft = this._gv.existingWshed ? FileTypes._EXISTINGWATERSHED : FileTypes._WATERSHED;
             var wshedLayer = await Utils.getLayerByFilenameOrLegend(this._gv.wshedFile, ft, "", this._gv.isBatch) as FeatureLayer;
             if (wshedLayer is null) {
@@ -1670,7 +1672,7 @@ namespace ArcSWAT3
             selectResSubbasins.Show();
         }
 
-        public async void selectResSubbasins(bool save) {
+        public async Task selectResSubbasins(bool save) {
             var ft = this._gv.existingWshed ? FileTypes._EXISTINGWATERSHED : FileTypes._WATERSHED;
             var wshedLayer = await Utils.getLayerByFilenameOrLegend(this._gv.wshedFile, ft, "", this._gv.isBatch) as FeatureLayer;
             if (!save) {
@@ -1700,7 +1702,7 @@ namespace ArcSWAT3
         // Create extra inlets/outlets shapefile 
         //         with added reservoirs and, if requested, point sources.
         //         
-        public async void addReservoirs() {
+        public async Task addReservoirs() {
             Coordinate2D point;
             int basin;
             double length;
@@ -1789,7 +1791,7 @@ namespace ArcSWAT3
         }
 
         // Load snapped inlets/outlets points.
-        public async void snapReview() {
+        public async Task snapReview() {
             var outletLayer = await Utils.getLayerByFilenameOrLegend(this._gv.outletFile, FileTypes._OUTLETS, "", this._gv.isBatch) as FeatureLayer;
             if (outletLayer is null) {
                 Utils.error("Cannot find inlets/outlets layer", this._gv.isBatch);
@@ -1808,7 +1810,7 @@ namespace ArcSWAT3
                 }
             }
             // make old outlet layer invisible
-            Utils.setLayerVisibility(outletLayer, false);
+            await Utils.setLayerVisibility(outletLayer, false);
             // load snapped layer
             var outletSnapLayer = (await Utils.getLayerByFilename(this.snapFile, FileTypes._OUTLETS, this._gv, null, Utils._WATERSHED_GROUP_NAME)).Item1;
             if (outletSnapLayer is null) {
@@ -1818,7 +1820,7 @@ namespace ArcSWAT3
         }
 
         // Allow user to select subbasins to be merged.
-        public async void selectMergeSubbasins() {
+        public async Task selectMergeSubbasins() {
             var ft = this._gv.existingWshed ? FileTypes._EXISTINGWATERSHED : FileTypes._WATERSHED;
             var wshedLayer = await Utils.getLayerByFilenameOrLegend(this._gv.wshedFile, ft, "", this._gv.isBatch) as FeatureLayer;
             if (wshedLayer is null) {
@@ -1843,7 +1845,7 @@ namespace ArcSWAT3
         }
 
         // Merged selected subbasin with its parent.
-        //public async void mergeSubbasins() {
+        //public async Task mergeSubbasins() {
         //    ReachData dataD;
         //    ReachData dataA;
         //    double dropD = 0.0;
@@ -2400,7 +2402,7 @@ namespace ArcSWAT3
         //}
 
         // OGR version Merged selected subbasin with its parent.
-        public async void mergeSubbasinsOgr() {
+        public async Task mergeSubbasinsOgr() {
             ReachData dataD;
             ReachData dataA;
             double dropD = 0.0;
@@ -2702,9 +2704,9 @@ namespace ArcSWAT3
                             reachM.SetField(dropField, dropA + dropD);
                         } else if (slopeField >= 0) {
                             dataA = await this._gv.topo.getOgrReachData(reachA, demLayer);
-                            dropA = dataA.upperZ = dataA.lowerZ;
+                            dropA = dataA.upperZ - dataA.lowerZ;
                             dataD = await this._gv.topo.getOgrReachData(reachD, demLayer);
-                            dropD = dataD.upperZ = dataD.lowerZ;
+                            dropD = dataD.upperZ - dataD.lowerZ;
                         }
                         if (slopeField >= 0) {
                             reachM.SetField(slopeField, lengthA + lengthD == 0 ? 0 : (dropA + dropD) / (lengthA + lengthD));
@@ -2946,7 +2948,7 @@ namespace ArcSWAT3
         }
 
         // Create watershed shapefile wshedFile from watershed grid wFile.
-        public async void createWatershedShapefile(string wFile, string wshedFile) {
+        public async Task createWatershedShapefile(string wFile, string wshedFile) {
             Layer subLayer;
             FeatureLayer wshedLayer;
             if (Utils.isUpToDate(wFile, wshedFile)) {
@@ -2957,6 +2959,7 @@ namespace ArcSWAT3
             //var parms = Geoprocessing.MakeValueArray(this._gv.sourceDir, Path.GetFileName(wshedFile), "POLYGON");
             //Utils.runPython("runCreateWshedFile.py", parms, this._gv.isBatch);
             var parms = Geoprocessing.MakeValueArray(wFile, wshedFile);
+
             Utils.runPython("runRasterToPolygon.py", parms, this._gv);
             // use GDAL to rename gridcode to PolygonId and add Area and Subbasin
             using (var wshedDs = Ogr.Open(wshedFile, 1)) {
@@ -3040,7 +3043,9 @@ namespace ArcSWAT3
             await Utils.removeLayerAndFiles(wFile);
             //Debug.Assert(!File.Exists(wFile));
             var parms = Geoprocessing.MakeValueArray(wshedFile, Topology._POLYGONID, wFile, this._gv.demFile);
-            Utils.runPython("runFeatureToRaster.py", parms, this._gv);
+            var environment = Geoprocessing.MakeEnvironmentArray(overwriteoutput: true);
+            await Geoprocessing.ExecuteToolAsync("conversion.FeatureToRaster", parms, environment, null, null, GPExecuteToolFlags.None);
+            //Utils.runPython("runFeatureToRaster.py", parms, this._gv);
             //var xSize = demLayer.rasterUnitsPerPixelX();
             //var ySize = demLayer.rasterUnitsPerPixelY();
             //var extent = this.extent;
@@ -4106,76 +4111,76 @@ namespace ArcSWAT3
             }
         }
 
-        private void selectOutletsButton_Click(object sender, EventArgs e) {
-            this.btnSetOutlets();
+        private async void selectOutletsButton_Click(object sender, EventArgs e) {
+            await this.btnSetOutlets();
         }
 
-        private void selectWshedButton_Click(object sender, EventArgs e) {
-            btnSetWatershed();
+        private async void selectWshedButton_Click(object sender, EventArgs e) {
+            await btnSetWatershed();
         }
 
-        private void selectNetButton_Click(object sender, EventArgs e) {
-            btnSetStreams();
+        private async void selectNetButton_Click(object sender, EventArgs e) {
+            await btnSetStreams();
         }
 
-        private void selectExistOutletsButton_Click(object sender, EventArgs e) {
-            this.btnSetOutlets();
+        private async void selectExistOutletsButton_Click(object sender, EventArgs e) {
+            await this.btnSetOutlets();
         }
 
-        private void delinRunButton1_Click(object sender, EventArgs e) {
-            this.runTauDEM1();
+        private async void delinRunButton1_Click(object sender, EventArgs e) {
+            await this.runTauDEM1();
         }
 
-        private void delinRunButton2_Click(object sender, EventArgs e) {
-            this.runTauDEM2();
+        private async void delinRunButton2_Click(object sender, EventArgs e) {
+            await this.runTauDEM2();
         }
 
         private void tabWidget_SelectedIndexChanged(object sender, EventArgs e) {
             this.changeExisting();
         }
 
-        private void existRunButton_Click(object sender, EventArgs e) {
-            this.runExisting();
+        private async void existRunButton_Click(object sender, EventArgs e) {
+            await this.runExisting();
         }
 
         private void useOutlets_CheckedChanged(object sender, EventArgs e) {
             this.changeUseOutlets();
         }
 
-        private void drawOutletsButton_Click(object sender, EventArgs e) {
-            this.drawOutlets();
+        private async void drawOutletsButton_Click(object sender, EventArgs e) {
+            await this.drawOutlets();
         }
 
-        private void selectOutletsInteractiveButton_Click(object sender, EventArgs e) {
-            this.doSelectOutlets();
+        private async void selectOutletsInteractiveButton_Click(object sender, EventArgs e) {
+            await this.doSelectOutlets();
         }
 
-        private void snapReviewButton_Click(object sender, EventArgs e) {
-            this.snapReview();
+        private async void snapReviewButton_Click(object sender, EventArgs e) {
+            await this.snapReview();
         }
 
-        private void selectSubButton_Click(object sender, EventArgs e) {
-            this.selectMergeSubbasins();
+        private async void selectSubButton_Click(object sender, EventArgs e) {
+            await this.selectMergeSubbasins();
         }
 
-        private void mergeButton_Click(object sender, EventArgs e) {
-            this.mergeSubbasinsOgr();
+        private async void mergeButton_Click(object sender, EventArgs e) {
+            await this.mergeSubbasinsOgr();
         }
 
-        private void selectResButton_Click(object sender, EventArgs e) {
-            this.selectReservoirs();
+        private async void selectResButton_Click(object sender, EventArgs e) {
+            await this.selectReservoirs();
         }
 
-        private void addButton_Click(object sender, EventArgs e) {
-            this.addReservoirs();
+        private async void addButton_Click(object sender, EventArgs e) {
+            await this.addReservoirs();
         }
 
         private void taudemHelpButton_Click(object sender, EventArgs e) {
             TauDEMUtils.taudemHelp();
         }
 
-        private void OKButton_Click(object sender, EventArgs e) {
-            this.finishDelineation();
+        private async void OKButton_Click(object sender, EventArgs e) {
+            await this.finishDelineation();
         }
 
         private void cancelButton_Click(object sender, EventArgs e) {
@@ -4183,7 +4188,7 @@ namespace ArcSWAT3
         }
 
         private void area_TextChanged(object sender, EventArgs e) {
-            if (this.area.Enabled) { this.setNumCells(); }
+          if (this.area.Enabled) { this.setNumCells(); }
         }
 
         private void areaUnitsBox_SelectedIndexChanged(object sender, EventArgs e) {
@@ -4195,7 +4200,7 @@ namespace ArcSWAT3
         }
 
         // Read delineation data from project database.
-        public async void readProj() {
+        public async Task readProj() {
             string extraOutletFile;
             string outletFile;
             string streamFile;
@@ -4431,8 +4436,8 @@ namespace ArcSWAT3
             proj.writeNumEntry(title, "delin/snapThreshold", snapThreshold);
         }
 
-        private void DelinForm_Load(object sender, EventArgs e) {
-            this.run();
+        private async void DelinForm_Load(object sender, EventArgs e) {
+            await this.run();
         }
 
 

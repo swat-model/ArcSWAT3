@@ -56,7 +56,7 @@
             this.label1.AutoSize = true;
             this.label1.Location = new System.Drawing.Point(13, 16);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(388, 225);
+            this.label1.Size = new System.Drawing.Size(397, 225);
             this.label1.TabIndex = 5;
             this.label1.Text = resources.GetString("label1.Text");
             // 
@@ -69,6 +69,7 @@
             this.Controls.Add(this.label1);
             this.Controls.Add(this.saveButton);
             this.Controls.Add(this.cancelButton);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "SelectPoint";
             this.Text = "Select inlets/outlets";
             this.ResumeLayout(false);

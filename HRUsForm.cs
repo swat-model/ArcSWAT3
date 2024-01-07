@@ -6,6 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Documents;
 using System.Windows.Forms;
 
 using ArcGIS.Desktop.Mapping;
@@ -32,7 +33,7 @@ namespace ArcSWAT3
                 parent.landuseFile = landuseFile;
                 parent.landuseLayer = landuseLayer as RasterLayer;
                 // hide landuseLayer
-                Utils.setLayerVisibility(landuseLayer, false);
+                await Utils.setLayerVisibility(landuseLayer, false);
             }
         }
 
@@ -45,7 +46,7 @@ namespace ArcSWAT3
                 parent.soilFile = soilFile;
                 parent.soilLayer = soilLayer as RasterLayer;
                 // hide soilLayer
-                Utils.setLayerVisibility(soilLayer, false);
+                await Utils.setLayerVisibility(soilLayer, false);
             }
         }
 
@@ -302,12 +303,12 @@ namespace ArcSWAT3
             this.slopeBand.Clear();
         }
 
-        private void readButton_Click(object sender, EventArgs e) {
-            parent.readFiles();
+        private async void readButton_Click(object sender, EventArgs e) {
+            await parent.readFiles();
         }
 
-        private void createButton_Click(object sender, EventArgs e) {
-            parent.calcHRUs();
+        private async void createButton_Click(object sender, EventArgs e) {
+            await parent.calcHRUs();
         }
 
         private void cancelButton_Click(object sender, EventArgs e) {
@@ -497,7 +498,7 @@ namespace ArcSWAT3
             dlg.run();
         }
 
-        private void HRUsForm_Load(object sender, EventArgs e) {
+        private async void HRUsForm_Load(object sender, EventArgs e) {
             parent._db.populateTableNames();
             foreach (string name in parent._db.landuseTableNames) {
                 this.selectLanduseTable.Items.Add(name);
@@ -507,7 +508,7 @@ namespace ArcSWAT3
                 this.selectSoilTable.Items.Add(name);
             }
             this.selectSoilTable.Items.Add(Parameters._USECSV);
-            this.readProj();
+            await this.readProj();
             this.setSoilData();
             parent._gv.getExemptSplit();
             this.fullHRUsLabel.Text = "";
@@ -525,7 +526,7 @@ namespace ArcSWAT3
         }
 
         // Read HRU settings from the project file.
-        public async void readProj() {
+        public async Task readProj() {
             string slopeBandsFile;
             string soilTable;
             int index;
@@ -556,7 +557,7 @@ namespace ArcSWAT3
                 parent.landuseFile = landuseFile;
                 parent.landuseLayer = landuseLayer;
                 // hide landuseLayer
-                Utils.setLayerVisibility(landuseLayer, false);
+                await Utils.setLayerVisibility(landuseLayer, false);
             }
             (soilFile, found) = proj.readEntry(title, "soil/file", "");
             RasterLayer soilLayer = null;
@@ -577,7 +578,7 @@ namespace ArcSWAT3
                 parent.soilFile = soilFile;
                 parent.soilLayer = soilLayer;
                 // hide soilLayer
-                Utils.setLayerVisibility(soilLayer, false);
+                await Utils.setLayerVisibility(soilLayer, false);
             }
             (parent._gv.db.useSTATSGO, found) = proj.readBoolEntry(title, "soil/useSTATSGO", false);
             if (found && parent._gv.db.useSTATSGO) {
@@ -666,7 +667,7 @@ namespace ArcSWAT3
             if (slopeBandsLayer is not null) {
                 parent._gv.slopeBandsFile = slopeBandsFile;
                 // hide slopeBandsLayer
-                Utils.setLayerVisibility(slopeBandsLayer, false);
+                await Utils.setLayerVisibility(slopeBandsLayer, false);
             } else {
                 parent._gv.slopeBandsFile = "";
             }

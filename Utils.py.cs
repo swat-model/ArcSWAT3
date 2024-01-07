@@ -474,7 +474,7 @@ namespace ArcSWAT3
 
         // Set map layer visible or not according to visibility.
 
-        public static async void setLayerVisibility(Layer layer, bool visibility) {
+        public static async Task setLayerVisibility(Layer layer, bool visibility) {
             await QueuedTask.Run(() => {
                 try {
                     layer.SetVisibility(visibility);
@@ -541,7 +541,7 @@ namespace ArcSWAT3
             }
         }
 
-        public static async void clearAnimationGroup() {
+        public static async Task clearAnimationGroup() {
             // remove animation layers
             await QueuedTask.Run(() => {
                 foreach (var animation in Utils.getLayersInGroup(Utils._ANIMATION_GROUP_NAME)) {
@@ -839,7 +839,7 @@ namespace ArcSWAT3
                 if (Utils.samePath(layerFile, fileName))
                 {
                     if (layer is FeatureLayer) {
-                        setMapTip((FeatureLayer)layer, ft);
+                        await setMapTip((FeatureLayer)layer, ft);
                     }
                     return (layer, false);
                 }
@@ -951,7 +951,7 @@ namespace ArcSWAT3
                     //} catch {; }
                     mapLayer = await QueuedTask.Run(() => LayerFactory.Instance.CreateLayer(new Uri(fileName), groupLayer, index, String.Format("{0} ({1})", legend, baseName)));
                     FileTypes.ApplySymbolToFeatureLayerAsync((FeatureLayer)mapLayer, ft, gv);
-                    setMapTip((FeatureLayer)mapLayer, ft);
+                    await setMapTip((FeatureLayer)mapLayer, ft);
                 }
                 var fun = FileTypes.colourFun(ft);
                 if (fun is not null) {
@@ -976,14 +976,14 @@ namespace ArcSWAT3
             }
         }
 
-        public static void setMapTip(FeatureLayer layer, int ft) {
+        public static async Task setMapTip(FeatureLayer layer, int ft) {
             var (vari, tip) = FileTypes.mapTip(ft);
             if (!string.IsNullOrEmpty(tip)) {
-                setMapTip(layer, vari, tip);
+                await setMapTip(layer, vari, tip);
             }
         }
 
-        public static async void setMapTip(FeatureLayer layer, string vari, string tip) {
+        public static async Task setMapTip(FeatureLayer layer, string vari, string tip) {
             var defn = await QueuedTask.Run(() => layer.GetDefinition()) as CIMBasicFeatureLayer;
             var tabl = defn.FeatureTable;
             tabl.DisplayField = vari;
@@ -2338,7 +2338,7 @@ namespace ArcSWAT3
                         return;
                     }
                     layer.SetColorizer(colorizer);
-                    MapView.Active.Redraw(false);
+                    //MapView.Active.Redraw(false);
                 }
                 catch (Exception ex) {
                     Utils.loginfo("Cannot create landuse colorizer: " + ex.Message);
@@ -2383,7 +2383,7 @@ namespace ArcSWAT3
                         return;
                     }
                     layer.SetColorizer(colorizer);
-                    MapView.Active.Redraw(false);
+                    //MapView.Active.Redraw(false);
                 }
                 catch (Exception ex) {
                     Utils.loginfo("Cannot create soil colorizer: " + ex.Message);
@@ -2426,7 +2426,7 @@ namespace ArcSWAT3
                         return;
                     }
                     layer.SetColorizer(colorizer);
-                    MapView.Active.Redraw(false);
+                    //MapView.Active.Redraw(false);
                     layer.SetVisibility(false);
                 }
                 catch (Exception ex) {
@@ -2485,7 +2485,7 @@ namespace ArcSWAT3
 
                 //Appy the renderer to the feature layer
                 featureLayer.SetRenderer(renderer);
-                MapView.Active.Redraw(false);
+                //MapView.Active.Redraw(false);
             });
         }
 

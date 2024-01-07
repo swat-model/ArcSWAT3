@@ -18,14 +18,14 @@ namespace ArcSWAT3
             this._parent = parent;
         }
 
-        private void saveButton_Click(object sender, EventArgs e) {
+        private async void saveButton_Click(object sender, EventArgs e) {
             Close();
-            _parent.selectPoints(true);
+            await this._parent.selectPoints(true);
         }
 
-        private void cancelButton_Click(object sender, EventArgs e) {
+        private async void cancelButton_Click(object sender, EventArgs e) {
             Close();
-            _parent.selectPoints(false);
+            await this._parent.selectPoints(false);
         }
     }
 }

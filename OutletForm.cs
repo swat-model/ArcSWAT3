@@ -47,7 +47,7 @@ namespace ArcSWAT3
             await Project.Current.SaveEditsAsync();
             //this.fc = null;
             this.Close();
-            this._parent.addOutlets(true);
+            await this._parent.addOutlets(true);
         }
 
         private async void cancelButton_Click(object sender, EventArgs e) {
@@ -56,14 +56,14 @@ namespace ArcSWAT3
             await Project.Current.DiscardEditsAsync();
             //this.fc = null;
             this.Close();
-            this._parent.addOutlets(false);
+            await this._parent.addOutlets(false);
         }
 
         public OutletForm() {
             InitializeComponent();
         }
 
-        public async void setup(FeatureLayer layer, DelinForm parent) {
+        public async Task setup(FeatureLayer layer, DelinForm parent) {
             this._parent = parent; 
             this.lastIndex = 0;
             this.currentLayer = layer;

@@ -147,6 +147,7 @@ namespace ArcSWAT3
             this.Controls.Add(this.editorButton);
             this.Controls.Add(this.editorBox);
             this.Controls.Add(this.editorLabel);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "ParamForm";
             this.Text = "ParamForm";
             this.ResumeLayout(false);

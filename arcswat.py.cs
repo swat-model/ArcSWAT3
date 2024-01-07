@@ -167,7 +167,7 @@ namespace ArcSWAT3
         }
 
         // Create a new project.
-        public async void newProject() {
+        public async Task newProject() {
             var title = Utils.trans("Choose parent directory for project");
             string parentDir = "";
             using (FolderBrowserDialog dialog = new FolderBrowserDialog()) {
@@ -195,7 +195,7 @@ namespace ArcSWAT3
         }
 
         // Open an existing project.
-        public async void existingProject() {
+        public async Task existingProject() {
             var title = Utils.trans("Choose project (*.aprx) file");
             var filtr = Utils.trans("Project files (*.aprx)|*.aprx");
             string projPath = "";
@@ -583,7 +583,7 @@ namespace ArcSWAT3
         //         
         public static async Task setLegendGroups() {
             var map = MapView.Active.Map;
-            await QueuedTask.Run(() => {
+            await QueuedTask.Run(async () => {
                 var groups = new List<string> {
                     Utils._SLOPE_GROUP_NAME,
                     Utils._SOIL_GROUP_NAME,
@@ -600,7 +600,7 @@ namespace ArcSWAT3
                     }
                 }
                 // clear anything left accidentally in animation group
-                Utils.clearAnimationGroup();
+                await Utils.clearAnimationGroup();
                 // don't do this - hides landuse, soil and slope
                 //// move world hillshade layer to base of watershed group
                 //GroupLayer wshedGroup = Utils.getGroupLayerByName(Utils._WATERSHED_GROUP_NAME);
@@ -638,7 +638,7 @@ namespace ArcSWAT3
         }
 
         // Close the database connections and subsidiary forms.
-        public async void finish(DialogResult result) {
+        public async Task finish(DialogResult result) {
             if (result == DialogResult.OK) {
                 await Project.Current.SaveAsync();
             }
@@ -665,14 +665,14 @@ namespace ArcSWAT3
         }
 
         // Run visualise form.
-        public void visualise() {
+        public async Task visualise() {
             // avoid getting second window
             if (this.vis is not null) {
-                this.vis.doClose();
+                await this.vis.doClose();
             }
             this.vis = new Visualise(this._gv);
             Debug.Assert(this.vis is not null);
-            this.vis.run();
+            await this.vis.run();
         }
 
         //// If we have subs1.shp and riv1.shp and an empty watershed group then add these layers.
