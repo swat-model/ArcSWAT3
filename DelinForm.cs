@@ -53,6 +53,7 @@ using ArcGIS.Desktop.Editing.Attributes;
 using System.Windows.Input;
 using Microsoft.VisualBasic;
 using ArcGIS.Desktop.Internal.Mapping.CommonControls;
+using System.ComponentModel;
 
 namespace ArcSWAT3
 {
@@ -61,7 +62,7 @@ namespace ArcSWAT3
 
         private ArcSWAT _parent;
 
-        private GlobalVars _gv;
+        public GlobalVars _gv;
 
         public double areaOfCell;
 
@@ -690,7 +691,8 @@ namespace ArcSWAT3
                     Utils.error(string.Format("Cannot find burn in file {0}", burnFile), this._gv.isBatch);
                     return;
                 }
-                var burnedDemFile = Path.ChangeExtension(this._gv.demFile, "_burned.tif");
+                // just changing extension to _burned.tif gives an extra period before new extension
+                var burnedDemFile = Path.ChangeExtension(this._gv.demFile, null) + "_burned.tif";
                 if (!Utils.isUpToDate(demFile, burnedDemFile) || !Utils.isUpToDate(burnFile, burnedDemFile)) {
                     // just in case
                     await Utils.removeLayerAndFiles(burnedDemFile);
@@ -886,6 +888,37 @@ namespace ArcSWAT3
                         this.cleanUp(-1);
                         return;
                     }
+                    if (outletLayer.ShapeType != ArcGIS.Core.CIM.esriGeometryType.esriGeometryPoint) {
+                        Utils.error(string.Format("Inlets/Outlets file {0} is not a point shapefile", this.selectOutlets.Text), this._gv.isBatch);
+                        this.cleanUp(-1);
+                        return;
+                    }
+                    HashSet<string> missingFields = new HashSet<string>();
+                    if (await this._gv.topo.getIndex(outletLayer, Topology._ID, ignoreMissing: true) < 0) {
+                        missingFields.Add(Topology._ID);
+                    }
+                    if (await this._gv.topo.getIndex(outletLayer, Topology._INLET, ignoreMissing: true) < 0) {
+                        missingFields.Add(Topology._INLET);
+                    }
+                    if (await this._gv.topo.getIndex(outletLayer, Topology._RES, ignoreMissing: true) < 0) {
+                        missingFields.Add(Topology._RES);
+                    }
+                    if (await this._gv.topo.getIndex(outletLayer, Topology._PTSOURCE, ignoreMissing: true) < 0) {
+                        missingFields.Add(Topology._PTSOURCE);
+                    }
+                    if (missingFields.Count > 0) {
+                        string fields = "";
+                        foreach (string field in missingFields) {
+                            fields += field + ", ";
+                        }
+                        fields = fields.Remove(fields.Length - 2);
+                        fields += ".";
+                        Utils.error(string.Format("There are fields missing from the inlets/outlets file {0}: {1}",
+                            this.selectOutlets.Text, fields), this._gv.isBatch);
+                        this.cleanUp(-1);
+                        return;
+                    }
+
                     this.progress("SnapOutletsToStreams ...");
                     ok = await this.createSnapOutletFile(outletLayer, streamLayer, outletFile, snapFile);
                     if (!ok) {
@@ -967,22 +1000,22 @@ namespace ArcSWAT3
                 this._gv.pFile = pFile;
                 this._gv.basinFile = wFile;
                 if (this.checkBurn.Checked) {
-                    // need to make slope file from original dem
-                    var felNoburn = @base + "felnoburn" + suffix;
-                    await Utils.removeLayer(felNoburn);
-                    this.progress("PitFill ...");
-                    ok = await TauDEMUtils.runPitFill(demFile, felNoburn, numProcesses, this.taudemOutput);
-                    if (!ok) {
-                        this.cleanUp(3);
-                        return;
-                    }
+                    // need to make slope file from original dem, without filling pits
+                    //var felNoburn = @base + "felnoburn" + suffix;
+                    //await Utils.removeLayer(felNoburn);
+                    //this.progress("PitFill ...");
+                    //ok = await TauDEMUtils.runPitFill(demFile, felNoburn, numProcesses, this.taudemOutput);
+                    //if (!ok) {
+                    //    this.cleanUp(3);
+                    //    return;
+                    //}
                     // use of slope.tif as name of slope file unaffected by burning in used by demProcessed check in main form
                     var slopeFile = @base + "slope" + suffix;
                     var angleFile = @base + "angle" + suffix;
                     await Utils.removeLayer(slopeFile);
                     await Utils.removeLayer(angleFile);
                     this.progress("DinfFlowDir ...");
-                    ok = await TauDEMUtils.runDinfFlowDir(felNoburn, slopeFile, angleFile, numProcesses, this.taudemOutput);
+                    ok = await TauDEMUtils.runDinfFlowDir(demFile, slopeFile, angleFile, numProcesses, this.taudemOutput);
                     if (!ok) {
                         this.cleanUp(3);
                         return;
@@ -1245,16 +1278,22 @@ namespace ArcSWAT3
                 // fail gracefully
                 epsg = -1;
             }
-            int uCode = unit.FactoryCode;
-            if (uCode == LinearUnit.Meters.FactoryCode) {
-                factor = 1.0;
-                this.horizontalCombo.SelectedIndex = this.horizontalCombo.Items.IndexOf(Parameters._METRES);
+            if (unit is LinearUnit) {
+                factor = unit.ConversionFactor;
+                this.horizontalCombo.Items.Add(unit.ToString());
+                this.horizontalCombo.SelectedIndex = this.horizontalCombo.Items.IndexOf(unit.ToString());
                 this.horizontalCombo.Enabled = false;
-            } else if (uCode == LinearUnit.Feet.FactoryCode) {
-                factor = 0.3048;
-                this.horizontalCombo.SelectedIndex = this.horizontalCombo.Items.IndexOf(Parameters._FEET);
-                this.horizontalCombo.Enabled = false;
+            //int uCode = unit.FactoryCode;
+            //if (uCode == LinearUnit.Meters.FactoryCode) {
+            //    factor = 1.0;
+            //    this.horizontalCombo.SelectedIndex = this.horizontalCombo.Items.IndexOf(Parameters._METRES);
+            //    this.horizontalCombo.Enabled = false;
+            //} else if (uCode == LinearUnit.Feet.FactoryCode) {
+            //    factor = 0.3048;
+            //    this.horizontalCombo.SelectedIndex = this.horizontalCombo.Items.IndexOf(Parameters._FEET);
+            //    this.horizontalCombo.Enabled = false;
             } else {
+                int uCode = unit.FactoryCode;
                 if (uCode == AngularUnit.Degrees.FactoryCode) {
                     @string = "degrees";
                     this.horizontalCombo.SelectedIndex = this.horizontalCombo.Items.IndexOf(Parameters._DEGREES);
@@ -1264,8 +1303,11 @@ namespace ArcSWAT3
                     this.horizontalCombo.SelectedIndex = this.horizontalCombo.Items.IndexOf(Parameters._DEGREES);
                     this.horizontalCombo.Enabled = true;
                 }
-                Utils.information("WARNING: DEM does not seem to be projected: its units are " + @string, this._gv.isBatch);
-                return false;
+                //Utils.information("WARNING: DEM does not seem to be projected: its units are " + @string, this._gv.isBatch);
+                //return false;
+                Utils.information("WARNING: cannot determine DEM projection.  Units are " + @string + ". FactoryCode is " + uCode.ToString(), this._gv.isBatch);
+                //assume metres
+                factor = 1.0;
             }
             this.demWidth = width;
             this.demHeight = height;
@@ -1463,8 +1505,8 @@ namespace ArcSWAT3
                 Utils.error(string.Format("Unable to load shapefile {0}", this.drawOutletFile), this._gv.isBatch);
                 return;
             }
-            var outletForm = new OutletForm();
-            await outletForm.setup(this.drawOutletLayer, this);
+            var outletForm = new OutletForm(this.drawOutletLayer, this);
+            await outletForm.setup();
             outletForm.Show();
         }
 
@@ -1490,12 +1532,12 @@ namespace ArcSWAT3
                     Utils.copyPointFeatures(this.drawOutletFile, this._gv.outletFile);
                     // restore outlets layer
                     var outletLayer = (await Utils.getLayerByFilename(this._gv.outletFile, FileTypes._OUTLETS, this._gv, null, Utils._WATERSHED_GROUP_NAME)).Item1 as FeatureLayer;
-                    await MapView.Active.RedrawAsync(true);
                 } else {
                     // replaces current outlet layer
                     await Utils.removeLayer(this._gv.outletFile);
                     this._gv.outletFile = this.drawOutletFile;
                 }
+                this.selectOutlets.Text = this._gv.outletFile;
             } else {
                 // discard drawoutlets layer and file
                 await Utils.removeLayerAndFiles(this.drawOutletFile);
@@ -1841,6 +1883,7 @@ namespace ArcSWAT3
             });
             FrameworkApplication.CurrentTool = "ArcGIS.Desktop.Internal.Mapping.Ribbon.SelectTool";
             var selSubs = new SelectSubbasin(wshedLayer, this, this._gv);
+            await selSubs.setup();
             selSubs.Show();
         }
 
@@ -2959,8 +3002,8 @@ namespace ArcSWAT3
             //var parms = Geoprocessing.MakeValueArray(this._gv.sourceDir, Path.GetFileName(wshedFile), "POLYGON");
             //Utils.runPython("runCreateWshedFile.py", parms, this._gv.isBatch);
             var parms = Geoprocessing.MakeValueArray(wFile, wshedFile);
-
             Utils.runPython("runRasterToPolygon.py", parms, this._gv);
+            Utils.copyPrj(wFile, wshedFile);
             // use GDAL to rename gridcode to PolygonId and add Area and Subbasin
             using (var wshedDs = Ogr.Open(wshedFile, 1)) {
                 Driver drv = wshedDs.GetDriver();

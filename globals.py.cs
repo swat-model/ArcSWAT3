@@ -182,6 +182,8 @@ namespace ArcSWAT3
 
             public string textDir;
 
+            public string tempDir;
+
             public int TNCCatchmentThreshold;
 
             public string TNCDir;
@@ -485,8 +487,8 @@ namespace ArcSWAT3
             Directory.CreateDirectory(this.gridDir);
             var tablesDir = Utils.join(watershedDir, "Tables");
             Directory.CreateDirectory(tablesDir);
-            var tempDir = Utils.join(watershedDir, "temp");
-            Directory.CreateDirectory(tempDir);
+            this.tempDir = Utils.join(watershedDir, "temp");
+            Directory.CreateDirectory(this.tempDir);
         }
 
         // Set vertical conversion factor according to vertical units.

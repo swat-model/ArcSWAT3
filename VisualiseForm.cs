@@ -133,16 +133,16 @@ namespace ArcSWAT3
             this._parent.setResultsFile();
         }
 
-        private void tabWidget_SelectedIndexChanged(object sender, EventArgs e) {
-            this._parent.modeChange();
+        private async void tabWidget_SelectedIndexChanged(object sender, EventArgs e) {
+            await this._parent.modeChange();
         }
 
-        private void saveButton_Click(object sender, EventArgs e) {
-            this._parent.makeResults();
+        private async void saveButton_Click(object sender, EventArgs e) {
+            await this._parent.makeResults();
         }
 
-        private void printButton_Click(object sender, EventArgs e) {
-            this._parent.printResults();
+        private async void printButton_Click(object sender, EventArgs e) {
+            await this._parent.printResults();
         }
 
         private void canvasAnimation_CheckedChanged(object sender, EventArgs e) {
@@ -153,12 +153,12 @@ namespace ArcSWAT3
             this._parent.changeAnimationMode();
         }
 
-        private void animationVariableCombo_SelectionChangeCommitted(object sender, EventArgs e) {
-            this._parent.setupAnimateLayer();
+        private async void animationVariableCombo_SelectionChangeCommitted(object sender, EventArgs e) {
+            await this._parent.setupAnimateLayer();
         }
 
-        private void trackBar1_Scroll(object sender, EventArgs e) {
-            this._parent.changeAnimate();
+        private async void trackBar1_Scroll(object sender, EventArgs e) {
+            await this._parent.changeAnimate();
         }
 
         private void trackBar1_MouseDown(object sender, MouseEventArgs e) {
@@ -237,8 +237,8 @@ namespace ArcSWAT3
             this._parent.writePlotData();
         }
 
-        private void closeButton_Click(object sender, EventArgs e) {
-            this._parent.doClose();
+        private async void closeButton_Click(object sender, EventArgs e) {
+            await this._parent.doClose();
         }
 
         private void compareButton_Click(object sender, EventArgs e) {
@@ -253,8 +253,12 @@ namespace ArcSWAT3
             }
         }
 
-        private void slider_ValueChanged(object sender, EventArgs e) {
-            this._parent.changeAnimate();
+        private async void slider_ValueChanged(object sender, EventArgs e) {
+            await this._parent.changeAnimate();
+        }
+
+        private void tableWidget_CurrentCellChanged(object sender, EventArgs e) {
+            this._parent.setVariablesForRow();
         }
     }
 }

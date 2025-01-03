@@ -1,6 +1,5 @@
 import arcpy
 arcpy.env.overwriteOutput = True
-arcpy.env.workspace = "C:/data"
 
 in_shp  = arcpy.GetParameterAsText(0)
 field = arcpy.GetParameterAsText(1)

@@ -1,6 +1,5 @@
 import arcpy
 arcpy.env.overwriteOutput = True
-arcpy.env.workspace = "c:/data"
 
 in_grid = arcpy.GetParameterAsText(0)
 out_folder = arcpy.GetParameterAsText(1)

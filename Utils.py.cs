@@ -33,6 +33,7 @@ using Polygon = ArcGIS.Core.Geometry.Polygon;
 //using ArcGIS.Desktop.Framework.Dialogs;
 using MessageBox = ArcGIS.Desktop.Framework.Dialogs.MessageBox;
 using ArcGIS.Desktop.Core.Geoprocessing;
+using ArcGIS.Desktop.Catalog;
 
 using Microsoft.Extensions.FileSystemGlobbing;
 
@@ -56,6 +57,8 @@ using Feature = ArcGIS.Core.Data.Feature;
 using System.Data.Entity.Migrations.Sql;
 using Microsoft.VisualBasic.Logging;
 using ArcGIS.Desktop.Internal.Catalog.PropertyPages.ParcelDataset;
+using ArcGIS.Core.Data.UtilityNetwork.Trace;
+using System.Runtime.InteropServices;
 
 namespace ArcSWAT3
 {
@@ -950,7 +953,7 @@ namespace ArcSWAT3
                     //    Utils.runPython("runDefineProjection.py", parms, gv);
                     //} catch {; }
                     mapLayer = await QueuedTask.Run(() => LayerFactory.Instance.CreateLayer(new Uri(fileName), groupLayer, index, String.Format("{0} ({1})", legend, baseName)));
-                    FileTypes.ApplySymbolToFeatureLayerAsync((FeatureLayer)mapLayer, ft, gv);
+                    await FileTypes.ApplySymbolToFeatureLayerAsync((FeatureLayer)mapLayer, ft, gv);
                     await setMapTip((FeatureLayer)mapLayer, ft);
                 }
                 var fun = FileTypes.colourFun(ft);
@@ -1150,7 +1153,9 @@ namespace ArcSWAT3
         {
             string inFileName = "";
             string outFileName;
+            string itemName = "";
             string path = "";
+            bool isGdbItem = false;
             //var settings = QSettings();
             //if (settings.contains("/QSWATPlus/LastInputPath"))
             //{
@@ -1168,82 +1173,109 @@ namespace ArcSWAT3
             }
             else
             {
-                using (OpenFileDialog dlg = new OpenFileDialog())
-                {
-                    dlg.InitialDirectory = path;
-                    dlg.Title = title;
-                    dlg.Filter = FileTypes.filter(ft);
-                    dlg.RestoreDirectory = false;
-                    if (dlg.ShowDialog() == DialogResult.OK)
-                    {
-                        inFileName = dlg.FileName;
-                    }
+                OpenItemDialog dlg = new OpenItemDialog() {
+                    InitialLocation = path,
+                    Title = title,
+                    Filter = FileTypes.filter(ft),
+                    AlwaysUseInitialLocation = false,
+                    MultiSelect = false
+                };
+                bool? ok = dlg.ShowDialog();
+                if (ok == true) {
+                    await QueuedTask.Run(() => {
+                        Item item = dlg.Items.First();
+                        itemName = Path.ChangeExtension(item.Name, null);
+                        inFileName = item.Path;
+                        var typeID = item.TypeID;
+                        isGdbItem = typeID.StartsWith("fgdb_") ||
+                            typeID.EndsWith("_fgdb") ||
+                            typeID.StartsWith("egdb_") ||
+                            typeID.EndsWith("_egdb");
+                    });
                 }
+
+                //using (OpenFileDialog dlg = new OpenFileDialog()) {
+                //    dlg.InitialDirectory = path;
+                //    dlg.Title = title;
+                //    dlg.Filter = FileTypes.filter(ft);
+                //    dlg.RestoreDirectory = false;
+                //    if (dlg.ShowDialog() == DialogResult.OK) {
+                //        inFileName = dlg.FileName;
+                //    }
+                //}
             }
             //Utils.information('File is |{0}|', inFileName), False)
             if (inFileName is not null && inFileName != "")
             {
                 //settings.setValue("/QSWATPlus/LastInputPath", os.path.dirname(inFileName.ToString()));
                 // copy to saveDir if necessary
-                var inInfo = new FileInfo(inFileName);
-                var inDir = inInfo.DirectoryName;
-                var outDir = saveDir;
                 bool isESRIGrid = false;
-                if (inDir != outDir)
-                {
-                    var inFile = inInfo.Name;
-                    if (inFile == "sta.adf" || inFile == "hdr.adf")
-                    {
-                        // ESRI grid - will be converted to .tif
+                string inDir;
+                string outFileBase;
+                var outDir = saveDir;
+                // check for ESRI rasters
+                if (!isGdbItem & FileTypes.isRaster(ft)) {
+                    if (Directory.Exists(inFileName)) {
                         isESRIGrid = true;
-                        var inDirName = inInfo.Directory.Name;
-                        ///if (ft == FileTypes._DEM)
-                        {
-                            // will be converted to .tif, so make a .tif name
-                            outFileName = Utils.join(saveDir, inDirName) + ".tif";
-                            await Utils.removeLayerByLegend(FileTypes.legend(ft));
-                            Utils.removeFiles(outFileName);
-                        }
-                        //else
-                        //{
-                        //    outFileName = Utils.join(Utils.join(saveDir, inDirName), inFile);
-                        //}
+                        var inInfo = new DirectoryInfo(inFileName);
+                        outFileBase = inInfo.Name;
+                    } else {
+                        var inInfo = new FileInfo(inFileName);
+                        var inFile = inInfo.Name;
+                        outFileBase = inInfo.Directory.Name;
+                        isESRIGrid = inFile == "sta.adf" || inFile == "hdr.adf";
                     }
-                    else
-                    {
+                } else {
+                    if (isGdbItem) {
+                        outFileBase = itemName;
+                    } else {
+                        outFileBase = Path.GetFileNameWithoutExtension(inFileName);
+                    }
+                }
+                if (isESRIGrid || isGdbItem) {
+                    if (FileTypes.isRaster(ft)) {
+                        // will be converted to .tif, so make a .tif name
+                        outFileName = Utils.join(saveDir, outFileBase) + ".tif";
+                        await Utils.removeLayerByLegend(FileTypes.legend(ft));
+                        Utils.removeFiles(outFileName);
+                        var parms = Geoprocessing.MakeValueArray(inFileName, saveDir);
+                        Utils.runPython("runConversion.py", parms, gv);
+                    } else {
+                        // must be gdb feature class.  Save as shapefile
+                        outFileName = Utils.join(saveDir, outFileBase) + ".shp";
+                        await Utils.removeLayerByLegend(FileTypes.legend(ft));
+                        Utils.removeFiles(outFileName);
+                        var parms = Geoprocessing.MakeValueArray(Path.GetDirectoryName(inFileName), itemName, saveDir);
+                        Utils.runPython("runFeaturesToShapefile.py", parms, gv);
+                    }
+                    // may not have got projection information, so if any copy it
+                    Utils.copyPrj(inFileName, outFileName);
+                } else { // we are jut dealing with files
+                    var inInfo = new FileInfo(inFileName);
+                    inDir = inInfo.DirectoryName;
+                    var inFile = inInfo.Name;
+                    if (inDir != outDir) {
                         outFileName = Utils.join(saveDir, inFile);
-                        if (ft == FileTypes._DEM)
-                        {
+                        if (ft == FileTypes._DEM) {
                             // will be converted to .tif, so convert to .tif name
                             outFileName = Path.ChangeExtension(outFileName, ".tif");
                         }
+                        // remove any existing layer for this file, else cannot copy to it
+                        await Utils.removeLayerByLegend(FileTypes.legend(ft));
+                        if (ft == FileTypes._DEM && Path.GetExtension(inFileName) != ".tif") {
+                            Utils.removeFiles(outFileName);
+                        }
+                        //else if (runFix)
+                        //{
+                        //    Utils.fixGeometry(inFileName, saveDir);
+                        //}
+                        else {
+                            Utils.copyFiles(inInfo, saveDir);
+                        }
+                    } else {
+                        // ignore runFix: assume already fixed as inside project
+                        outFileName = inFileName;
                     }
-                    // remove any existing layer for this file, else cannot copy to it
-                    await Utils.removeLayerByLegend(FileTypes.legend(ft));
-                    if (isESRIGrid || (ft == FileTypes._DEM && Path.GetExtension(inFileName) != ".tif"))
-                    {
-                        Utils.removeFiles(outFileName);
-                        // for ESRI grids use directory for input file
-                        var input = inFileName;
-                        if (isESRIGrid) input = inInfo.DirectoryName;
-                        var parms = Geoprocessing.MakeValueArray(input, saveDir);
-                        Utils.runPython("runConversion.py", parms, gv);
-                        // may not have got projection information, so if any copy it
-                        Utils.copyPrj(inFileName, outFileName);
-                    }
-                    //else if (runFix)
-                    //{
-                    //    Utils.fixGeometry(inFileName, saveDir);
-                    //}
-                    else
-                    {
-                        Utils.copyFiles(inInfo, saveDir);
-                    }
-                }
-                else
-                {
-                    // ignore runFix: assume already fixed as inside project
-                    outFileName = inFileName;
                 }
                 // this function will add layer if necessary
                 Layer layer = null;
@@ -1902,14 +1934,21 @@ namespace ArcSWAT3
         // Return filter for open file dialog according to file type.
 
         public static string filter(int ft) {
-            if (ft == FileTypes._DEM || ft == FileTypes._LANDUSES || ft == FileTypes._SOILS || ft == FileTypes._HILLSHADE || ft == FileTypes._WSHEDRASTER) {
-                return "All files (*.*)|*.*"; // "All files (*)|*|All supported files (*.vrt *.VRT *.ovr *.OVR *.tif *.TIF *.tiff *.TIFF *.ntf *.NTF *.toc *.TOC *.xml *.XML *.img *.IMG *.gff *.GFF *.asc *.ASC *.isg *.ISG *.ddf *.DDF *.dt0 *.DT0 *.dt1 *.DT1 *.dt2 *.DT2 *.png *.PNG *.jpg *.JPG *.jpeg *.JPEG *.mem *.MEM *.gif *.GIF *.n1 *.N1 *.kap *.KAP *.xpm *.XPM *.bmp *.BMP *.pix *.PIX *.map *.MAP *.mpr *.MPR *.mpl *.MPL *.rgb *.RGB *.hgt *.HGT *.ter *.TER *.ter *.TER *.nc *.NC *.hdf *.HDF *.lbl *.LBL *.cub *.CUB *.xml *.XML *.ers *.ERS *.ecw *.ECW *.jp2 *.JP2 *.j2k *.J2K *.jp2 *.JP2 *.j2k *.J2K *.grb *.GRB *.grb2 *.GRB2 *.grib2 *.GRIB2 *.sid *.SID *.jp2 *.JP2 *.rsw *.RSW *.nat *.NAT *.rst *.RST *.grd *.GRD *.grd *.GRD *.grd *.GRD *.hdr *.HDR *.rda *.RDA *.kml *.KML *.kmz *.KMZ *.webp *.WEBP *.pdf *.PDF *.sqlite *.SQLITE *.mbtiles *.MBTILES *.cal *.CAL *.ct1 *.CT1 *.mrf *.MRF *.pgm *.PGM *.ppm *.PPM *.pnm *.PNM *.hdr *.HDR *.bt *.BT *.lcp *.LCP *.gtx *.GTX *.gsb *.GSB *.gvb *.GVB *.ACE2 *.ACE2 *.hdr *.HDR *.kro *.KRO *.grd *.GRD *.byn *.BYN *.err *.ERR *.rik *.RIK *.dem *.DEM *.gxf *.GXF *.bag *.BAG *.h5 *.H5 *.hdf5 *.HDF5 *.grd *.GRD *.grc *.GRC *.gen *.GEN *.img *.IMG *.blx *.BLX *.sdat *.SDAT *.sg-grd-z *.SG-GRD-Z *.xyz *.XYZ *.hf2 *.HF2 *.dat *.DAT *.bin *.BIN *.ppi *.PPI *.prf *.PRF *.sigdem *.SIGDEM *.tga *.TGA *.json *.JSON *.gpkg *.GPKG *.dwg *.DWG *.bil *.BIL *.zip *.ZIP *.gz *.GZ *.tar *.TAR *.tar.gz *.TAR.GZ *.tgz *.TGZ) |GDAL/OGR VSIFileHandler (*.zip *.gz *.tar *.tar.gz *.tgz *.ZIP *.GZ *.TAR *.TAR.GZ *.TGZ);;ACE2 (*.ace2 *.ACE2);;ARC Digitized Raster Graphics (*.gen *.GEN);;ASCII Gridded XYZ (*.xyz *.XYZ);;Arc/Info ASCII Grid (*.asc *.ASC);;Arc/Info Binary Grid (hdr.adf HDR.ADF);;AutoCAD Driver (*.dwg *.DWG);;Bathymetry Attributed Grid (*.bag *.BAG);;CALS  (*.cal *.ct1 *.CAL *.CT1);;DRDC COASP SAR Processor Raster (*.hdr *.HDR);;DTED Elevation Raster (*.dt0 *.dt1 *.dt2 *.DT0 *.DT1 *.DT2);;ECRG TOC format (*.xml *.XML);;ERDAS Compressed Wavelets  (*.ecw *.ECW);;ERDAS JPEG2000  (*.jp2 *.j2k *.JP2 *.J2K);;ERMapper .ers Labelled (*.ers *.ERS);;ESRI .hdr Labelled (*.bil *.BIL);;EUMETSAT Archive native  (*.nat *.NAT);;Envisat Image Format (*.n1 *.N1);;Erdas Imagine Images  (*.img *.IMG);;FARSITE v.4 Landscape File  (*.lcp *.LCP);;GRIdded Binary  (*.grb *.grb2 *.grib2 *.GRB *.GRB2 *.GRIB2);;GeoPackage (*.gpkg *.GPKG);;GeoSoft Grid Exchange Format (*.gxf *.GXF);;GeoTIFF (*.tif *.tiff *.TIF *.TIFF);;Geospatial PDF (*.pdf *.PDF);;Golden Software 7 Binary Grid  (*.grd *.GRD);;Golden Software ASCII Grid  (*.grd *.GRD);;Golden Software Binary Grid  (*.grd *.GRD);;Graphics Interchange Format  (*.gif *.GIF);;Ground-based SAR Applications Testbed File Format  (*.gff *.GFF);;HF2/HFZ heightfield raster (*.hf2 *.HF2);;Hierarchical Data Format Release 4 (*.hdf *.HDF);;Hierarchical Data Format Release 5 (*.h5 *.hdf5 *.H5 *.HDF5);;ILWIS Raster Map (*.mpr *.mpl *.MPR *.MPL);;IRIS data  (*.ppi *.PPI);;Idrisi Raster A.1 (*.rst *.RST);;International Service for the Geoid (*.isg *.ISG);;JPEG JFIF (*.jpg *.jpeg *.JPG *.JPEG);;Japanese DEM  (*.mem *.MEM);;KOLOR Raw (*.kro *.KRO);;Kml Super Overlay (*.kml *.kmz *.KML *.KMZ);;Leveller heightfield (*.ter *.TER);;MBTiles (*.mbtiles *.MBTILES);;MS Windows Device Independent Bitmap (*.bmp *.BMP);;Magellan topo  (*.blx *.BLX);;Maptech BSB Nautical Charts (*.kap *.KAP);;Meta Raster Format (*.mrf *.MRF);;Multi-resolution Seamless Image Database  (*.sid *.SID);;NASA Planetary Data System 4 (*.xml *.XML);;NOAA NGS Geoid Height Grids (*.bin *.BIN);;NOAA Vertical Datum .GTX (*.gtx *.GTX);;NTv2 Datum Grid Shift (*.gsb *.gvb *.GSB *.GVB);;National Imagery Transmission Format (*.ntf *.NTF);;Natural Resources Canada's Geoid (*.byn *.err *.BYN *.ERR);;Network Common Data Format (*.nc *.NC);;Northwood Classified Grid Format .grc/.tab (*.grc *.GRC);;Northwood Numeric Grid Format .grd/.tab (*.grd *.GRD);;PCIDSK Database File (*.pix *.PIX);;PCRaster Raster File (*.map *.MAP);;Portable Network Graphics (*.png *.PNG);;Portable Pixmap Format  (*.pgm *.ppm *.pnm *.PGM *.PPM *.PNM);;R Object Data Store (*.rda *.RDA);;R Raster (*.grd *.GRD);;Racurs PHOTOMOD PRF (*.prf *.PRF);;Raster Matrix Format (*.rsw *.RSW);;Raster Product Format TOC format (*.toc *.TOC);;Rasterlite (*.sqlite *.SQLITE);;SAGA GIS Binary Grid  (*.sdat *.sg-grd-z *.SDAT *.SG-GRD-Z);;SDTS Raster (*.ddf *.DDF);;SGI Image File Format 1.0 (*.rgb *.RGB);;SRTMHGT File Format (*.hgt *.HGT);;Scaled Integer Gridded DEM .sigdem (*.sigdem *.SIGDEM);;Snow Data Assimilation System (*.hdr *.HDR);;Spatio-Temporal Asset Catalog Tiled Assets (*.json *.JSON);;Standard Raster Product  (*.img *.IMG);;Swedish Grid RIK  (*.rik *.RIK);;TGA/TARGA Image File Format (*.tga *.TGA);;Terragen heightfield (*.ter *.TER);;USGS Astrogeology ISIS cube  (*.lbl *.cub *.LBL *.CUB);;USGS Optional ASCII DEM  (*.dem *.DEM);;VTP .bt (Binary Terrain) 1.3 Format (*.bt *.BT);;Vexcel MFF Raster (*.hdr *.HDR);;Virtual Raster (*.vrt *.ovr *.VRT *.OVR);;WEBP (*.webp *.WEBP);;X11 PixMap Format (*.xpm *.XPM);;ZMap Plus Grid (*.dat *.DAT)";
-            } else if (ft == FileTypes._MASK) {
-                return "All files (*)";
-            } else if (ft == FileTypes._BURN || ft == FileTypes._OUTLETS || ft == FileTypes._STREAMS || ft == FileTypes._SUBBASINS || ft == FileTypes._REACHES || ft == FileTypes._WATERSHED || ft == FileTypes._EXISTINGSUBBASINS || ft == FileTypes._EXISTINGWATERSHED || ft == FileTypes._GRID || ft == FileTypes._GRIDSTREAMS) {
-                return "All files (*.*)|*.*"; //"All files (*);;All supported files (*.pix *.PIX *.nc *.NC *.xml *.XML *.jp2 *.JP2 *.jp2 *.JP2 *.j2k *.J2K *.pdf *.PDF *.mbtiles *.MBTILES *.bag *.BAG *.shp *.SHP *.dbf *.DBF *.shz *.SHZ *.shp.zip *.SHP.ZIP *.mif *.MIF *.tab *.TAB *.xml *.XML *.000 *.000 *.dgn *.DGN *.vrt *.VRT *.ovf *.OVF *.csv *.CSV *.xml *.XML *.gml *.GML *.gpx *.GPX *.kml *.KML *.kmz *.KMZ *.geojson *.GEOJSON *.geojsonl *.GEOJSONL *.geojsons *.GEOJSONS *.nlgeojson *.NLGEOJSON *.json *.JSON *.json *.JSON *.json *.JSON *.topojson *.TOPOJSON *.itf *.ITF *.xml *.XML *.ili *.ILI *.xtf *.XTF *.xml *.XML *.ili *.ILI *.gmt *.GMT *.gpkg *.GPKG *.sqlite *.SQLITE *.db *.DB *.sqlite3 *.SQLITE3 *.db3 *.DB3 *.s3db *.S3DB *.sl3 *.SL3 *.map *.MAP *.mdb *.MDB *.dxf *.DXF *.dwg *.DWG *.fgb *.FGB *.gxt *.GXT *.txt *.TXT *.xml *.XML *.vfk *.VFK *.sql *.SQL *.osm *.OSM *.pbf *.PBF *.mps *.MPS *.gdb *.GDB *.osm *.OSM *.tcx *.TCX *.igc *.IGC *.sos *.SOS *.thf *.THF *.svg *.SVG *.vct *.VCT *.xls *.XLS *.ods *.ODS *.xlsx *.XLSX *.sxf *.SXF *.jml *.JML *.txt *.TXT *.x10 *.X10 *.mvt *.MVT *.mvt.gz *.MVT.GZ *.pbf *.PBF *.parquet *.PARQUET *.arrow *.ARROW *.feather *.FEATHER *.arrows *.ARROWS *.ipc *.IPC *.e00 *.E00 *.zip *.ZIP *.gz *.GZ *.tar *.TAR *.tar.gz *.TAR.GZ *.tgz *.TGZ);;GDAL/OGR VSIFileHandler (*.zip *.gz *.tar *.tar.gz *.tgz *.ZIP *.GZ *.TAR *.TAR.GZ *.TGZ);;(Geo)Arrow IPC File Format / Stream (*.arrow *.feather *.arrows *.ipc *.ARROW *.FEATHER *.ARROWS *.IPC);;(Geo)Parquet (*.parquet *.PARQUET);;Arc/Info ASCII Coverage (*.e00 *.E00);;AutoCAD DXF (*.dxf *.DXF);;AutoCAD Driver (*.dwg *.DWG);;Bathymetry Attributed Grid (*.bag *.BAG);;Comma Separated Value (*.csv *.CSV);;Czech Cadastral Exchange Data Format (*.vfk *.VFK);;EDIGEO (*.thf *.THF);;ESRI Personal GeoDatabase (*.mdb *.MDB);;ESRI Shapefiles (*.shp *.shz *.shp.zip *.SHP *.SHZ *.SHP.ZIP);;ESRIJSON (*.json *.JSON);;FlatGeobuf (*.fgb *.FGB);;GMT ASCII Vectors (.gmt) (*.gmt *.GMT);;GPS eXchange Format [GPX] (*.gpx *.GPX);;GPSBabel (*.mps *.gdb *.osm *.tcx *.igc *.MPS *.GDB *.OSM *.TCX *.IGC);;GeoJSON (*.geojson *.GEOJSON);;GeoJSON Newline Delimited JSON (*.geojsonl *.geojsons *.nlgeojson *.json *.GEOJSONL *.GEOJSONS *.NLGEOJSON *.JSON);;GeoPackage (*.gpkg *.GPKG);;GeoRSS (*.xml *.XML);;Geoconcept (*.gxt *.txt *.GXT *.TXT);;Geography Markup Language [GML] (*.gml *.GML);;Geospatial PDF (*.pdf *.PDF);;INTERLIS 1 (*.itf *.xml *.ili *.ITF *.XML *.ILI);;INTERLIS 2 (*.xtf *.xml *.ili *.XTF *.XML *.ILI);;Idrisi Vector (.vct) (*.vct *.VCT);;Kadaster LV BAG Extract 2.0 (*.xml *.XML);;Keyhole Markup Language [KML] (*.kml *.kmz *.KML *.KMZ);;MBTiles (*.mbtiles *.MBTILES);;MS Excel format (*.xls *.XLS);;MS Office Open XML spreadsheet (*.xlsx *.XLSX);;Mapbox Vector Tiles (*.mvt *.mvt.gz *.pbf *.MVT *.MVT.GZ *.PBF);;Mapinfo File (*.mif *.tab *.MIF *.TAB);;Microstation DGN (*.dgn *.DGN);;NAS - ALKIS (*.xml *.XML);;Network Common Data Format (*.nc *.NC);;Open Document Spreadsheet (*.ods *.ODS);;OpenJUMP JML (*.jml *.JML);;OpenStreetMap (*.osm *.pbf *.OSM *.PBF);;PCI Geomatics Database File (*.pix *.PIX);;Planetary Data Systems TABLE (*.xml *.XML);;PostgreSQL SQL dump (*.sql *.SQL);;S-57 Base file (*.000 *.000);;SQLite/SpatiaLite (*.sqlite *.db *.sqlite3 *.db3 *.s3db *.sl3 *.SQLITE *.DB *.SQLITE3 *.DB3 *.S3DB *.SL3);;Scalable Vector Graphics (*.svg *.SVG);;Storage and eXchange Format (*.sxf *.SXF);;Systematic Organization of Spatial Information [SOSI] (*.sos *.SOS);;TopoJSON (*.json *.topojson *.JSON *.TOPOJSON);;VDV-451/VDV-452/INTREST Data Format (*.txt *.x10 *.TXT *.X10);;VRT - Virtual Datasource (*.vrt *.ovf *.VRT *.OVF);;WAsP (*.map *.MAP)";
+            string filtr = "";
+            if (isRaster(ft)) {
+                filtr = "esri_browseDialogFilters_rasters";
+            } else {
+                if (ft == FileTypes._OUTLETS || ft == FileTypes._OUTLETSHUC) {
+                    filtr = "esri_browseDialogFilters_featureClasses_point";
+                } else if (ft == FileTypes._STREAMS || ft == FileTypes._REACHES || ft == FileTypes._BURN ||
+                     ft == FileTypes._GRIDSTREAMS) {
+                    filtr = "esri_browseDialogFilters_featureClasses_line";
+                } else if (ft == FileTypes._SUBBASINS || ft == FileTypes._EXISTINGSUBBASINS ||
+                        ft == FileTypes._WATERSHED || ft == FileTypes._EXISTINGWATERSHED || ft == FileTypes._GRID) {
+                    filtr = "esri_browseDialogFilters_featureClasses_polygon";
+                }
             }
-            return "";
+            return filtr;
         }
 
 
@@ -2194,6 +2233,7 @@ namespace ArcSWAT3
             CIMSymbolReference inletRef = null;
             CIMSymbolReference ptsourceRef = null;
             return QueuedTask.Run(() => {
+                var styles = gv.arcSWAT3Style.SearchSymbols(StyleItemType.PointSymbol, "Outlet");
                 var outlet = gv.arcSWAT3Style.SearchSymbols(StyleItemType.PointSymbol, "Outlet")[0].Symbol as CIMPointSymbol;
                 var reservoir = gv.arcSWAT3Style.SearchSymbols(StyleItemType.PointSymbol, "Reservoir")[0].Symbol as CIMPointSymbol;
                 var pond = gv.arcSWAT3Style.SearchSymbols(StyleItemType.PointSymbol, "Pond")[0].Symbol as CIMPointSymbol;
@@ -2325,10 +2365,12 @@ namespace ArcSWAT3
                     var colours = ColorFactory.Instance.GenerateColorsFromColorRamp(ramp, total_colours);
                     foreach (int i in Enumerable.Range(0, total_colours)) {
                         classes[i].Color = colours[i];
-                        if (gv.db.landuseCodes.Count > 0) {
-                            var value = Convert.ToInt32(classes[i].Values[0]);
-                            classes[i].Label = gv.db.landuseCodes[value];
+                        var value = Convert.ToInt32(classes[i].Values[0]);
+                        string label;
+                        if (!gv.db.landuseCodes.TryGetValue(value, out label)) {
+                            label = value.ToString();  // may be outside area of watershed.  Otherwise error will be reported elsewhere
                         }
+                        classes[i].Label = label;
                     }
                     grps[0].Classes = classes;
                     colorizer.Groups = grps;
@@ -2370,10 +2412,12 @@ namespace ArcSWAT3
                     var colours = ColorFactory.Instance.GenerateColorsFromColorRamp(ramp, total_colours);
                     foreach (int i in Enumerable.Range(0, total_colours)) {
                         classes[i].Color = colours[i];
-                        if (gv.db.soilNames.Count > 0) {
-                            var value = Convert.ToInt32(classes[i].Values[0]);
-                            classes[i].Label = gv.db.soilNames[value];
+                        var value = Convert.ToInt32(classes[i].Values[0]);
+                        string label;
+                        if (!gv.db.soilNames.TryGetValue(value, out label)) {
+                            label = value.ToString();  // may be outside area of watershed.  Otherwise error will be reported elsewhere
                         }
+                        classes[i].Label = label;
                     }
                     grps[0].Classes = classes;
                     colorizer.Groups = grps;
@@ -2399,27 +2443,27 @@ namespace ArcSWAT3
                 var raster = layer.GetRaster();
                 if (raster is null) { return; }
                 var ramp = await SWATRamp("Grays");
-                var defn = new UniqueValueColorizerDefinition("Value", ramp);
+                var count = gv.db.slopeLimits.Count + 1;
+                var defn = new ClassifyColorizerDefinition("Value", count, ClassificationMethod.Manual, ramp);
                 bool ok1 = layer.CanCreateColorizer(defn);
                 if (!ok1) {
                     Utils.loginfo("Cannot create colorizer for slopes");
                     return;
                 }
                 try {
-                    var colorizer = await layer.CreateColorizerAsync(defn) as CIMRasterUniqueValueColorizer;
-                    // should only be one group
-                    // get the number of colours needed
-                    var grps = colorizer.Groups;
-                    var classes = grps[0].Classes;
-                    var total_colours = classes.Length;
-                    var colours = ColorFactory.Instance.GenerateColorsFromColorRamp(ramp, total_colours);
-                    foreach (int i in Enumerable.Range(0, total_colours)) {
-                        classes[i].Color = colours[i];
-                        var value = Convert.ToInt32(classes[i].Values[0]);
-                        classes[i].Label = gv.db.slopeRange(value);
+                    var colorizer = await layer.CreateColorizerAsync(defn) as CIMRasterClassifyColorizer;
+                    var colours = ColorFactory.Instance.GenerateColorsFromColorRamp(ramp, 3);
+                    CIMRasterClassBreak[] breaks = new CIMRasterClassBreak[3];
+                    (double, double)[] bounds = new (double, double)[3];
+                    foreach (int i in Enumerable.Range(0, 3)) {
+                        breaks[i] = new CIMRasterClassBreak();
+                        breaks[i].Color = colours[i];
+                        bounds[i].Item1 = i == 0 ? 0 : gv.db.slopeLimits[i - 1];
+                        bounds[i].Item2 = i == 2 ? 9999 : gv.db.slopeLimits[i];
+                        breaks[i].Label = gv.db.slopeRange(i); // string.Format("{0:F1} - {1:F1}", bounds[i].Item1, bounds[i].Item2);
+                        breaks[i].UpperBound = i == 2 ? 9999 : gv.db.slopeLimits[i];
                     }
-                    grps[0].Classes = classes;
-                    colorizer.Groups = grps;
+                    colorizer.ClassBreaks = breaks;
                     bool ok2 = layer.CanSetColorizer(colorizer);
                     if (!ok2) {
                         Utils.loginfo("Cannot set colorizer for slopes");
@@ -2434,26 +2478,9 @@ namespace ArcSWAT3
                     return;
                 }
             });
-            //    var db = gv.db;
-            //    var shader = QgsRasterShader();
-            //    var items = new List<object>();
-            //    var numItems = db.slopeLimits.Count + 1;
-            //    foreach (var n in Enumerable.Range(0, numItems)) {
-            //        var colour = Convert.ToInt32(5 + float(245) * (numItems - 1 - n) / (numItems - 1));
-            //        var item = QgsColorRampShader.ColorRampItem(n, QColor(colour, colour, colour), db.slopeRange(n));
-            //        items.append(item);
-            //    }
-            //    var fcn = QgsColorRampShader();
-            //    fcn.setColorRampType(QgsColorRampShader.Discrete);
-            //    fcn.setColorRampItemList(items);
-            //    shader.setRasterShaderFunction(fcn);
-            //    var renderer = QgsSingleBandPseudoColorRenderer(layer.dataProvider(), 1, shader);
-            //    layer.setRenderer(renderer);
-            //    layer.triggerRepaint();
-            //}
         }
 
-        public async static void ApplySymbolToFeatureLayerAsync(FeatureLayer featureLayer, int ft, GlobalVars gv) {
+        public async static Task ApplySymbolToFeatureLayerAsync(FeatureLayer featureLayer, int ft, GlobalVars gv) {
             if (ft == FileTypes._OUTLETS) {
                 await colourPoints(featureLayer, gv);
                 return;

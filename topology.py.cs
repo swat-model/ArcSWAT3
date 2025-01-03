@@ -859,6 +859,13 @@ namespace ArcSWAT3 {
                     }
                 }
             }
+            // now recolour wshed shapefile using subbasin value to distinguish upstream subbasins
+            var arcWshedLayer = (await Utils.getLayerByFilename(wshedFile, FileTypes._WATERSHED, gv, null, null)).Item1 as FeatureLayer;
+            await FileTypes.colourWatershed(arcWshedLayer, gv);
+            await QueuedTask.Run(() => {
+                arcWshedLayer.SetLabelVisibility(true);
+                arcWshedLayer.SetExpanded(true);
+            });
             return true;
         }
         

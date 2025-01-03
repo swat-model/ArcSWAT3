@@ -1,6 +1,5 @@
 import arcpy
 arcpy.env.overwriteOutput = True
-arcpy.env.workspace = "c:/data"
 from arcpy.sa import *
 import os
 
@@ -12,7 +11,7 @@ reduction = arcpy.GetParameterAsText(4)
 
 arcpy.env.extent = in_raster
 
-temp_ras = os.path.join(arcpy.env.workspace, "temp.tif")
+temp_ras = os.path.join(arcpy.env.scratchFolder, "temp.tif")
 arcpy.conversion.FeatureToRaster(in_stream, "FID", temp_ras, int(cell_size))
 out_ras = Con(IsNull(Raster("{0}".format(temp_ras))), Raster("{0}".format(in_raster)), Raster("{0}".format(in_raster)) - int(reduction))
 out_ras.save(out_raster)

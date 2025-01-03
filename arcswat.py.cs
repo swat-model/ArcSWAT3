@@ -29,11 +29,17 @@ using ArcGIS.Desktop.Core.Geoprocessing;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography.X509Certificates;
 using System.Windows.Shapes;
+using ArcGIS.Desktop.Framework.AddIns;
 using ArcGIS.Desktop.Internal.Framework;
+using System.Runtime.InteropServices;
+using System.Data.Entity.Core.Mapping;
+using System.IO.Compression;
+using System.Xml;
+
+
 
 namespace ArcSWAT3
 {
-
 
     // ArcGIS Pro plugin to prepare geographic data for SWAT Editor.
     public class ArcSWAT
@@ -59,7 +65,7 @@ namespace ArcSWAT3
 
         public string _SWATEDITORVERSION = Parameters._SWATEDITORVERSION;
 
-        public static string @__version__ = "1.0.0";
+        public static string @__version__ = getVersion();
 
         public ArcSWAT() {
             //object locale;
@@ -152,6 +158,33 @@ namespace ArcSWAT3
         //     except Exception:
         //         pass
         // Run ArcSWAT.
+
+        private static string getVersion() {
+            // this does not work: GetAddInInfos has no definition
+            //var addInInfo = FrameworkApplication.GetAddInInfos().First(addIn => addIn.Name == "ArcSWAT3");
+            //return addInInfo.Version.ToString();
+
+            // this always return 1.0.0.0
+            //var assembly = System.Reflection.Assembly.GetExecutingAssembly();
+            //var assemblyName = assembly.GetName();
+            //return assemblyName.Version.ToString();
+
+            // get version from config.daml.  Note this depends on daml being included in build (eg copy if newer)
+            string version = "";
+            XmlDocument xDoc = new XmlDocument();
+            var assembly = System.Reflection.Assembly.GetExecutingAssembly();
+            string configDamlPath = Path.Combine(Path.GetDirectoryName(assembly.Location), "Config.daml");
+            using (StreamReader streamReader = new StreamReader(configDamlPath)) {
+                var daml = streamReader.ReadToEnd();
+                xDoc.LoadXml(daml); // @"<?xml version=""1.0"" encoding=""utf - 8""?>" + 
+            }
+            XmlNodeList items = xDoc.GetElementsByTagName("AddInInfo");
+            foreach (XmlNode xItem in items) {
+                version = xItem.Attributes["version"].Value;
+            }
+            return version;
+        }
+
         public async Task run() {
 
             // make sure we clear data from previous runs

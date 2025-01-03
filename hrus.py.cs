@@ -2792,7 +2792,7 @@ namespace ArcSWAT3 {
                 if (group is not null) {
                     var baseName = Path.ChangeExtension(Path.GetFileName(this._gv.fullHRUsFile), null);
                     var mapLayer = await QueuedTask.Run(() => LayerFactory.Instance.CreateLayer(new Uri(this._gv.fullHRUsFile), group, index, String.Format("{0} ({1})", legend, baseName)));
-                    FileTypes.ApplySymbolToFeatureLayerAsync((FeatureLayer)mapLayer, ft, this._gv);
+                    await FileTypes.ApplySymbolToFeatureLayerAsync((FeatureLayer)mapLayer, ft, this._gv);
                     await Utils.setMapTip((FeatureLayer)mapLayer, ft);
                 }
                 return true;
@@ -4538,7 +4538,7 @@ namespace ArcSWAT3 {
                         //if (!OK) {
                         //    Utils.error("Cannot commit changes to FullHRUs shapefile", this._gv.isBatch);
                         //}
-                        await this.writeActHRUs(fullHRUsLayer, hrugisIndx);
+                        await this.writeActHRUs(hrugisIndx);
                     }
                 }
 
@@ -5026,7 +5026,7 @@ namespace ArcSWAT3 {
 
 
         // Create and load the actual HRUs file.
-        public async Task writeActHRUs(OSGeo.OGR.Layer fullHRUsLayer, int hrugisIndx) {
+        public async Task writeActHRUs(int hrugisIndx) {
             var actHRUsBasename = "hru2";
             var actHRUsFilename = actHRUsBasename + ".shp";
             Utils.copyShapefile(this._gv.fullHRUsFile, actHRUsBasename, this._gv.shapesDir);
@@ -5039,7 +5039,7 @@ namespace ArcSWAT3 {
                 var ft = FileTypes._HRUS;
                 if (group is not null) {
                     var mapLayer = await QueuedTask.Run(() => LayerFactory.Instance.CreateLayer(new Uri(actHRUsFile), group, index, String.Format("{0} ({1})", legend, actHRUsBasename)));
-                    FileTypes.ApplySymbolToFeatureLayerAsync((FeatureLayer)mapLayer, ft, this._gv);
+                    await FileTypes.ApplySymbolToFeatureLayerAsync((FeatureLayer)mapLayer, ft, this._gv);
                     await Utils.setMapTip((FeatureLayer)mapLayer, ft);
                 }
                 // remove visibility from FullHRUs layer

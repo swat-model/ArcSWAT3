@@ -1,7 +1,6 @@
 
 import arcpy
 arcpy.env.overwriteOutput = True
-# arcpy.env.workspace = "C:/data"
 
 out_dir = arcpy.GetParameterAsText(0)
 out_name  = arcpy.GetParameterAsText(1)

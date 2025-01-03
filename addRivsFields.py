@@ -1,6 +1,5 @@
 import arcpy
 arcpy.env.overwriteOutput = True
-arcpy.env.workspace = "c:/data"
 
 in_file = arcpy.GetParameterAsText(0)
 

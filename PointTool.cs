@@ -39,9 +39,9 @@ namespace ArcSWAT3
             // Select the type of construction tool you wish to implement.  
             // Make sure that the tool is correctly registered with the correct component category type in the daml 
             SketchType = SketchGeometryType.Point;
-            SketchOutputMode = SketchOutputMode.Map;
+            SketchOutputMode = SketchOutputMode.Screen;
             FireSketchEvents = true;
-            ControlID = "ArcSWAT3_SelectPoint";
+            ControlID = "ArcSWAT3_PointTool";
             //var systemCursor = System.Windows.Input.Cursors.Arrow;
             //Cursor = systemCursor;
         }

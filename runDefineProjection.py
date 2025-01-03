@@ -1,6 +1,5 @@
 import arcpy
 arcpy.env.overwriteOutput = True
-# arcpy.env.workspace = "C:/data"
 
 out_file = arcpy.GetParameterAsText(0)
 prj_file  = arcpy.GetParameterAsText(1)

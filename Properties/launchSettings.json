@@ -2,7 +2,7 @@
   "profiles": {
     "ArcSWAT3": {
       "commandName": "Executable",
-      "executablePath": "C:\\Users\\Chris\\AppData\\Local\\Programs\\ArcGIS\\Pro\\bin\\ArcGISPro.exe"
+      "executablePath": "C:\\Program Files\\ArcGIS\\Pro\\bin\\ArcGISPro.exe"
     }
   }
 }

@@ -1,6 +1,5 @@
 import arcpy
 arcpy.env.overwriteOutput = True
-arcpy.env.workspace = "c:/data"
 
 gdb_dir = arcpy.GetParameterAsText(0)
 gdb_name = arcpy.GetParameterAsText(1)

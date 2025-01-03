@@ -920,6 +920,7 @@
             this.tableWidget.RowTemplate.Height = 25;
             this.tableWidget.Size = new System.Drawing.Size(350, 191);
             this.tableWidget.TabIndex = 16;
+            this.tableWidget.CurrentCellChanged += new System.EventHandler(this.tableWidget_CurrentCellChanged);
             // 
             // plotButton
             // 

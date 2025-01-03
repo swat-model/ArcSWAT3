@@ -1,6 +1,5 @@
 import arcpy
 arcpy.env.overwriteOutput = True
-arcpy.env.workspace = "C:/data"
 import os
 
 dem_raster = arcpy.GetParameterAsText(0)

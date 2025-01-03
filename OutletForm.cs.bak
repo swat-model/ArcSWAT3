@@ -138,12 +138,7 @@ namespace ArcSWAT3
                             rowBuffer[this.resIndex] = this.reservoirButton.Checked ? 1 : this.pondButton.Checked ? 2 : 0;
                             rowBuffer[this.inletIndex] = (this.inletButton.Checked || this.ptsourceButton.Checked) ? 1 : 0;
                             rowBuffer[this.ptsourceIndex] = this.ptsourceButton.Checked ? 1 : 0;
-                            //var transformFromLatLong = ProjectionTransformation.Create(this._parent._gv.topo.crsLatLong, this._parent._gv.crsProject, this._parent._gv.topo.demExtent);
-                            var pt = MapView.Active.ClientToMap(new System.Windows.Point(geom.X, geom.Y));
-                            //var geomNoZ = MapPointBuilderEx.CreateMapPoint(geom.X, geom.Y);
-                            //MapPoint f_geom = GeometryEngine.Instance.Project(geomNoZ, this._parent._gv.crsProject) as MapPoint;
-                            MapPoint f_geom_pt = GeometryEngine.Instance.Project(pt, this._parent._gv.topo.crsProject) as MapPoint;
-                            rowBuffer[def.GetShapeField()] = f_geom_pt;
+                            rowBuffer[def.GetShapeField()] = new MapPointBuilderEx(geom.X, geom.Y).ToGeometry();
                             using (ArcGIS.Core.Data.Feature feature = this.fc.CreateRow(rowBuffer)) {
                                 //To indicate that the attribute table has to be updated
                                 context.Invalidate(feature);

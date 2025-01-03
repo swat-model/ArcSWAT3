@@ -35,6 +35,7 @@ using System.DirectoryServices.ActiveDirectory;
 using ArcGIS.Desktop.Layouts;
 using System.Windows.Media.Animation;
 using Microsoft.Extensions.FileSystemGlobbing;
+using System.Data.SQLite;
 
 namespace ArcSWAT3 {
 
@@ -498,15 +499,16 @@ namespace ArcSWAT3 {
             animationGroup.PropertyChanged += new PropertyChangedEventHandler(changeAnimation);
             var resultsGroup = Utils.getGroupLayerByName(Utils._RESULTS_GROUP_NAME);
             Debug.Assert(resultsGroup is not null);
-            // make sure results group is expanded
+            // make sure results group is expanded and visible
             await QueuedTask.Run(() => {
                 resultsGroup.SetExpanded(true);
+                resultsGroup.SetVisibility(true);
             });
             resultsGroup.PropertyChanged += new PropertyChangedEventHandler(setResults);
             // in case restart with existing animation layers
-            this.setAnimateLayer();
+            await this.setAnimateLayer();
             // in case restart with existing results layers
-            this.setResultsLayer();
+            await this.setResultsLayer();
         }
 
         // Do visualisation.
@@ -2616,7 +2618,7 @@ namespace ArcSWAT3 {
         //         
         //         Get date from slider value; read animation data for date; write to animation file; redisplay.
         //         
-        public virtual async void changeAnimate() {
+        public virtual async Task changeAnimate() {
             string @ref;
             int sub;
             List<FeatureLayer> animateLayers;
@@ -3543,7 +3545,7 @@ namespace ArcSWAT3 {
                 var sleep = this._dlg.PspinBox.Value;
                 this.changeSpeed(sleep);
                 this.resetSlider();
-                this.changeAnimate();
+                await this.changeAnimate();
             } finally {
                 //this._dlg.calculateLabel.Text = "");
                 Cursor.Current = Cursors.Default;
@@ -3958,6 +3960,26 @@ namespace ArcSWAT3 {
             }
         }
 
+        // used when current tableWidget cell changes.
+        // If the cell is a variable cell (column index 4), set variables for observed 
+        // if current cell row is observed, else according to current table
+        public void setVariablesForRow() {
+            try {
+                if (this._dlg.PtableWidget.CurrentCell.ColumnIndex != 4) { return; }
+                var row = this._dlg.PtableWidget.CurrentCell.OwningRow;
+                var rowTable = (string)row.Cells[1].Value;
+                if (rowTable == "-") {  // observed row
+                    this.setObservedVars();
+                } else {
+                    this.setPlotVars(rowTable);
+                }
+            }
+            catch {
+                // allow to fail quietly
+                return;
+            }
+        }
+
         // Add a plot row and make it current.
         public virtual void doAddPlot() {
             var sub = this._dlg.PsubPlot.SelectedIndex < 0 ? "" : this._dlg.PsubPlot.SelectedItem.ToString();
@@ -4052,6 +4074,27 @@ namespace ArcSWAT3 {
                 }
             }
             this._dlg.PtableWidget.CurrentCell = this._dlg.PtableWidget.Rows[index + 1].Cells[0];
+        }
+
+        // set plot variables according to table parameter
+        public void setPlotVars(string table) {
+            this._dlg.PvariablePlot.Items.Clear();
+            //this._dlg.PvariablePlot.Items.Add("");
+            this._dlg.PvariablePlot.Text = "";
+            if (!string.IsNullOrEmpty(table)) {
+                var adp = new OleDbDataAdapter();
+                var cmd = new OleDbCommand(string.Format("SELECT * FROM {0} WHERE 1=2;", table), this.conn as OleDbConnection);
+                adp.SelectCommand = cmd;
+                var dset = new DataSet();
+                adp.Fill(dset, table);
+                var cols = dset.Tables[0].Columns;
+                for (int i = 0; i < cols.Count; i++) {
+                    var name = cols[i].ColumnName;
+                    if (!this.ignoredVars.Contains(name)) {
+                        this._dlg.PvariablePlot.Items.Add(name);
+                    }
+                }
+            }
         }
 
         // Add a row for an observed plot, and make it current.
@@ -4306,7 +4349,7 @@ namespace ArcSWAT3 {
             var animationLayers = Utils.getLayersInGroup(Utils._ANIMATION_GROUP_NAME, visible: true);
             if (animationLayers.Count == 0) {
                 this.animateLayer = null;
-                this.setResultsLayer();
+                await this.setResultsLayer();
                 return;
             }
             // expand the animation layer and hide the results group maps
@@ -4347,12 +4390,12 @@ namespace ArcSWAT3 {
             return;
         }
 
-        public void setResults(object sender, PropertyChangedEventArgs e) {
-            this.setResultsLayer();
+        public async void setResults(object sender, PropertyChangedEventArgs e) {
+            await this.setResultsLayer();
         }
         
         // Set self.currentResultsLayer to first visible layer in Results group, retitle as appropriate.
-        public async void setResultsLayer() {
+        public async Task setResultsLayer() {
             // only change results layer and title if there are no visible animate layers
             var animationLayers = Utils.getLayersInGroup(Utils._ANIMATION_GROUP_NAME, visible: true);
             if (animationLayers.Count > 0) {

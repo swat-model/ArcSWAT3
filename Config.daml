@@ -1,5 +1,9 @@
-﻿<ArcGIS defaultAssembly="ArcSWAT3.dll" defaultNamespace="ArcSWAT3" xmlns="http://schemas.esri.com/DADF/Registry" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://schemas.esri.com/DADF/Registry file:///C:/Users/Chris/AppData/Local/Programs/ArcGIS/Pro/bin/ArcGIS.Desktop.Framework.xsd">
-  <AddInInfo id="{c0ba4fb8-0911-4188-9dc2-b57230e6b969}" version="1.0" desktopVersion="3.0.36056">
+﻿<ArcGIS defaultAssembly="ArcSWAT3.dll" 
+		defaultNamespace="ArcSWAT3" 
+		xmlns="http://schemas.esri.com/DADF/Registry" 
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+		xsi:schemaLocation="http://schemas.esri.com/DADF/Registry file:///C:/Program%20Files/ArcGIS/Pro/bin/ArcGIS.Desktop.Framework.xsd">
+  <AddInInfo id="{c0ba4fb8-0911-4188-9dc2-b57230e6b969}" version="1.0.1" desktopVersion="3.0.36056">
     <Name>ArcSWAT3</Name>
     <Description>ArcSWAT3 description</Description>
     <Image>Install/Images/QSWAT32.png</Image>
@@ -11,7 +15,7 @@
                     Content, Framework, Editing, Geodatabase, Geometry, Geoprocessing, Layouts, Map Authoring, Map Exploration -->
   </AddInInfo>
   <modules>
-    <insertModule id="ArcSWAT3_Module" className="Module1" autoLoad="true" caption="Module1">
+    <insertModule id="ArcSWAT3_Module" className="Module1" autoLoad="false" caption="Module1">
       <!-- uncomment to have the control hosted on a separate tab-->
       <tabs>
         <tab id="ArcSWAT3_Tab1" caption="ArcSWAT" keytip="X">

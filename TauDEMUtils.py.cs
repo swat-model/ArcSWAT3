@@ -471,8 +471,14 @@ namespace ArcSWAT3 {
         public static void taudemHelp() {
             //var settings = QSettings();
             //var taudemHelpFile = Utils.join(Utils.join(settings.value("/QSWAT/SWATEditorDir"), Parameters._TAUDEMDIR), Parameters._TAUDEMHELP);
-            var taudemHelpFile = Utils.join(Parameters._TAUDEMDIR, Parameters._TAUDEMHELP);
-            System.Diagnostics.Process.Start(taudemHelpFile);
+            var taudemHelpFile = Utils.join(Parameters._SWATEDITORDEFAULTDIR, Utils.join(Parameters._TAUDEMDIR, Parameters._TAUDEMHELP));
+            Process p = new()
+            {
+                StartInfo = new ProcessStartInfo(taudemHelpFile)
+                { UseShellExecute = true }
+            };
+            p.Start();
+            //System.Diagnostics.Process.Start(taudemHelpFile);
         }
         
         // Report error, just printing if no QGIS running.

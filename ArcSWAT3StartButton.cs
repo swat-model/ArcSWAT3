@@ -26,7 +26,7 @@ namespace ArcSWAT3
     {
         protected async override void OnClick()
         {
-            //try
+            try
             {
                 // Inform user that add-in is about to call Python script.
                 // ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show("Click OK to start script, and wait for completion messagebox.", "Info");
@@ -71,12 +71,11 @@ namespace ArcSWAT3
                 ////ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show(result, "Info");
             }
 
-            //catch (Exception exc)
-            //{
-            //    // Catch any exception found and display in a message box
-            //    ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show("Exception caught while trying to run ArcSWAT: " + exc.Message);
-            //    return;
-            //}
+            catch (Exception exc) {
+                // Catch any exception found and display in a message box
+                ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show("Exception caught while trying to run ArcSWAT: " + exc.Message);
+                return;
+            }
         }
     }
 }
