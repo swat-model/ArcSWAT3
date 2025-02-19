@@ -156,6 +156,8 @@ namespace ArcSWAT3
 
             public static string _FEET = "feet";
 
+            public static string _FEET_US = "feet_us";
+
             public static string _CM = "centimetres";
 
             public static string _MM = "millimetres";

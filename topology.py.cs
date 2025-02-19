@@ -373,15 +373,16 @@ namespace ArcSWAT3 {
                 Utils.loginfo(String.Format("Failure to read DEM unit: {0}", ex.Message));
                 return false;
             }
-            if (unit.Name == "Meter") {
-                factor = 1;
-            } else if (unit.Name == "Foot") {
-                factor = 0.3048;
-            } else {
-                // unknown or degrees - will be reported in delineation - just quietly fail here
-                Utils.loginfo(String.Format("Failure to read DEM unit: {0}", unit.ToString()));
-                return false;
-            }
+            factor = unit.ConversionFactor;
+            //if (unit.Name == "Meter") {
+            //    factor = 1;
+            //} else if ((unit.Name == "Foot") || (unit.Name == "Foot_US")) {
+            //    factor = 0.3048;
+            //} else {
+            //    // unknown or degrees - will be reported in delineation - just quietly fail here
+            //    Utils.loginfo(String.Format("Failure to read DEM unit: {0}", unit.ToString()));
+            //    return false;
+            //}
             var XYSizes = await QueuedTask.Run<Tuple<double, double>>(() => {
                 return demLayer.GetRaster().GetMeanCellSize();
             });

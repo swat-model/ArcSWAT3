@@ -16,5 +16,5 @@ with arcpy.EnvManager(workspace=out_dir):
         r"Raster {0}; 'Input Features' {1}; Field {2}; 'Resolve Overlap Method' First".format(dem_raster, in_shp, field))
 
 # The following message will be included in the message box from the calling button's OnClick routine
-print("Creation of {0} complete.", out_raster)
+print("Creation of {0} complete.".format(out_raster))
 

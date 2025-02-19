@@ -19,5 +19,5 @@ with arcpy.EnvManager(workspace=out_dir):
                               "DISSOLVE_LINES")
 
 # The following message will be included in the message box from the calling button's OnClick routine
-print("Creation of {0} complete.", out_shp)
+print("Creation of {0} complete.".format(out_shp))
 

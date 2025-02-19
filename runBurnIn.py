@@ -17,4 +17,4 @@ out_ras = Con(IsNull(Raster("{0}".format(temp_ras))), Raster("{0}".format(in_ras
 out_ras.save(out_raster)
 
 # The following message will be included in the message box from the calling button's OnClick routine
-print("Burn in of {0} to {1} making {2} complete.", in_stream, in_raster, out_raster)
+print("Burn in of {0} to {1} making {2} complete.".format(in_stream, in_raster, out_raster))

@@ -59,6 +59,7 @@ using Microsoft.VisualBasic.Logging;
 using ArcGIS.Desktop.Internal.Catalog.PropertyPages.ParcelDataset;
 using ArcGIS.Core.Data.UtilityNetwork.Trace;
 using System.Runtime.InteropServices;
+using System.Linq.Expressions;
 
 namespace ArcSWAT3
 {
@@ -76,9 +77,9 @@ namespace ArcSWAT3
 
         public static string _WATERSHED_GROUP_NAME = "Watershed";
 
-        public static string _RESULTS_GROUP_NAME = "Results";
+        //public static string _RESULTS_GROUP_NAME = "Results";
 
-        public static string _ANIMATION_GROUP_NAME = "Animations";
+        //public static string _ANIMATION_GROUP_NAME = "Animations";
 
         public static string _DEMLEGEND = "DEM";
 
@@ -99,6 +100,8 @@ namespace ArcSWAT3
         public static string _REACHESLEGEND = "Reaches";
 
         public static string _WATERSHEDLEGEND = "Watershed";
+
+        public static string _SUBBASINSLEGEND = "Subbasins";
 
         public static string _GRIDLEGEND = "Watershed grid";
 
@@ -423,13 +426,13 @@ namespace ArcSWAT3
 
         // Remove any MapView layers for fileName.
         public static async Task removeLayer(string fileName) {
-            var layers = MapView.Active.Map.GetLayersAsFlattenedList().Where(l => l is FeatureLayer || l is RasterLayer).ToList();
+            var layers = ArcSWAT.mainMap.GetLayersAsFlattenedList().Where(l => l is FeatureLayer || l is RasterLayer).ToList();
             for (int i = 0; i < layers.Count; i++) {
                 Layer layer = layers[i];
                 var path = await Utils.layerFilename(layer);
                 if (Utils.samePath(fileName, path)) {
                     await QueuedTask.Run(() => {
-                        MapView.Active.Map.RemoveLayer(layer);
+                        ArcSWAT.mainMap.RemoveLayer(layer);
                     });
                     if (Utils.hasLayer(layer)) {
                         Utils.error(string.Format("failed to remove layer for {0}", fileName), false);
@@ -440,7 +443,7 @@ namespace ArcSWAT3
         }
 
         public static bool hasLayer(Layer layer) {
-            return MapView.Active.Map.GetLayersAsFlattenedList().Where(l => l is FeatureLayer || l is RasterLayer).Contains(layer);
+            return ArcSWAT.mainMap.GetLayersAsFlattenedList().Where(l => l is FeatureLayer || l is RasterLayer).Contains(layer);
         }
 
 
@@ -451,11 +454,11 @@ namespace ArcSWAT3
             if (legend == "") {
                 return;
             }
-            var layers = MapView.Active.Map.GetLayersAsFlattenedList().Where(l => l is FeatureLayer || l is RasterLayer);
+            var layers = ArcSWAT.mainMap.GetLayersAsFlattenedList().Where(l => l is FeatureLayer || l is RasterLayer);
             foreach (var layer in layers) {
                 if (layer.Name.StartsWith(legend)) {
                     await QueuedTask.Run(() => {
-                        MapView.Active.Map.RemoveLayer(layer);
+                        ArcSWAT.mainMap.RemoveLayer(layer);
                     });
                     if (Utils.hasLayer(layer))
                         Utils.error(string.Format("failed to remove layer for legend {0}", legend), false);
@@ -492,7 +495,7 @@ namespace ArcSWAT3
         // Find a non-group layer if any whose legend name starts with the legend.
 
         public static Layer getLayerByLegend(string legend) {
-            List<Layer> layers = MapView.Active.Map.GetLayersAsFlattenedList().Where(layer => layer.Name.StartsWith(legend)).ToList();
+            List<Layer> layers = ArcSWAT.mainMap.GetLayersAsFlattenedList().Where(layer => layer.Name.StartsWith(legend)).ToList();
             if (layers.Count > 0) {
                 foreach (Layer layer in layers) {
                     if (layer is GroupLayer) { continue; }  //beware of Watershed layer and Watershed group layer
@@ -507,7 +510,7 @@ namespace ArcSWAT3
 
         public static GroupLayer getGroupLayerByName(string name) {
             var groupLayers =
-                MapView.Active.Map.Layers.OfType<GroupLayer>().Where(layer => string.Equals(layer.Name, name)).ToList();
+                ArcSWAT.mainMap.Layers.OfType<GroupLayer>().Where(layer => string.Equals(layer.Name, name)).ToList();
             if (groupLayers.Count > 0) {
                 return groupLayers[0];
             }
@@ -518,7 +521,7 @@ namespace ArcSWAT3
 
         public static List<Layer> getLayersInGroup(string group, bool visible = false) {
             var groupLayer =
-                MapView.Active.Map.Layers.OfType<GroupLayer>().FirstOrDefault(layer => string.Equals(layer.Name, group));
+                ArcSWAT.mainMap.Layers.OfType<GroupLayer>().FirstOrDefault(layer => string.Equals(layer.Name, group));
             var result = new List<Layer>();
             if (groupLayer is null) {
                 return result;
@@ -536,7 +539,7 @@ namespace ArcSWAT3
 
         public static int countLayersInGroup(string group) {
             var groupLayer =
-                MapView.Active.Map.Layers.OfType<GroupLayer>().FirstOrDefault(layer => string.Equals(layer.Name, group));
+                ArcSWAT.mainMap.Layers.OfType<GroupLayer>().FirstOrDefault(layer => string.Equals(layer.Name, group));
             if (groupLayer is null) {
                 return 0;
             } else {
@@ -544,13 +547,15 @@ namespace ArcSWAT3
             }
         }
 
-        public static async Task clearAnimationGroup() {
-            // remove animation layers
-            await QueuedTask.Run(() => {
-                foreach (var animation in Utils.getLayersInGroup(Utils._ANIMATION_GROUP_NAME)) {
-                    MapView.Active.Map.RemoveLayer(animation);
+        public static async Task clearAnimationMaps() {
+            // remove animation maps
+            var mapItems = Project.Current.GetItems<MapProjectItem>();
+            foreach (var mapItem in mapItems) {
+                if (mapItem.Name.StartsWith("Animate ")) {
+                    await QueuedTask.Run(
+                        () => Project.Current.RemoveItem(mapItem));
                 }
-            });
+            }
         }
 
         //        // Find layer by id, and raise exception if not found.
@@ -836,7 +841,7 @@ namespace ArcSWAT3
             string layerFile;
             // make sure any layer changes have completed by clearing the MCT task queue
             await QueuedTask.Run(() => {; });
-            foreach (var layer in MapView.Active.Map.GetLayersAsFlattenedList().Where (l => (l is RasterLayer) || (l is FeatureLayer)))
+            foreach (var layer in ArcSWAT.mainMap.GetLayersAsFlattenedList().Where (l => (l is RasterLayer) || (l is FeatureLayer)))
             {
                 layerFile = await Utils.layerFilename(layer);
                 if (Utils.samePath(layerFile, fileName))
@@ -882,7 +887,7 @@ namespace ArcSWAT3
                 // multiple layers not allowed
                 await Utils.removeLayerByLegend(legend);
                 var groupLayer =
-                    MapView.Active.Map.Layers.OfType<GroupLayer>().FirstOrDefault(layer => string.Equals(layer.Name, groupName));
+                    ArcSWAT.mainMap.Layers.OfType<GroupLayer>().FirstOrDefault(layer => string.Equals(layer.Name, groupName));
                 if (groupLayer is null)
                 {
                     Utils.information(String.Format("Internal error: cannot find group {0}.", groupName), false /* gv.isBatch */);
@@ -1007,7 +1012,7 @@ namespace ArcSWAT3
             {
                 return index;
             }
-            foreach (var layer2 in MapView.Active.Map.Layers.OfType<GroupLayer>())
+            foreach (var layer2 in ArcSWAT.mainMap.Layers.OfType<GroupLayer>())
             {
                 if (layer2 == layer)
                 {
@@ -1974,7 +1979,7 @@ namespace ArcSWAT3
             } else if (ft == FileTypes._STREAMS) {
                 return "Streams";
             } else if (ft == FileTypes._SUBBASINS || ft == FileTypes._EXISTINGSUBBASINS) {
-                return "Subbasins";
+                return Utils._SUBBASINSLEGEND;
             } else if (ft == FileTypes._LANDUSES) {
                 return "Landuses";
             } else if (ft == FileTypes._SOILS) {

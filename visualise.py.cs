@@ -20,6 +20,7 @@ using ArcGIS.Desktop.Mapping;
 using Layer = ArcGIS.Desktop.Mapping.Layer;
 using OSGeo.GDAL;
 using OSGeo.OGR;
+using FieldType = OSGeo.OGR.FieldType;
 using System.Data.Entity;
 using System.Security.Cryptography;
 using System.Windows.Documents;
@@ -36,6 +37,16 @@ using ArcGIS.Desktop.Layouts;
 using System.Windows.Media.Animation;
 using Microsoft.Extensions.FileSystemGlobbing;
 using System.Data.SQLite;
+using ArcGIS.Core.Data;
+using ArcGIS.Core.Data.Mapping;
+using ArcGIS.Core.Geometry;
+using ArcGIS.Desktop.Internal.Catalog;
+using System.Windows.Controls;
+using System.Windows.Forms.VisualStyles;
+using ArcGIS.Desktop.Internal.Mapping.CommonControls;
+using ImageMagick;
+using ArcGIS.Desktop.Internal.Mapping.Locate;
+using ArcGIS.Desktop.Internal.Mapping;
 
 namespace ArcSWAT3 {
 
@@ -57,6 +68,8 @@ namespace ArcSWAT3 {
         public Dictionary<string, string> animateVars;
 
         public FeatureLayer animateLayer;
+
+        public Map animateMap;
 
         public Timer animateTimer;
 
@@ -125,6 +138,8 @@ namespace ArcSWAT3 {
         public bool keepSubColours;
 
         public string mapTitle;
+
+        public string projGdb;
 
         public int numSubbasins;
 
@@ -295,6 +310,8 @@ namespace ArcSWAT3 {
             this.periodYears = 0.0;
             //# map canvas title
             this.mapTitle = null;
+            // project geodatabase
+            this.projGdb = Path.Combine(gv.projDir, gv.projName + ".gdb");
             //# flag to decide if we need to create a new results file:
             // changes to summary method or result variable don't need a new file
             this.resultsFileUpToDate = false;
@@ -494,21 +511,21 @@ namespace ArcSWAT3 {
                 this.observedFileName = observedFile;
                 this._dlg.PobservedFileEdit.Text = observedFileName;
             }
-            var animationGroup = Utils.getGroupLayerByName(Utils._ANIMATION_GROUP_NAME);
-            Debug.Assert(animationGroup is not null);
-            animationGroup.PropertyChanged += new PropertyChangedEventHandler(changeAnimation);
-            var resultsGroup = Utils.getGroupLayerByName(Utils._RESULTS_GROUP_NAME);
-            Debug.Assert(resultsGroup is not null);
-            // make sure results group is expanded and visible
-            await QueuedTask.Run(() => {
-                resultsGroup.SetExpanded(true);
-                resultsGroup.SetVisibility(true);
-            });
-            resultsGroup.PropertyChanged += new PropertyChangedEventHandler(setResults);
+            //var animationGroup = Utils.getGroupLayerByName(Utils._ANIMATION_GROUP_NAME);
+            //Debug.Assert(animationGroup is not null);
+            //animationGroup.PropertyChanged += new PropertyChangedEventHandler(changeAnimation);
+            //var resultsGroup = Utils.getGroupLayerByName(Utils._RESULTS_GROUP_NAME);
+            //Debug.Assert(resultsGroup is not null);
+            //// make sure results group is expanded and visible
+            //await QueuedTask.Run(() => {
+            //    resultsGroup.SetExpanded(true);
+            //    resultsGroup.SetVisibility(true);
+            //});
+            //resultsGroup.PropertyChanged += new PropertyChangedEventHandler(setResults);
             // in case restart with existing animation layers
-            await this.setAnimateLayer();
+            await this.setAnimateLayer(); // TODO
             // in case restart with existing results layers
-            await this.setResultsLayer();
+            await this.setResultsLayer(); // TODO
         }
 
         // Do visualisation.
@@ -559,7 +576,7 @@ namespace ArcSWAT3 {
             if (slopeGroup is not null) {
                 foreach (var layer in slopeGroup.GetLayersAsFlattenedList()) {
                     await QueuedTask.Run(() => {
-                        layer.SetVisibility(false); 
+                        layer.SetVisibility(false);
                     });
                 }
             }
@@ -598,15 +615,20 @@ namespace ArcSWAT3 {
                 }
             }
             var watershedLayers = Utils.getLayersInGroup(Utils._WATERSHED_GROUP_NAME);
-            // make subbasins, channels, LSUs, HRUs and aquifers visible
+            // make subbasins and channels visible
             if (this._gv.useGridModel) {
                 keepVisible = n => n.StartsWith(Utils._GRIDSTREAMSLEGEND) || n.StartsWith(Utils._DRAINSTREAMSLEGEND) || n.StartsWith(Utils._GRIDLEGEND);
             } else {
-                keepVisible = n => n.StartsWith(Utils._WATERSHEDLEGEND) || n.StartsWith(Utils._REACHESLEGEND);
+                keepVisible = n => n.StartsWith(Utils._SUBBASINSLEGEND) || n.StartsWith(Utils._REACHESLEGEND);
             }
             foreach (var layer in watershedLayers) {
                 await QueuedTask.Run(() => {
-                    layer.SetVisibility(keepVisible(layer.Name));
+                    if (keepVisible(layer.Name)) {
+                        layer.SetVisibility(true);
+                    } else {
+                        layer.SetVisibility(false);
+                        layer.SetExpanded(false);
+                    }
                 });
             }
         }
@@ -617,7 +639,7 @@ namespace ArcSWAT3 {
             var scen = this._dlg.PscenariosCombo.SelectedItem;
             if (scen is not null) {
                 this.scenario = scen.ToString();
-            } else { 
+            } else {
                 this.scenario = this._dlg.PscenariosCombo.Text;
             }
             this.setConnection(this.scenario);
@@ -900,7 +922,8 @@ namespace ArcSWAT3 {
                 var month = this._dlg.PstartMonth.SelectedIndex + 1;
                 var year = Convert.ToInt32(this._dlg.PstartYear.Text);
                 return new DateOnly(year, month, day);
-            } catch (Exception) {
+            }
+            catch (Exception) {
                 return null;
             }
         }
@@ -912,7 +935,8 @@ namespace ArcSWAT3 {
                 var month = this._dlg.PfinishMonth.SelectedIndex + 1;
                 var year = Convert.ToInt32(this._dlg.PfinishYear.Text);
                 return new DateOnly(year, month, day);
-            } catch (Exception) {
+            }
+            catch (Exception) {
                 return null;
             }
         }
@@ -973,7 +997,7 @@ namespace ArcSWAT3 {
         public virtual async Task doClose() {
             this.animateTimer.Stop();
             // remove animation layers
-            await Utils.clearAnimationGroup();
+            await Utils.clearAnimationMaps();
             // empty animation and png directories
             this.clearAnimationDir();
             this.clearPngDir();
@@ -1362,7 +1386,8 @@ namespace ArcSWAT3 {
                         }
                     }
                 }
-            } catch {
+            }
+            catch {
                 // get scenario name
                 var scenario = this.scenarioFromDb();
                 Utils.error(string.Format("Cannot find {0} data for scenario {1}", table, scenario), this._gv.isBatch);
@@ -1467,7 +1492,7 @@ namespace ArcSWAT3 {
         }
 
         // Return (year, mon) pair for start date according to period.
-        public virtual (int, int)  startYearMon() {
+        public virtual (int, int) startYearMon() {
             if (this.isDaily || this.table == "wql") {
                 return (this.startYear, this.julianStartDay);
             } else if (this.isAnnual) {
@@ -1509,7 +1534,9 @@ namespace ArcSWAT3 {
 
         // Summarise values according to summary method.
         public virtual double summarise(Dictionary<int, Dictionary<int, double>> data) {
-            if (this._dlg.PsummaryCombo.SelectedItem.ToString() == Visualise._TOTALS) {
+            if (this._dlg.PsummaryCombo.SelectedItem == null) {
+                Utils.information("Please choose a summary", this._gv.isBatch);
+            } else if (this._dlg.PsummaryCombo.SelectedItem.ToString() == Visualise._TOTALS) {
                 return this.summariseTotal(data);
             } else if (this._dlg.PsummaryCombo.SelectedItem.ToString() == Visualise._ANNUALMEANS) {
                 return this.summariseAnnual(data);
@@ -1613,7 +1640,7 @@ namespace ArcSWAT3 {
                 return;
             }
             var sql = DBUtils.sqlSelect(table, subCol, "", "");
-            using (var reader = DBUtils.getReader(this.conn, sql)) { 
+            using (var reader = DBUtils.getReader(this.conn, sql)) {
                 while (reader.Read()) {
                     this.numSubbasins = Math.Max(this.numSubbasins, reader.GetInt32(0));
                 }
@@ -1698,7 +1725,8 @@ namespace ArcSWAT3 {
             string path;
             try {
                 path = Path.GetDirectoryName(this._dlg.PresultsFileEdit.Text);
-            } catch (Exception) {
+            }
+            catch (Exception) {
                 path = "";
             }
             var subsOrRiv = this.useSubs() ? "subs" : this.useHRUs() ? "hrus" : "riv";
@@ -1743,7 +1771,8 @@ namespace ArcSWAT3 {
             string path;
             try {
                 path = Path.GetDirectoryName(filename);
-            } catch (Exception) {
+            }
+            catch (Exception) {
                 path = "";
             }
             var dlg = new OpenFileDialog() {
@@ -1825,7 +1854,7 @@ namespace ArcSWAT3 {
                 this.keepRivColours = false;
                 this.currentResultsLayer = this.rivResultsLayer;
             }
-            using (var resultsDs = Ogr.Open(this.resultsFile, 1)) { 
+            using (var resultsDs = Ogr.Open(this.resultsFile, 1)) {
                 var resultslayer = resultsDs.GetLayerByIndex(0);
                 var resultsDef = resultslayer.GetLayerDefn();
                 if (this.hasAreas) {
@@ -1838,15 +1867,30 @@ namespace ArcSWAT3 {
                     resultslayer.CreateField(field, 1);
                 }
             }
+            // create a map to hold results layer and background maps
+            Map resultsMap = null;
+            await QueuedTask.Run(() => 
+                resultsMap = MapFactory.Instance.CreateMap(legend, MapType.Map, MapViewingMode.Map, Basemap.None)
+            );
+            Layer backLayer = null;
+            var subs1File = Utils.join(this._gv.shapesDir, Parameters._SUBS1 + ".shp");
+            if (File.Exists(subs1File)) {
+                backLayer = await QueuedTask.Run(() =>
+                    LayerFactory.Instance.CreateLayer(new Uri(subs1File), resultsMap, 0, Utils._SUBBASINSLEGEND)
+                    );
+                var ft = FileTypes._SUBBASINS;
+                await FileTypes.ApplySymbolToFeatureLayerAsync((FeatureLayer)backLayer, ft, this._gv);
+                await Utils.setMapTip((FeatureLayer)backLayer, ft);
+            } 
             this.currentResultsLayer = await QueuedTask.Run(() => 
                 LayerFactory.Instance.CreateLayer(new Uri(this.resultsFile),
-                        Utils.getGroupLayerByName(Utils._RESULTS_GROUP_NAME), 0, legend) as FeatureLayer);
+                        resultsMap, 0, legend) as FeatureLayer);
             if (this.useSubs()) {
-                this.subResultsLayer = currentResultsLayer;
+                this.subResultsLayer = this.currentResultsLayer;
             } else if (this.useHRUs()) {
-                this.hruResultsLayer = currentResultsLayer;
+                this.hruResultsLayer = this.currentResultsLayer;
             } else {
-                this.rivResultsLayer = currentResultsLayer;
+                this.rivResultsLayer = this.currentResultsLayer;
             }
             await this.updateResultsFile();
             //cast(QgsVectorLayer, QgsProject.instance().addMapLayer(this.currentResultsLayer, false));
@@ -1871,6 +1915,9 @@ namespace ArcSWAT3 {
             //}
             //this.currentResultsLayer.setMapTipTemplate(baseMapTip + "<br/><b>{0}:</b> [% \"{0}\" %]", selectVar));
             //this.currentResultsLayer.updatedFields.connect(this.addResultsVars);
+            if (resultsMap != MapView.Active.Map) {
+                await resultsMap.OpenViewAsync();
+            }
             return true;
         }
 
@@ -2031,7 +2078,7 @@ namespace ArcSWAT3 {
                 var colour = colours[i];
                 classBreaks.Add(this.makeSymbologyForRange(minVal, maxVal, colour, 3, useLine));
             }
-            var renderer = new CIMClassBreaksRenderer() { 
+            var renderer = new CIMClassBreaksRenderer() {
                 Breaks = classBreaks.ToArray(),
                 ColorRamp = ramp,
                 Field = vari.Substring(0, Math.Min(10, vari.Length))
@@ -2109,7 +2156,7 @@ namespace ArcSWAT3 {
             //        transparency = this.useSubs() || this.useHRUs() ? 35 : 0;
             //    }
             //}
-            if (true)  {   // was !keepColours) {
+            if (true) {   // was !keepColours) {
                 if (ramp is null) {
                     ramp = await this.chooseColorRamp(this.table, selectVar);
                 }
@@ -2127,7 +2174,7 @@ namespace ArcSWAT3 {
                     BreakCount = count,
                     ColorRamp = ramp,
                     SymbolTemplate = symbol.MakeSymbolReference()
-                }; 
+                };
                 //renderer = QgsGraduatedSymbolRenderer.createRenderer(layer, selectVarShort, count, QgsGraduatedSymbolRenderer.Jenks, symbol, ramp, labelFmt);
             } else {
                 //renderer..setSourceSymbol(symbol);
@@ -2170,10 +2217,7 @@ namespace ArcSWAT3 {
                 renderer.VisualVariables = visualVars;
                 layer.SetRenderer(renderer);
                 layer.SetTransparency(transparency);
-                // TODO
-                //this.clearMapTitle();
-                //this.mapTitle = MapTitle(canvas, this.title, layer);
-                //MapView.Active.Redraw(true);
+                this.setMapTitle(layer);
             });
             if (this.useSubs()) {
                 this.internalChangeToSubRenderer = false;
@@ -2210,14 +2254,14 @@ namespace ArcSWAT3 {
             }
             foreach (var vari in newVars) {
                 var i = this._dlg.PvariableList.FindString(vari);
-                if (i == ListBox.NoMatches) {
+                if (i == System.Windows.Forms.ListBox.NoMatches) {
                     // add vari to variableList
                     this._dlg.PvariableList.Items.Add(vari);
                 }
             }
         }
 
-        // Return true if current results layer has not been removed.
+        // Return true if current results layer is not null and its map is not null.
         public virtual bool resultsLayerExists() {
             //         if self.useSubs():
             //             layer = self.subResultsLayer
@@ -2228,8 +2272,10 @@ namespace ArcSWAT3 {
             if (this.currentResultsLayer is null) {
                 return false;
             }
-            var resultsGroup = Utils.getGroupLayerByName(Utils._RESULTS_GROUP_NAME);
-            return resultsGroup is not null && resultsGroup.FindLayers(this.currentResultsLayer.Name).Count > 0;
+            if (this.currentResultsLayer.Map is null) {
+                return false;
+            }
+            return true;
         }
 
         // 
@@ -2267,32 +2313,49 @@ namespace ArcSWAT3 {
                 //animateLayer.updateFields();
                 //var animateIndex = this._gv.topo.getProviderIndex(provider, this.animateVar);
             }
-            // place layer at top of animation group if new,
-            // else above current animation layer, and remove that
-            var animationGroup = Utils.getGroupLayerByName(Utils._ANIMATION_GROUP_NAME);
-            Debug.Assert(animationGroup is not null);
-            var index = 0;
-            if (this._dlg.PcurrentAnimation.Checked) {
-                var animations = animationGroup.Layers;
-                if (animations.Count == 1) {
-                    await QueuedTask.Run(() => MapView.Active.Map.RemoveLayer(animations[0]));
-                index = 0;
-                } else {
-                    var currentLayers = MapView.Active.GetSelectedLayers();
-                    if (currentLayers.Count > 0) {
-                        var currentLayerName = currentLayers[0].Name;
-                        foreach (var i in Enumerable.Range(0, animations.Count)) {
-                            if (animations[i].Name == currentLayerName) {
-                                index = i;
-                                await QueuedTask.Run(() => MapView.Active.Map.RemoveLayer(animations[i]));
-                                break;
-                            }
-                        }
-                    }
-                }
+            //// place layer at top of animation group if new,
+            //// else above current animation layer, and remove that
+            //var animationGroup = Utils.getGroupLayerByName(Utils._ANIMATION_GROUP_NAME);
+            //Debug.Assert(animationGroup is not null);
+            //var index = 0;
+            //if (this._dlg.PcurrentAnimation.Checked) {
+            //    var animations = animationGroup.Layers;
+            //    if (animations.Count == 1) {
+            //        await QueuedTask.Run(() => MapView.Active.Map.RemoveLayer(animations[0]));
+            //        index = 0;
+            //    } else {
+            //        var currentLayers = MapView.Active.GetSelectedLayers();
+            //        if (currentLayers.Count > 0) {
+            //            var currentLayerName = currentLayers[0].Name;
+            //            foreach (var i in Enumerable.Range(0, animations.Count)) {
+            //                if (animations[i].Name == currentLayerName) {
+            //                    index = i;
+            //                    await QueuedTask.Run(() => MapView.Active.Map.RemoveLayer(animations[i]));
+            //                    break;
+            //                }
+            //            }
+            //        }
+            //    }
+            //}
+
+            // create a map to hold animate layer and background maps
+            this.animateMap = null;
+            await QueuedTask.Run(() =>
+                this.animateMap = MapFactory.Instance.CreateMap(string.Format("Animate {0} {1}", this.scenario, this.animateVar), 
+                    MapType.Map, MapViewingMode.Map, Basemap.None)
+            );
+            Layer backLayer = null;
+            var subs1File = Utils.join(this._gv.shapesDir, Parameters._SUBS1 + ".shp");
+            if (File.Exists(subs1File)) {
+                backLayer = await QueuedTask.Run(() =>
+                    LayerFactory.Instance.CreateLayer(new Uri(subs1File), this.animateMap, 0, Utils._SUBBASINSLEGEND)
+                    );
+                var ft = FileTypes._SUBBASINS;
+                await FileTypes.ApplySymbolToFeatureLayerAsync((FeatureLayer)backLayer, ft, this._gv);
+                await Utils.setMapTip((FeatureLayer)backLayer, ft);
             }
-            this.animateLayer = await QueuedTask.Run(() => LayerFactory.Instance.CreateLayer(new Uri(animateFile), 
-                animationGroup, index, string.Format("{0} {1}", this.scenario, this.animateVar))) as FeatureLayer;
+            this.animateLayer = await QueuedTask.Run(() => LayerFactory.Instance.CreateLayer(new Uri(animateFile),
+                this.animateMap, 0, string.Format("{0} {1}", this.scenario, this.animateVar))) as FeatureLayer;
             //Debug.Assert(this.animateLayer is not null);
             this.animateIndexes[this.animateLayer.Name] = animateIndex;
             this.animateVars[this.animateLayer.Name] = this.animateVar;
@@ -2301,6 +2364,9 @@ namespace ArcSWAT3 {
             //if (this.useSubs()) {
             //    this.animateLayer.loadNamedStyle(Utils.join(this._gv.plugin_dir, "subsresults.qml"));
             //}
+            if (this.animateMap != MapView.Active.Map) {
+                await this.animateMap.OpenViewAsync();
+            }
             return true;
         }
 
@@ -2350,14 +2416,8 @@ namespace ArcSWAT3 {
                 }
                 this.animateLayer.SetRenderer(renderer);
                 this.animateLayer.SetTransparency(transparency);
+                this.setMapTitle(this.animateLayer);
             });
-            //         animations = Utils.getLayersInGroup(Utils._ANIMATION_GROUP_NAME, li, visible=True)
-            //         if len(animations) > 0:
-            //             canvas = self._iface.mapCanvas()
-            //             if self.mapTitle is not None:
-            //                 canvas.scene().removeItem(self.mapTitle)
-            //             self.mapTitle = MapTitle(canvas, self.title, animations[0])
-            //             canvas.refresh()
         }
 
         //TODO
@@ -2519,12 +2579,12 @@ namespace ArcSWAT3 {
         //    if (!this._gv.isBatch) {
         //        Utils.information(@"
         //    The layout designer is about to start, showing the current layout for the animation.
-            
+
         //    You can change the layout as you wish, and then you should 'Save as Template' in the designer menu, using {0} as the template file.  
         //    If this file already exists: you will have to confirm overwriting it.
         //    Then close the layout designer.
         //    If you don't change anything you can simply close the layout designer without saving.
-            
+
         //    Then start the animation running.
         //    ", this.animationTemplate), false);
         //        var title = "Animation base";
@@ -2621,109 +2681,100 @@ namespace ArcSWAT3 {
         public virtual async Task changeAnimate() {
             string @ref;
             int sub;
-            List<FeatureLayer> animateLayers;
             //try {
-            if (true) { 
+            if (true) {
                 if (this._dlg.PanimationVariableCombo.SelectedItem.ToString() == "") {
                     Utils.information("Please choose an animation variable", this._gv.isBatch);
                     this.doRewind();
                     return;
                 }
+                //if (this.animateMap != MapView.Active.Map) {
+                //    await this.animateMap.OpenViewAsync();
+                //}
+                var view = MapView.Active;
+                var extent = view.Extent;
+                int height = (int)Math.Ceiling(extent.YMax - extent.YMin + 0.5);
+                int width = (int)Math.Ceiling(extent.XMax - extent.XMin + 0.5);
                 if (this.capturing) {
-                    await this.capture();
+                    await this.capture(height, width);
                 }
-                var dat = this.sliderValToDate();
+                var dat = this.sliderValToDate(this._dlg.Pslider.Value);
                 var date = this.dateToString(dat);
                 this._dlg.PdateLabel.Text = date;
-                if (this._dlg.PcanvasAnimation.Checked) {
-                    animateLayers = new List<FeatureLayer> {
-                        this.animateLayer
-                    };
-                } else {
-                    var layers = Utils.getLayersInGroup(Utils._ANIMATION_GROUP_NAME, visible: false);
-                    animateLayers = (from layer in layers
-                                     where layer is not null
-                                     select layer as FeatureLayer).ToList();
-                }
-                foreach (var animateLayer in animateLayers) {
-                    if (animateLayer is null) {
-                        continue;
-                    }
-                    var layerName = animateLayer.Name;
-                    var animateFile = await Utils.layerFilename(this.animateLayer);
-                    var animateIndex = this.animateIndexes[layerName];
-                    var animateVar = this.animateVars[layerName];
-                    var animateVarShort = animateVar.Substring(0, Math.Min(10, animateVar.Length));
-                    var data = this.animateResultsData[layerName][dat];
+                var layerName = this.animateLayer.Name;
+                var animateFile = await Utils.layerFilename(this.animateLayer);
+                var animateIndex = this.animateIndexes[layerName];
+                var animateVar = this.animateVars[layerName];
+                var animateVarShort = animateVar.Substring(0, Math.Min(10, animateVar.Length));
+                var data = this.animateResultsData[layerName][dat];
+                await QueuedTask.Run(async () => {
                     // TODO
-                    //Debug.Assert(this.mapTitle is not null);
-                    //this.mapTitle.updateLine2(date);
-                    await QueuedTask.Run(async () => {
-                        if (!animateLayer.CanEditData()) {
-                            animateLayer.SetEditable(true);
-                            if (!animateLayer.CanEditData()) {
-                                Utils.error("Cannot edit animation layer " + layerName, false);
-                                return;
-                            }
+                    // maybe find way to change text of element instead of destroy and recreate
+                    this.setMapTitle(this.animateLayer, line2: date);
+                    if (!this.animateLayer.CanEditData()) {
+                        this.animateLayer.SetEditable(true);
+                        if (!this.animateLayer.CanEditData()) {
+                            Utils.error("Cannot edit animation layer " + layerName, false);
+                            return;
                         }
-                        var layerDefn = animateLayer.GetFeatureClass().GetDefinition();
-                        // cannot use useHRUs as it will only be correct for top layer
-                        var subIdx = 0;
-                        var hruIdx = layerDefn.FindField(Topology._HRUGIS);
-                        if (hruIdx < 0) {
-                            // not an HRUs layer
-                            subIdx = layerDefn.FindField(Topology._SUBBASIN);
-                        }
-                        using (var rc = animateLayer.Search()) {
-                            while (rc.MoveNext()) {
-                                using (var f = rc.Current as ArcGIS.Core.Data.Feature) {
-                                    bool result = false;
-                                    var op = new ArcGIS.Desktop.Editing.EditOperation();
+                    }
+                    var layerDefn = this.animateLayer.GetFeatureClass().GetDefinition();
+                    // cannot use useHRUs as it will only be correct for top layer
+                    var subIdx = 0;
+                    var hruIdx = layerDefn.FindField(Topology._HRUGIS);
+                    if (hruIdx < 0) {
+                        // not an HRUs layer
+                        subIdx = layerDefn.FindField(Topology._SUBBASIN);
+                    }
+                    using (var rc = this.animateLayer.Search()) {
+                        while (rc.MoveNext()) {
+                            using (var f = rc.Current as ArcGIS.Core.Data.Feature) {
+                                bool result = false;
+                                var op = new ArcGIS.Desktop.Editing.EditOperation();
+                                if (hruIdx >= 0) {
+                                    // May be split HRUs; just use first
+                                    // This is inadequate for some variables, but no way to know if correct val is sum of vals, mean, etc.
+                                    sub = Convert.ToInt32(f[hruIdx].ToString().Split(',')[0]);
+                                } else {
+                                    sub = Convert.ToInt32(f[subIdx]);
+                                }
+                                double val;
+                                if (data.ContainsKey(sub)) {
+                                    val = data[sub];
+                                } else {
                                     if (hruIdx >= 0) {
-                                        // May be split HRUs; just use first
-                                        // This is inadequate for some variables, but no way to know if correct val is sum of vals, mean, etc.
-                                        sub = Convert.ToInt32(f[hruIdx].ToString().Split(',')[0]);
+                                        @ref = string.Format("HRU {0}", sub);
                                     } else {
-                                        sub = Convert.ToInt32(f[subIdx]);
+                                        @ref = string.Format("subbasin {0}", sub);
                                     }
-                                    double val;
-                                    if (data.ContainsKey(sub)) {
-                                        val = data[sub];
-                                    } else {
-                                        if (hruIdx >= 0) {
-                                            @ref = string.Format("HRU {0}", sub);
-                                        } else {
-                                            @ref = string.Format("subbasin {0}", sub);
-                                        }
-                                        Utils.error(string.Format("Cannot get data for {0}: have you run SWAT and saved data since running QSWAT", @ref), this._gv.isBatch);
-                                        return;
-                                    }
-                                    op.Modify(f, animateVarShort, val);
-                                    if (!op.IsEmpty) {
-                                        result = await op.ExecuteAsync();
-                                    }
-                                    if (!result) {
-                                        Utils.error(string.Format("Could not set attributes in results file {0}", this.resultsFile), this._gv.isBatch);
-                                        return;
-                                    }
+                                    Utils.error(string.Format("Cannot get data for {0}: have you run SWAT and saved data since running QSWAT", @ref), this._gv.isBatch);
+                                    return;
+                                }
+                                op.Modify(f, animateVarShort, val);
+                                if (!op.IsEmpty) {
+                                    result = await op.ExecuteAsync();
+                                }
+                                if (!result) {
+                                    Utils.error(string.Format("Could not set attributes in results file {0}", this.resultsFile), this._gv.isBatch);
+                                    return;
                                 }
                             }
                         }
-                    });
-                }
-                await Project.Current.SaveEditsAsync();
-                //await QueuedTask.Run(() => {
-                //    MapView.Active.Redraw(false);
-                //});
-                this._dlg.PdateLabel.Refresh();
+                    }
+                });
+            }
+            await Project.Current.SaveEditsAsync();
+            //await QueuedTask.Run(() => {
+            //    MapView.Active.Redraw(false);
+            //});
+            this._dlg.PdateLabel.Refresh();
             //} catch (Exception) {
             //    this.animating = false;
             //    throw;
-            }
         }
 
         // Make image file of current canvas.
-        public virtual async Task capture() {
+        public virtual async Task capture(int height, int width) {
             if (this.animateLayer is null) {
                 return;
             }
@@ -2772,7 +2823,9 @@ namespace ArcSWAT3 {
                 // canvas.saveAsImage(nextStillFile)
                 await QueuedTask.Run(() => {
                     var PNG = new PNGFormat();
-                    PNG.Resolution = 300;
+                    PNG.Resolution = 96;
+                    PNG.Width = Convert.ToInt32(width / 14.65);
+                    PNG.Height = Convert.ToInt32(height / 14.65);
                     PNG.OutputFileName = nextStillFile;
                     if (PNG.ValidateOutputFilePath()) {
                         MapView.Active.Export(PNG);
@@ -2933,15 +2986,15 @@ namespace ArcSWAT3 {
             }
         }
 
-        // Main tab has changed.  Show/hide Animation group.
-        public virtual async Task modeChange() {
-            var expandAnimation = this._dlg.PtabWidget.SelectedIndex == 1;
-            var animationGroup = Utils.getGroupLayerByName(Utils._ANIMATION_GROUP_NAME);
-            Debug.Assert(animationGroup is not null);
-            await QueuedTask.Run(() => {
-                animationGroup.SetVisibility(expandAnimation);
-            });
-        }
+        //// Main tab has changed.  Show/hide Animation group.
+        //public virtual async Task modeChange() {
+        //    var expandAnimation = this._dlg.PtabWidget.SelectedIndex == 1;
+        //    var animationGroup = Utils.getGroupLayerByName(Utils._ANIMATION_GROUP_NAME);
+        //    Debug.Assert(animationGroup is not null);
+        //    await QueuedTask.Run(() => {
+        //        animationGroup.SetVisibility(expandAnimation);
+        //    });
+        //}
 
         // Make single results file or comparison results files if self.scenarios1 is not empty.
         public virtual async Task makeResults0() {
@@ -2996,6 +3049,10 @@ namespace ArcSWAT3 {
                 Utils.information("Please select a variable for display", this._gv.isBatch);
                 return;
             }
+            if (this._dlg.PsummaryCombo.SelectedItem == null) {
+                Utils.information("Please choose a summary", this._gv.isBatch);
+                return;
+            }
             if (!this.setPeriods()) {
                 return;
             }
@@ -3003,7 +3060,7 @@ namespace ArcSWAT3 {
                 var _ = await this.makeCompareResults();
                 return;
             }
-            
+
             Cursor.Current = Cursors.WaitCursor;
             this.resultsFileUpToDate = this.resultsFileUpToDate && this.resultsFile == this._dlg.PresultsFileEdit.Text;
             if (!this.resultsFileUpToDate || !this.periodsUpToDate) {
@@ -3015,7 +3072,16 @@ namespace ArcSWAT3 {
             if (this.summaryChanged) {
                 this.summariseData("", true);
             }
-            if (this.resultsFileUpToDate && this.resultsLayerExists()) {
+            if (this.resultsFileUpToDate && this.resultsLayerExists() && this._dlg.PcurrentResultsMap.Checked) {
+                Map map = MapView.Active.Map;
+                if (map == ArcSWAT.mainMap) {
+                    Utils.error("The current map for showing results cannot be the main map: choose a results map or click New map", this._gv.isBatch);
+                    Cursor.Current = Cursors.Default;
+                    return;
+                }
+                var selectVar = this._dlg.PvariableList.SelectedItems[0].ToString();
+                var legend = string.Format("{0} {1} {2}", this.scenario, selectVar, this._dlg.PsummaryCombo.SelectedItem.ToString());
+                await QueuedTask.Run(() => map.SetName(legend));
                 if (this.summaryChanged) {
                     await this.updateResultsFile();
                 }
@@ -3078,44 +3144,58 @@ namespace ArcSWAT3 {
             var ft = this.useSubs() ? FileTypes._SUBBASINS : this.useHRUs() ? FileTypes._HRUS : FileTypes._REACHES;
             var resultsBase = Utils.join(tablesOutDir, baseName) + ".shp";
             var summary = this._dlg.PsummaryCombo.SelectedItem.ToString();
+            // create a map to hold the comparison result layers
+            Map comparisonMap = null;
+            string legend = string.Format("Comparison {0}", dirname);
+            await QueuedTask.Run(() =>
+                comparisonMap = MapFactory.Instance.CreateMap(legend, MapType.Map, MapViewingMode.Map, Basemap.None)
+            );
+            var legend1 = string.Format("{0} {1} {2}", this.scenario1, selectVar, summary);
             var needLayer1 = true;
             if (file1Exists) {
-                layer1 = (await Utils.getLayerByFilename(file1, ft, null, null, null)).Item1 as FeatureLayer;
+                layer1 = await QueuedTask.Run(() =>
+                    LayerFactory.Instance.CreateLayer(new Uri(file1), comparisonMap, 0, legend1) as FeatureLayer);
                 if (layer1 is not null) {
                     needLayer1 = false;
                 }
             } else {
                 Utils.copyShapefile(resultsBase, file1Base, direc);
             }
+            var legend2 = string.Format("{0} {1} {2}", this.scenario2, selectVar, summary);
             var needLayer2 = true;
             if (file2Exists) {
-                layer2 = (await Utils.getLayerByFilename(file2, ft, null, null, null)).Item1 as FeatureLayer;
+                layer2 = await QueuedTask.Run(() =>
+                    LayerFactory.Instance.CreateLayer(new Uri(file2), comparisonMap, 0, legend2) as FeatureLayer);
                 if (layer2 is not null) {
                     needLayer2 = false;
                 }
             } else {
                 Utils.copyShapefile(resultsBase, file2Base, direc);
             }
+            // note that string 'difference' is used to find variable name in MapTitle, so change there if you change here
+            var legend3 = string.Format("{0} {1} {2} {3} {4}", selectVar, "difference", this.scenario2, "minus", this.scenario1);
             var needLayer3 = true;
             if (diffFileExists) {
-                layer3 = (await Utils.getLayerByFilename(diffFile, ft, null, null, null)).Item1 as FeatureLayer;
+                layer3 = await QueuedTask.Run(() => 
+                    LayerFactory.Instance.CreateLayer(new Uri(diffFile), comparisonMap, 0, legend3) as FeatureLayer);
                 if (layer3 is not null) {
                     needLayer3 = false;
                 }
             } else {
                 Utils.copyShapefile(resultsBase, diffBase, direc);
             }
+            // note that string '%change' is used to find variable name in MapTitle, so change there if you change here
+            var legend4 = string.Format("{0} {1} {2} {3} {4}", selectVar, "%change from", this.scenario1, "to", this.scenario2);
             var needLayer4 = true;
             if (changeFileExists) {
-                layer4 = (await Utils.getLayerByFilename(changeFile, ft, null, null, null)).Item1 as FeatureLayer;
+                layer4 = await QueuedTask.Run(() => 
+                    LayerFactory.Instance.CreateLayer(new Uri(changeFile), comparisonMap, 0, legend4) as FeatureLayer);
                 if (layer4 is not null) {
                     needLayer4 = false;
                 }
             } else {
                 Utils.copyShapefile(resultsBase, changeBase, direc);
             }
-            var resultsGroup = Utils.getGroupLayerByName(Utils._RESULTS_GROUP_NAME);
-            Debug.Assert(resultsGroup is not null);
             FieldDefn areaField = null;
             if (this.hasAreas) {
                 areaField = new OSGeo.OGR.FieldDefn(Visualise._AREA, FieldType.OFTReal);
@@ -3124,7 +3204,6 @@ namespace ArcSWAT3 {
             var varField = new OSGeo.OGR.FieldDefn(selectVarShort, FieldType.OFTReal);
             var addedLayers = new List<FeatureLayer>();
             if (needLayer1) {
-                var legend1 = string.Format("{0} {1} {2}", this.scenario1, selectVar, summary);
                 using (var layer1Ds = Ogr.Open(file1, 1)) {
                     var glayer1 = layer1Ds.GetLayerByIndex(0);
                     var defn1 = glayer1.GetLayerDefn();
@@ -3136,12 +3215,11 @@ namespace ArcSWAT3 {
                     }
                 }
                 await QueuedTask.Run(() => {
-                    layer1 = LayerFactory.Instance.CreateLayer(new Uri(file1), resultsGroup, 0, legend1) as FeatureLayer;
+                    layer1 = LayerFactory.Instance.CreateLayer(new Uri(file1), comparisonMap, 0, legend1) as FeatureLayer;
                 });
                 addedLayers.Add(layer1);
             }
             if (needLayer2) {
-                var legend2 = string.Format("{0} {1} {2}", this.scenario2, selectVar, summary);
                 using (var layer2Ds = Ogr.Open(file2, 1)) {
                     var glayer2 = layer2Ds.GetLayerByIndex(0);
                     var defn2 = glayer2.GetLayerDefn();
@@ -3153,13 +3231,11 @@ namespace ArcSWAT3 {
                     }
                 }
                 await QueuedTask.Run(() => {
-                    layer2 = LayerFactory.Instance.CreateLayer(new Uri(file2), resultsGroup, 0, legend2) as FeatureLayer;
+                    layer2 = LayerFactory.Instance.CreateLayer(new Uri(file2), comparisonMap, 0, legend2) as FeatureLayer;
                 });
                 addedLayers.Add(layer2);
             }
             if (needLayer3) {
-                // note that string 'difference' is used to find variable name in MapTitle, so change there if you change here
-                var legend3 = string.Format("{0} {1} {2} {3} {4}", selectVar, "difference", this.scenario2, "minus", this.scenario1);
                 using (var layer3Ds = Ogr.Open(diffFile, 1)) {
                     var glayer3 = layer3Ds.GetLayerByIndex(0);
                     var defn3 = glayer3.GetLayerDefn();
@@ -3171,13 +3247,11 @@ namespace ArcSWAT3 {
                     }
                 }
                 await QueuedTask.Run(() => {
-                    layer3 = LayerFactory.Instance.CreateLayer(new Uri(diffFile), resultsGroup, 0, legend3) as FeatureLayer;
+                    layer3 = LayerFactory.Instance.CreateLayer(new Uri(diffFile), comparisonMap, 0, legend3) as FeatureLayer;
                 });
                 addedLayers.Add(layer3);
             }
             if (needLayer4) {
-                // note that string '%change' is used to find variable name in MapTitle, so change there if you change here
-                var legend4 = string.Format("{0} {1} {2} {3} {4}", selectVar, "%change from", this.scenario1, "to", this.scenario2); 
                 using (var layer4Ds = Ogr.Open(changeFile, 1)) {
                     var glayer4 = layer4Ds.GetLayerByIndex(0);
                     var defn4 = glayer4.GetLayerDefn();
@@ -3189,7 +3263,7 @@ namespace ArcSWAT3 {
                     }
                 }
                 await QueuedTask.Run(() => {
-                    layer4 = LayerFactory.Instance.CreateLayer(new Uri(changeFile), resultsGroup, 0, legend4) as FeatureLayer;
+                    layer4 = LayerFactory.Instance.CreateLayer(new Uri(changeFile), comparisonMap, 0, legend4) as FeatureLayer;
                 });
                 addedLayers.Add(layer4);
             }
@@ -3262,6 +3336,9 @@ namespace ArcSWAT3 {
             await this.colourResultsFile(layer: layer2, renderer: renderer2);
             await this.colourResultsFile(layer: layer3, ramp: ramp34);
             await this.colourResultsFile(layer: layer4, ramp: ramp34);
+            if (comparisonMap != MapView.Active.Map) {
+                await comparisonMap.OpenViewAsync();
+            }
             return true;
         }
 
@@ -3469,9 +3546,8 @@ namespace ArcSWAT3 {
                 Utils.error(string.Format("There are layout templates only for 1, 2, 3, 4 or 6 result maps, not for {0}", count), this._gv.isBatch);
                 return;
             }
-            var templateIn = Utils.join(this._gv.addinPath, "LayoutTemplates/LayoutTemplate" + templ); 
-            await QueuedTask.Run(() =>
-            {
+            var templateIn = Utils.join(this._gv.addinPath, "LayoutTemplates/LayoutTemplate" + templ);
+            await QueuedTask.Run(() => {
                 IProjectItem pagx = ItemFactory.Instance.Create(templateIn) as IProjectItem;
                 Project.Current.AddItem(pagx);
             });
@@ -3491,7 +3567,7 @@ namespace ArcSWAT3 {
         public virtual void changeAnimationMode() {
             if (this._dlg.PprintAnimation.Checked) {
                 this._dlg.PcomposeOptions.Visible = true;
-                this._dlg.PcomposeCount.Value = Utils.countLayersInGroup(Utils._ANIMATION_GROUP_NAME);
+                this._dlg.PcomposeCount.Value = 1; //  Utils.countLayersInGroup(Utils._ANIMATION_GROUP_NAME);
             } else {
                 this._dlg.PcomposeOptions.Visible = false;
             }
@@ -3546,63 +3622,70 @@ namespace ArcSWAT3 {
                 this.changeSpeed(sleep);
                 this.resetSlider();
                 await this.changeAnimate();
-            } finally {
+            }
+            finally {
                 //this._dlg.calculateLabel.Text = "");
                 Cursor.Current = Cursors.Default;
             }
         }
 
-        //TODO
-        //// Save animated GIF if still files found.
-        //public virtual object saveVideo() {
-        //    // capture final frame
-        //    this.capture();
-        //    // remove animation layout
-        //    try {
-        //        Debug.Assert(this.animationLayout is not null);
-        //        QgsProject.instance().layoutManager().removeLayout(this.animationLayout);
-        //    } catch {
-        //    }
-        //    var fileNames = (from fn in os.listdir(this._gv.pngDir)
-        //                     where fn.endswith(".png")
-        //                     select fn).OrderBy(_p_1 => _p_1).ToList();
-        //    if (fileNames == new List<object>()) {
-        //        return;
-        //    }
-        //    if (this._dlg.printAnimation.Checked) {
-        //        var @base = Utils.join(this._gv.tablesOutDir, "Video.gif");
-        //        this.videoFile = Utils.nextFileName(@base, 0)[0];
-        //    } else {
-        //        var tablesOutDir = os.path.split(this.db)[0];
-        //        this.videoFile = Utils.join(tablesOutDir, this.animateVar + "Video.gif");
-        //    }
-        //    try {
-        //        os.remove(this.videoFile);
-        //    } catch (Exception) {
-        //    }
-        //    var period = 1.0 / this._dlg.spinBox.Value;
-        //    try {
-        //        using (var writer = imageio.get_writer("file://" + this.videoFile, mode: "I", loop: 1, duration: period)) {
-        //            // type: ignore
-        //            foreach (var filename in fileNames) {
-        //                image = imageio.imread(Utils.join(this._gv.pngDir, filename));
-        //                writer.append_data(image);
-        //            }
-        //        }
-        //        // clear the png files:
-        //        this.clearPngDir();
-        //        Utils.information("Animated gif {0} written", this.videoFile), this._gv.isBatch);
-        //    } catch (Exception ex) {
-        //        Utils.error(string.Format(@"
-        //    Failed to generate animated gif: {0}.
-        //    The .png files are in {1}: suggest you try using GIMP.
-        //    ", ex.Message, this._gv.pngDir), this._gv.isBatch);
-        //    }
-        //}
+        // Save animated GIF if still files found.
+        public async virtual void saveVideo() {
+            // capture final frame
+            var extent = MapView.Active.Extent;
+            int height = (int)Math.Ceiling(extent.YMax - extent.YMin + 0.5);
+            int width = (int)Math.Ceiling(extent.XMax - extent.XMin + 0.5);
+            await this.capture(height, width);
+            // remove animation layout
+            //try {
+            //    Debug.Assert(this.animationLayout is not null);
+            //    QgsProject.instance().layoutManager().removeLayout(this.animationLayout);
+            //}
+            //catch {
+            //}
+            var fileNames = Directory.GetFiles(this._gv.pngDir);
+            var numFiles = fileNames.Length;
+            if (numFiles == 0) {
+                return;
+            }
+            //if (this._dlg.printAnimation.Checked) {
+            //    var @base = Utils.join(this._gv.tablesOutDir, "Video.gif");
+            //    this.videoFile = Utils.nextFileName(@base, 0)[0];
+            //} else {
+            var tablesOutDir = this._gv.tablesOutDir;
+            this.videoFile = Utils.join(tablesOutDir, this.animateVar + "Video.gif");
+            try {
+                File.Delete(this.videoFile);
+            }
+            catch (Exception) {
+            }
+            var period = 1.0 / Convert.ToDouble(this._dlg.PspinBox.Value);
+            try {
+                using (var images = new MagickImageCollection()) {
+                    foreach (int i in Enumerable.Range(0, numFiles)) {
+                        images.Add(new MagickImage(fileNames[i]));
+                        images[i].AnimationDelay = 100;
+                        images[i].AnimationIterations = 1;
+                        images[i].GifDisposeMethod = GifDisposeMethod.Previous;
+                    };
+                    images.Optimize();
+                    images.Write(this.videoFile);
+                }
+                // clear the png files:
+                this.clearPngDir();
+                Utils.information(string.Format("Animated gif {0} written", this.videoFile), this._gv.isBatch);
+            }
+            catch (Exception ex) {
+                Utils.error(string.Format(@"
+            Failed to generate animated gif: {0}.
+            The .png files are in {1}: suggest you try using GIMP.
+            ", ex.Message, this._gv.pngDir), this._gv.isBatch);
+            }
+        }
 
         // Set animating and not pause.
         public virtual void doPlay() {
-            if (this._dlg.PanimationVariableCombo.SelectedItem.ToString() == "") {
+            if (this._dlg.PanimationVariableCombo.SelectedItem == null) {
                 Utils.information("Please choose an animation variable", this._gv.isBatch);
                 return;
             }
@@ -3667,7 +3750,8 @@ namespace ArcSWAT3 {
             try {
                 this.animateTimer.Interval = (int)(1000 / val);
                 this.animateTimer.Start();
-            } catch (Exception) {
+            }
+            catch (Exception) {
                 this.animating = false;
                 this.animateTimer.Stop();
                 // raise last exception again
@@ -3687,13 +3771,13 @@ namespace ArcSWAT3 {
         }
 
         // Convert slider value to date.
-        public virtual int sliderValToDate() {
+        public virtual int sliderValToDate(int sliderVal) {
             if (this.isDaily || this.table == "wql") {
-                return this.addDays(this.julianStartDay + this._dlg.Pslider.Value - 1, this.startYear);
+                return this.addDays(this.julianStartDay + sliderVal - 1, this.startYear);
             } else if (this.isAnnual) {
-                return this.startYear + this._dlg.Pslider.Value - 1;
+                return this.startYear + sliderVal - 1;
             } else {
-                var totalMonths = this.startMonth + this._dlg.Pslider.Value - 2;
+                var totalMonths = this.startMonth + sliderVal - 2;
                 var year = (double)totalMonths / 12;
                 var month = totalMonths % 12 + 1;
                 return (int)(this.startYear + year) * 100 + month;
@@ -3870,8 +3954,7 @@ namespace ArcSWAT3 {
                 Cursor.Current = Cursors.WaitCursor;
                 this._dlg.PrecordButton.BackColor = System.Drawing.Color.Green;
                 this._dlg.PrecordLabel.Text = "Start recording";
-                //TODO
-                //this.saveVideo();
+                this.saveVideo();
                 this._dlg.PplayButton.Enabled = true;
                 Cursor.Current = Cursors.Default;
             }
@@ -3887,8 +3970,10 @@ namespace ArcSWAT3 {
                 Utils.information(string.Format("No video file for {0} exists at present", this.animateVar), this._gv.isBatch);
                 return;
             }
-            //TODO
-            //os.startfile(this.videoFile);
+            ProcessStartInfo psi = new ProcessStartInfo();
+            psi.FileName = this.videoFile;
+            psi.UseShellExecute = true;
+            Process.Start(psi);
         }
 
         // Flag change to summary method.
@@ -4050,7 +4135,7 @@ namespace ArcSWAT3 {
                 foreach (var col in Enumerable.Range(0, 5)) {
                     var item = upper[col];
                     upper[col] = lower[col];
-                    lower[col] = item; 
+                    lower[col] = item;
                 }
             }
             this._dlg.PtableWidget.CurrentCell = this._dlg.PtableWidget.Rows[index - 1].Cells[0];
@@ -4108,7 +4193,7 @@ namespace ArcSWAT3 {
             row[1] = "-";
             row[2] = "-";
             row[3] = "-";
-            row[4] = this._dlg.PvariablePlot.SelectedIndex < 0 ? 
+            row[4] = this._dlg.PvariablePlot.SelectedIndex < 0 ?
                 (this._dlg.PvariablePlot.Items.Count == 1 ? this._dlg.PvariablePlot.Items[0].ToString() : "") :
                 this._dlg.PvariablePlot.SelectedItem.ToString();
             this.plotData.Rows.Add(row);
@@ -4146,7 +4231,7 @@ namespace ArcSWAT3 {
             using (var obs = new StreamReader(this.observedFileName)) {
                 var line = obs.ReadLine();
                 var varz = (from var1 in line.Split(',')
-                        select var1.Trim()).ToList();
+                            select var1.Trim()).ToList();
                 int numVarz = varz.Count;
                 if (numVarz == 0) {
                     Utils.error(string.Format("Cannot find variables in first line of observed data file {0}", this.observedFileName), this._gv.isBatch);
@@ -4343,26 +4428,22 @@ namespace ArcSWAT3 {
         public async void changeAnimation(object sender, PropertyChangedEventArgs e) {
             await this.setAnimateLayer();
         }
-        
+
         // Set self.animateLayer to first visible layer in Animations group, retitle as appropriate.
-        public async Task setAnimateLayer() {
-            var animationLayers = Utils.getLayersInGroup(Utils._ANIMATION_GROUP_NAME, visible: true);
-            if (animationLayers.Count == 0) {
-                this.animateLayer = null;
-                await this.setResultsLayer();
-                return;
-            }
-            // expand the animation layer and hide the results group maps
-            var animationGroup = Utils.getGroupLayerByName(Utils._ANIMATION_GROUP_NAME);
-            if (!animationGroup.IsExpanded) {
-                await QueuedTask.Run(() => { animationGroup.SetExpanded(true); });
-            }
-            var resultsGroup = Utils.getGroupLayerByName(Utils._RESULTS_GROUP_NAME);
-            if (resultsGroup.IsVisible) {
-                await QueuedTask.Run(() => { resultsGroup.SetVisibility(false); });
-            }
-            // TODO
-            this.animateLayer = animationLayers[0] as FeatureLayer;
+        public async Task setAnimateLayer() { // TODO
+            //var animationLayers = Utils.getLayersInGroup(Utils._ANIMATION_GROUP_NAME, visible: true);
+            //if (animationLayers.Count == 0) {
+            //    this.animateLayer = null;
+            //    await this.setResultsLayer();
+            //    return;
+            //}
+            //this.animateLayer = animationLayers[0] as FeatureLayer;
+            //var dat = this.sliderValToDate(1);
+            //var date = this.dateToString(dat);
+            //await QueuedTask.Run(() => {
+            //    this.setMapTitle(this.animateLayer, line2: date);
+            //});
+
             //foreach (var mapLayer in animationLayers) {
             //    Debug.Assert(mapLayer is not null);
             //    if (this.mapTitle is null) {
@@ -4393,40 +4474,46 @@ namespace ArcSWAT3 {
         public async void setResults(object sender, PropertyChangedEventArgs e) {
             await this.setResultsLayer();
         }
-        
+
         // Set self.currentResultsLayer to first visible layer in Results group, retitle as appropriate.
-        public async Task setResultsLayer() {
-            // only change results layer and title if there are no visible animate layers
-            var animationLayers = Utils.getLayersInGroup(Utils._ANIMATION_GROUP_NAME, visible: true);
-            if (animationLayers.Count > 0) {
-                return;
-            }
-            // make sure results group is visible, since running animations may have made it invisible
-            var resultsGroup = Utils.getGroupLayerByName(Utils._RESULTS_GROUP_NAME);
-            if (!resultsGroup.IsVisible) {
-                await QueuedTask.Run(() => { resultsGroup.SetVisibility(true); });
-            }
-            //TODO
-            //this.clearMapTitle();
-            var resultsLayers = Utils.getLayersInGroup(Utils._RESULTS_GROUP_NAME, visible: true);
-            if (resultsLayers.Count == 0) {
-                this.currentResultsLayer = null;
-                return;
-            } else {
-                //TODO
-                this.currentResultsLayer = resultsLayers[0] as FeatureLayer;
-                //foreach (var treeLayer in resultsLayers) {
-                //    var mapLayer = treeLayer.layer();
-                //    Debug.Assert(mapLayer is not null);
-                //    this.currentResultsLayer = cast(QgsVectorLayer, mapLayer);
-                //    Debug.Assert(this.currentResultsLayer is not null);
-                //    this.mapTitle = new MapTitle(canvas, this.title, mapLayer);
-                //    canvas.refresh();
-                //}
-                return;
-            }
+        public async Task setResultsLayer() { // TODO
+            //// only change results layer and title if there are no visible animate layers
+            //var animationLayers = Utils.getLayersInGroup(Utils._ANIMATION_GROUP_NAME, visible: true);
+            //if (animationLayers.Count > 0) {
+            //    return;
+            //}
+            //// make sure results group is visible, since running animations may have made it invisible
+            //var resultsGroup = Utils.getGroupLayerByName(Utils._RESULTS_GROUP_NAME);
+            //if (!resultsGroup.IsVisible) {
+            //    await QueuedTask.Run(() => { resultsGroup.SetVisibility(true); });
+            //}
+            ////TODO
+            //var resultsLayers = Utils.getLayersInGroup(Utils._RESULTS_GROUP_NAME, visible: true);
+            //if (resultsLayers.Count == 0) {
+            //    this.currentResultsLayer = null;
+            //    // no results or animation layers: clear graphics layer
+            //    await QueuedTask.Run(() => {
+            //        this.setMapTitle(null);
+            //    });
+            //    return;
+            //} else {
+            //    this.currentResultsLayer = resultsLayers[0] as FeatureLayer;
+            //    await QueuedTask.Run(() => {
+            //        this.setMapTitle(this.currentResultsLayer);
+            //    });
+            //    //TODO
+            //    //foreach (var treeLayer in resultsLayers) {
+            //    //    var mapLayer = treeLayer.layer();
+            //    //    Debug.Assert(mapLayer is not null);
+            //    //    this.currentResultsLayer = cast(QgsVectorLayer, mapLayer);
+            //    //    Debug.Assert(this.currentResultsLayer is not null);
+            //    //    this.mapTitle = new MapTitle(canvas, this.title, mapLayer);
+            //    //    canvas.refresh();
+            //    //}
+            //    return;
+            //}
         }
-        
+
         // Remove shape files (all components) from animation directory.
         public virtual void clearAnimationDir() {
             if (Directory.Exists(this._gv.animationDir)) {
@@ -4450,7 +4537,7 @@ namespace ArcSWAT3 {
                 var pattern = "*.png";
                 Matcher matcher = new Matcher();
                 matcher.AddInclude(pattern);
-                foreach (var f in matcher.GetResultsInFullPath(this._gv.animationDir)) {
+                foreach (var f in matcher.GetResultsInFullPath(this._gv.pngDir)) {
                     try {
                         File.Delete(f);
                     }
@@ -4462,155 +4549,108 @@ namespace ArcSWAT3 {
             this.currentStillNumber = 0;
         }
 
-            // started developing this but incomplete: not clear how to render the annotation
-            // also not clear if multiple annotated visible layers would give clashing annotations
-            // could continue with MapTitle below, and perhaps use QgsMapCanvasAnnotationItem as the QgsMapCanvasItem,
-            // but looks as if it would be more complicated than current version
-            // class MapTitle2(QgsTextAnnotation):
-            // 
-            //     def __init__(self, canvas: QgsMapCanvas, title: str, 
-            //                  layer: QgsMapLayer, line2: Optional[str]=None):
-            //         super().__init__() 
-            //         ## normal font
-            //         self.normFont = QFont()
-            //         ## normal metrics object
-            //         self.metrics = QFontMetricsF(self.normFont)
-            //         # bold metrics object
-            //         boldFont = QFont()
-            //         boldFont.setBold(True)
-            //         metricsBold = QFontMetricsF(boldFont)
-            //         ## titled layer
-            //         self.layer = layer
-            //         ## project line of title
-            //         self.line0 = 'Project: {0}', title)
-            //         ## First line of title
-            //         self.line1 = layer.name()
-            //         ## second line of title (or None)
-            //         self.line2 = line2
-            //         rect0 = metricsBold.boundingRect(self.line0)
-            //         rect1 = self.metrics.boundingRect(self.line1)
-            //         ## bounding rectange of first 2 lines 
-            //         self.rect01 = QRectF(0, rect0.top() + rect0.height(),
-            //                             max(rect0.width(), rect1.width()),
-            //                             rect0.height() + rect1.height())
-            //         ## bounding rectangle
-            //         self.rect = None
-            //         if line2 is None:
-            //             self.rect = self.rect01
-            //         else:
-            //             self.updateLine2(line2)
-            //         text = QTextDocument()
-            //         text.setDefaultFont(self.normFont)
-            //         if self.line2 is None:
-            //             text.setHtml('<p><b>{0}</b><br/>{1}</p>', self.line0, self.line1))
-            //         else:
-            //             text.setHtml('<p><b>{0}</b><br/>{1}<br/>{2}</p>', self.line0, self.line1, self.line2))
-            //         canvasRect = canvas.extent()
-            //         self.setMapPosition(QgsPointXY(canvasRect.xMinimum(), canvasRect.yMaximum()))
-            //         self.setHasFixedMapPosition(True)
-            //         self.setFrameSize(self.rect.size())
-            //         self.setDocument(text)
-            //         self.setMapLayer(layer)
-            //     
-            //     def updateLine2(self, line2: str) -> None:
-            //         """Change second line."""
-            //         self.line2 = line2
-            //         rect2 = self.metrics.boundingRect(self.line2)
-            //         self.rect = QRectF(0, self.rect01.top(), 
-            //                             max(self.rect01.width(), rect2.width()), 
-            //                             self.rect01.height() + rect2.height())
-            //         
-            //     def renderAnnotation(self, context, size):
+        // started developing this but incomplete: not clear how to render the annotation
+        // also not clear if multiple annotated visible layers would give clashing annotations
+        // could continue with MapTitle below, and perhaps use QgsMapCanvasAnnotationItem as the QgsMapCanvasItem,
+        // but looks as if it would be more complicated than current version
+        // class MapTitle2(QgsTextAnnotation):
+        // 
+        //     def __init__(self, canvas: QgsMapCanvas, title: str, 
+        //                  layer: QgsMapLayer, line2: Optional[str]=None):
+        //         super().__init__() 
+        //         ## normal font
+        //         self.normFont = QFont()
+        //         ## normal metrics object
+        //         self.metrics = QFontMetricsF(self.normFont)
+        //         # bold metrics object
+        //         boldFont = QFont()
+        //         boldFont.setBold(True)
+        //         metricsBold = QFontMetricsF(boldFont)
+        //         ## titled layer
+        //         self.layer = layer
+        //         ## project line of title
+        //         self.line0 = 'Project: {0}', title)
+        //         ## First line of title
+        //         self.line1 = layer.name()
+        //         ## second line of title (or None)
+        //         self.line2 = line2
+        //         rect0 = metricsBold.boundingRect(self.line0)
+        //         rect1 = self.metrics.boundingRect(self.line1)
+        //         ## bounding rectange of first 2 lines 
+        //         self.rect01 = QRectF(0, rect0.top() + rect0.height(),
+        //                             max(rect0.width(), rect1.width()),
+        //                             rect0.height() + rect1.height())
+        //         ## bounding rectangle
+        //         self.rect = None
+        //         if line2 is None:
+        //             self.rect = self.rect01
+        //         else:
+        //             self.updateLine2(line2)
+        //         text = QTextDocument()
+        //         text.setDefaultFont(self.normFont)
+        //         if self.line2 is None:
+        //             text.setHtml('<p><b>{0}</b><br/>{1}</p>', self.line0, self.line1))
+        //         else:
+        //             text.setHtml('<p><b>{0}</b><br/>{1}<br/>{2}</p>', self.line0, self.line1, self.line2))
+        //         canvasRect = canvas.extent()
+        //         self.setMapPosition(QgsPointXY(canvasRect.xMinimum(), canvasRect.yMaximum()))
+        //         self.setHasFixedMapPosition(True)
+        //         self.setFrameSize(self.rect.size())
+        //         self.setDocument(text)
+        //         self.setMapLayer(layer)
+        //     
+        //     def updateLine2(self, line2: str) -> None:
+        //         """Change second line."""
+        //         self.line2 = line2
+        //         rect2 = self.metrics.boundingRect(self.line2)
+        //         self.rect = QRectF(0, self.rect01.top(), 
+        //                             max(self.rect01.width(), rect2.width()), 
+        //                             self.rect01.height() + rect2.height())
+        //         
+        //     def renderAnnotation(self, context, size):
+
+
+        public void setMapTitle(Layer layer, string line2 = null) {
+            // set map title referring to layer.  Must be called on MCT.
+            // if layer is null just clears the graphic layer
+            string elementName = "title";
+            var mapTitleLayer = MapView.Active.Map.GetLayersAsFlattenedList()
+                .OfType<GraphicsLayer>().FirstOrDefault();
+            if (mapTitleLayer == null) {
+                var glParams = new GraphicsLayerCreationParams();
+                mapTitleLayer = LayerFactory.Instance.CreateLayer<GraphicsLayer>(glParams, MapView.Active.Map);
+            }
+            while (true) {
+                var currentElement = mapTitleLayer.FindElement(elementName);
+                if (currentElement != null) {
+                    mapTitleLayer.RemoveElement(currentElement);
+                } else { break; }
+            }
+            if (layer == null) { return; }
+            mapTitleLayer.SetName("Map Title");
+            mapTitleLayer.SetExpanded(true);
+            //# project line of title
+            string line0 = string.Format("Project: {0}\n", this.title);
+            //# First line of title
+            string line1 = layer.Name;
+            // mapTitle text
+            string mapTitle;
+            if (line2 == null) {
+                mapTitle = line0 + line1;
+            } else {
+                mapTitle = line0 + line1 + "\n" + line2;
+            }
+            var extent = MapView.Active.Extent;
+            int yDiff = 800;
+            if (line2 == null) { yDiff = 600; }
+            MapPoint location = MapPointBuilderEx.CreateMapPoint(extent.XMin + 200, extent.YMax - yDiff);
+            var elemInfo = new ElementInfo() {
+                Anchor = Anchor.TopLeftCorner
+            };
+            var element = mapTitleLayer.AddElement(location, mapTitle, null, elementName, false, elemInfo);
+        }
+
     }
-    
-    //TODO
-    //// Item for displaying title at top left of map canvas.
-    //public class MapTitle
-    //    : QgsMapCanvasItem {
-        
-    //    public object layer;
-        
-    //    public string line0;
-        
-    //    public object line1;
-        
-    //    public object line2;
-        
-    //    public object metrics;
-        
-    //    public object normFont;
-        
-    //    public object rect;
-        
-    //    public object rect01;
-        
-    //    public MapTitle(object canvas, string title, object layer, object line2 = null) {
-    //        //# normal font
-    //        this.normFont = QFont();
-    //        //# normal metrics object
-    //        this.metrics = QFontMetricsF(this.normFont);
-    //        // bold metrics object
-    //        var boldFont = QFont();
-    //        boldFont.setBold(true);
-    //        var metricsBold = QFontMetricsF(boldFont);
-    //        //# titled layer
-    //        this.layer = layer;
-    //        //# project line of title
-    //        this.line0 = "Project: {0}", title);
-    //        //# First line of title
-    //        this.line1 = layer.name();
-    //        //# second line of title (or None)
-    //        this.line2 = line2;
-    //        var rect0 = metricsBold.boundingRect(this.line0);
-    //        var rect1 = this.metrics.boundingRect(this.line1);
-    //        //# bounding rectange of first 2 lines 
-    //        this.rect01 = QRectF(0, rect0.top() + rect0.height(), max(rect0.width(), rect1.width()), rect0.height() + rect1.height());
-    //        //# bounding rectangle
-    //        this.rect = null;
-    //        if (line2 is null) {
-    //            this.rect = this.rect01;
-    //        } else {
-    //            this.updateLine2(line2);
-    //        }
-    //    }
-        
-    //    // Paint the text.
-    //    public virtual object paint(object painter, object option, object widget = null) {
-    //        // type: ignore # @UnusedVariable
-    //        //         if self.line2 is None:
-    //        //             painter.drawText(self.rect, Qt.AlignLeft, '{0}\n{1}', self.line0, self.line1))
-    //        //         else:
-    //        //             painter.drawText(self.rect, Qt.AlignLeft, '{0}\n{1}\n{2}', self.line0, self.line1, self.line2))
-    //        var text = QTextDocument();
-    //        text.setDefaultFont(this.normFont);
-    //        if (this.line2 is null) {
-    //            text.setHtml("<p><b>{0}</b><br/>{1}</p>", this.line0, this.line1));
-    //        } else {
-    //            text.setHtml("<p><b>{0}</b><br/>{1}<br/>{2}</p>", this.line0, this.line1, this.line2));
-    //        }
-    //        //Utils.loginfo(text.toPlainText())
-    //        //Utils.loginfo(text.toHtml())
-    //        text.drawContents(painter);
-    //    }
-        
-    //    // Return the bounding rectangle.
-    //    public virtual object boundingRect() {
-    //        Debug.Assert(this.rect is not null);
-    //        return this.rect;
-    //    }
-        
-    //    // Change second line.
-    //    public virtual object updateLine2(string line2) {
-    //        this.line2 = line2;
-    //        var rect2 = this.metrics.boundingRect(this.line2);
-    //        this.rect = QRectF(0, this.rect01.top(), max(this.rect01.width(), rect2.width()), this.rect01.height() + rect2.height());
-    //    }
-        
-    //    // Function used to identify a MapTitle object even when it has a wrapper.
-    //    public virtual string identifyMapTitle() {
-    //        return "MapTitle";
-    //    }
-    //}
-    
+
 
 }

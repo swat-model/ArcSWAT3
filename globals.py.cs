@@ -495,7 +495,7 @@ namespace ArcSWAT3
         public void setVerticalFactor() {
             if (this.verticalUnits == Parameters._METRES) {
                 this.verticalFactor = 1.0;
-            } else if (this.verticalUnits == Parameters._FEET) {
+            } else if (this.verticalUnits == Parameters._FEET || this.verticalUnits == Parameters._FEET_US) {
                 this.verticalFactor = Parameters._FEETTOMETRES;
             } else if (this.verticalUnits == Parameters._CM) {
                 this.verticalFactor = Parameters._CMTOMETRES;

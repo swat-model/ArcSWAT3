@@ -233,12 +233,14 @@ namespace ArcSWAT3
             //this.areaUnitsBox.activated.connect(this.changeAreaOfCell);
             this.horizontalCombo.Items.Add(Parameters._METRES);
             this.horizontalCombo.Items.Add(Parameters._FEET);
+            this.horizontalCombo.Items.Add(Parameters._FEET_US);
             this.horizontalCombo.Items.Add(Parameters._DEGREES);
             this.horizontalCombo.Items.Add(Parameters._UNKNOWN);
             // set horizontal unit default to metres
             this.horizontalCombo.SelectedItem = Parameters._METRES;
             this.verticalCombo.Items.Add(Parameters._METRES);
             this.verticalCombo.Items.Add(Parameters._FEET);
+            this.verticalCombo.Items.Add(Parameters._FEET_US);
             this.verticalCombo.Items.Add(Parameters._CM);
             this.verticalCombo.Items.Add(Parameters._MM);
             this.verticalCombo.Items.Add(Parameters._INCHES);
@@ -400,7 +402,7 @@ namespace ArcSWAT3
                 Utils.error("DEM layer not found: have you removed it?", this._gv.isBatch);
                 return;
             }
-            if (!await this.setDimensions(demLayer)) {
+            if (!await this.setDimensions(demLayer, this._gv)) {
                 return;
             }
             if (!this._gv.useGridModel && string.IsNullOrEmpty(this._gv.basinFile)) {
@@ -495,11 +497,11 @@ namespace ArcSWAT3
                     MapView.Active.ZoomTo(demMapLayer);
                     // set extent to DEM as otherwise defaults to full globe
                     var demExtent = demMapLayer.QueryExtent();
-                    var map = MapView.Active.Map;
+                    var map = ArcSWAT.mainMap;
                     map.SetCustomFullExtent(demExtent);
                 });
                 this._gv.demFile = demFile;
-                await this.setDefaultNumCells(demMapLayer);
+                await this.setDefaultNumCells(demMapLayer, this._gv);
                 // warn if large DEM
                 var numCells = this.demWidth * this.demHeight;
                 if (numCells > 4000000.0) {
@@ -675,7 +677,7 @@ namespace ArcSWAT3
                 return;
             }
             // changing default number of cells 
-            if (!await this.setDefaultNumCells(demLayer)) {
+            if (!await this.setDefaultNumCells(demLayer, this._gv)) {
                 return;
             }
             string @base = Path.ChangeExtension(this._gv.demFile, null);
@@ -1182,8 +1184,8 @@ namespace ArcSWAT3
         // Set threshold number of cells to default of 1% of number in grid, 
         //         unless already set.
         //         
-        public async Task<bool> setDefaultNumCells(RasterLayer demLayer) {
-            if (!await this.setDimensions(demLayer)) {
+        public async Task<bool> setDefaultNumCells(RasterLayer demLayer, GlobalVars gv) {
+            if (!await this.setDimensions(demLayer, gv)) {
                 return false;
             }
             // set to default number of cells unless already set
@@ -1204,11 +1206,12 @@ namespace ArcSWAT3
         //         Also sets DEM properties tab.
         //         
         //         
-        public async Task<bool> setDimensions(RasterLayer demLayer) {
+        public async Task<bool> setDimensions(RasterLayer demLayer, GlobalVars gv) {
             string @string;
             double factor;
             int epsg;
             Unit unit;
+            Unit verticalUnit;
             SpatialReference crs = null;
             await QueuedTask.Run(() => {
                 crs = demLayer.GetSpatialReference();
@@ -1228,6 +1231,7 @@ namespace ArcSWAT3
                     this._gv.topo.crsProject = crs;
                 }
                 unit = crs.Unit;
+                verticalUnit = crs.ZUnit;
             }
             catch (Exception ex) {
                 Utils.loginfo(string.Format("Failure to read DEM unit: {0}", ex.Message));
@@ -1281,8 +1285,17 @@ namespace ArcSWAT3
             if (unit is LinearUnit) {
                 factor = unit.ConversionFactor;
                 this.horizontalCombo.Items.Add(unit.ToString());
-                this.horizontalCombo.SelectedIndex = this.horizontalCombo.Items.IndexOf(unit.ToString());
+                this.horizontalCombo.SelectedIndex = this.horizontalCombo.Items.IndexOf(unit.Name);
                 this.horizontalCombo.Enabled = false;
+                if (verticalUnit is not null) {
+                    this.verticalCombo.Items.Add(verticalUnit.ToString());
+                    this.verticalCombo.SelectedIndex = this.verticalCombo.Items.IndexOf(unit.Name);
+                    this.verticalCombo.Enabled = false;
+                    gv.verticalFactor = verticalUnit.ConversionFactor;
+                    gv.verticalUnits = verticalUnit.ToString();
+                } else {
+                    this.verticalCombo.Enabled = true;
+                }
             //int uCode = unit.FactoryCode;
             //if (uCode == LinearUnit.Meters.FactoryCode) {
             //    factor = 1.0;
@@ -1569,7 +1582,7 @@ namespace ArcSWAT3
             }
             // make only the inlets/outlets layer selectable (else clicking selects all features)
             await QueuedTask.Run(() => {
-                foreach (Layer layer in MapView.Active.Map.GetLayersAsFlattenedList().Where(l => l is FeatureLayer).ToList()) {
+                foreach (Layer layer in ArcSWAT.mainMap.GetLayersAsFlattenedList().Where(l => l is FeatureLayer).ToList()) {
                     ((FeatureLayer)layer).SetSelectable(false);
                 }
                 var cimFeatureDefinition = this.selFromLayer.GetDefinition() as ArcGIS.Core.CIM.CIMBasicFeatureLayer;
@@ -1682,7 +1695,7 @@ namespace ArcSWAT3
             }
             // make only the watershed layer selectable (else clicking selects all features)
             await QueuedTask.Run(() => {
-                foreach (Layer layer in MapView.Active.Map.GetLayersAsFlattenedList().Where(l => l is FeatureLayer).ToList()) {
+                foreach (Layer layer in ArcSWAT.mainMap.GetLayersAsFlattenedList().Where(l => l is FeatureLayer).ToList()) {
                     ((FeatureLayer)layer).SetSelectable(false);
                 }
                 var cimFeatureDefinition = wshedLayer.GetDefinition() as ArcGIS.Core.CIM.CIMBasicFeatureLayer;
@@ -1871,7 +1884,7 @@ namespace ArcSWAT3
             }
             // make only watershed layer selectable
             await QueuedTask.Run(() => {
-                foreach (Layer layer in MapView.Active.Map.GetLayersAsFlattenedList().Where(l => l is FeatureLayer).ToList()) {
+                foreach (Layer layer in ArcSWAT.mainMap.GetLayersAsFlattenedList().Where(l => l is FeatureLayer).ToList()) {
                     ((FeatureLayer)layer).SetSelectable(false);
                 }
                 var cimFeatureDefinition = wshedLayer.GetDefinition() as ArcGIS.Core.CIM.CIMBasicFeatureLayer;
@@ -4289,7 +4302,7 @@ namespace ArcSWAT3
             if (demLayer is not null) {
                 this._gv.demFile = demFile;
                 this.selectDem.Text = this._gv.demFile;
-                await this.setDefaultNumCells(demLayer);
+                await this.setDefaultNumCells(demLayer, this._gv);
             } else {
                 this._gv.demFile = "";
             }

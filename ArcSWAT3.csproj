@@ -8,6 +8,7 @@
 		<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
 		<NoWarn>CA1416</NoWarn>
 		<Platforms>AnyCPU;x86;x64</Platforms>
+		<PlatformTarget>AnyCPU</PlatformTarget>
 	</PropertyGroup>
 	<ItemGroup>
 		<Compile Remove="about.py.cs" />
@@ -76,6 +77,8 @@
 		<Resource Include="DarkImages\AddInDesktop32.png" />
 	</ItemGroup>
 	<ItemGroup>
+		<PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.4.0" />
+		<PackageReference Include="Magick.NET.Core" Version="14.4.0" />
 		<PackageReference Include="MaxRev.Gdal.Core" Version="3.7.0.217" />
 		<PackageReference Include="MaxRev.Gdal.WindowsRuntime.Minimal" Version="3.7.0.100" />
 		<PackageReference Include="Microsoft.Extensions.FileSystemGlobbing" Version="8.0.0" />

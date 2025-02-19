@@ -101,6 +101,10 @@ namespace ArcSWAT3
 
         public Label PrecordLabel => this.recordLabel;
 
+        public RadioButton PcurrentResultsMap => this.currrentResultsMap;
+
+        public RadioButton PnewResultsMap => this.newResultsMap;
+
         private void scenariosCombo_SelectionChangeCommitted(object sender, EventArgs e) {
             this._parent.setupDb();
         }
@@ -133,9 +137,9 @@ namespace ArcSWAT3
             this._parent.setResultsFile();
         }
 
-        private async void tabWidget_SelectedIndexChanged(object sender, EventArgs e) {
-            await this._parent.modeChange();
-        }
+        //private async void tabWidget_SelectedIndexChanged(object sender, EventArgs e) {
+        //    await this._parent.modeChange();
+        //}
 
         private async void saveButton_Click(object sender, EventArgs e) {
             await this._parent.makeResults();

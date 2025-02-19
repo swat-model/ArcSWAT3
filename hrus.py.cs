@@ -2786,7 +2786,7 @@ namespace ArcSWAT3 {
                 } else {
                     subLayer = demLayer;
                 }
-                var group = MapView.Active.Map.Layers.OfType<GroupLayer>().FirstOrDefault(layer => string.Equals(layer.Name, Utils._WATERSHED_GROUP_NAME));
+                var group = ArcSWAT.mainMap.Layers.OfType<GroupLayer>().FirstOrDefault(layer => string.Equals(layer.Name, Utils._WATERSHED_GROUP_NAME));
                 var index = Utils.groupIndex(group, subLayer);
                 await Utils.removeLayerByLegend(legend);
                 if (group is not null) {
@@ -5033,7 +5033,7 @@ namespace ArcSWAT3 {
             var actHRUsFile = Utils.join(this._gv.shapesDir, actHRUsFilename);
             if (this.removeDeselectedHRUs(actHRUsFile, hrugisIndx)) {
                 var legend = Utils._ACTHRUSLEGEND;
-                var group = MapView.Active.Map.Layers.OfType<GroupLayer>().FirstOrDefault(layer => string.Equals(layer.Name, Utils._WATERSHED_GROUP_NAME));
+                var group = ArcSWAT.mainMap.Layers.OfType<GroupLayer>().FirstOrDefault(layer => string.Equals(layer.Name, Utils._WATERSHED_GROUP_NAME));
                 var index = 0;
                 await Utils.removeLayerByLegend(legend);
                 var ft = FileTypes._HRUS;

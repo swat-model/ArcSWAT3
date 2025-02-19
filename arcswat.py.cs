@@ -35,6 +35,11 @@ using System.Runtime.InteropServices;
 using System.Data.Entity.Core.Mapping;
 using System.IO.Compression;
 using System.Xml;
+using ArcGIS.Core.Data.UtilityNetwork.Trace;
+using ArcGIS.Desktop.Core.Events;
+using ArcGIS.Core.Events;
+using System.Windows.Documents;
+using System.Text.RegularExpressions;
 
 
 
@@ -66,6 +71,10 @@ namespace ArcSWAT3
         public string _SWATEDITORVERSION = Parameters._SWATEDITORVERSION;
 
         public static string @__version__ = getVersion();
+
+        public static Map mainMap;
+
+        public static MapProjectItem mainMapItem;
 
         public ArcSWAT() {
             //object locale;
@@ -130,8 +139,11 @@ namespace ArcSWAT3
             //# visualise window
             this.vis = null;
             Utils.openLog();
-            // report QGIS version
-            Utils.loginfo(String.Format("ArcSWAT version: {0}", ArcSWAT.@__version__));
+            // report version
+            System.Reflection.Assembly assembly = System.Reflection.Assembly.GetEntryAssembly();
+            FileVersionInfo fvi = FileVersionInfo.GetVersionInfo(assembly.Location);
+            string fileVersion = String.Format("{0}.{1}.{2}", fvi.FileMajorPart, fvi.FileMinorPart, fvi.FileBuildPart);
+            Utils.loginfo(String.Format("ArcGIS Pro version {0}; ArcSWAT version: {1}", fileVersion, ArcSWAT.@__version__));
         }
 
         // def initGui(self) -> None:
@@ -298,6 +310,23 @@ namespace ArcSWAT3
             //this._odlg.projPath.repaint();
             this._odlg._gv = this._gv;
             this._odlg.checkReports();
+            // identify the main project map
+            var mapItems = Project.Current.GetItems<MapProjectItem>();
+            int mapCount = mapItems.Count();
+            if (mapCount == 1) {
+                // maybe new project.  Set map title as "Main" and store link to it
+                ArcSWAT.mainMapItem = mapItems.First();
+                ArcSWAT.mainMap = await QueuedTask.Run(mainMapItem.GetMap);
+            } else {
+                foreach (var mapItem in mapItems) {
+                    if (mapItem.Name.Equals("Map", StringComparison.CurrentCultureIgnoreCase)) {
+                        ArcSWAT.mainMapItem = mapItem;
+                        ArcSWAT.mainMap = await QueuedTask.Run(mapItem.GetMap);
+                        break;
+                    }
+                }
+            }
+            ProjectItemRemovingEvent.Subscribe(OnItemRemoval);
             await setLegendGroups();
             // enable edit button if converted from Arc
             int choice;
@@ -339,6 +368,17 @@ namespace ArcSWAT3
             this._odlg.setProject(this._gv.projDir);
             //this._odlg.mainBox.setEnabled(true);
             //this._odlg.setCursor(Qt.ArrowCursor);
+        }
+
+        public Task OnItemRemoval(ProjectItemRemovingEventArgs args) {
+            Item[] arg = args.ProjectItems;
+            foreach (Item item in arg) {
+                if (item.ToString().StartsWith("<MapProjectItem Map@")) {
+                    Utils.error("You are trying to delete the main map", false);
+                    args.Cancel = true;
+                }
+            }
+            return Task.CompletedTask;
         }
 
         // Run parameters form.
@@ -423,30 +463,37 @@ namespace ArcSWAT3
                 return false;
             }
             this._gv.demFile = demFile;
+            dynamic nodata = null;
             await QueuedTask.Run(() => {
                 // set extent to DEM as otherwise defaults to full globe
                 var demExtent = demLayer.QueryExtent();
-                var map = MapView.Active.Map;
+                var map = ArcSWAT.mainMap;
                 map.SetCustomFullExtent(demExtent);
-                dynamic nodata = demLayer.GetRaster().GetNoDataValue();
-                var typ = nodata.GetType();
-                if (typ.IsArray) {
-                    this._gv.elevationNoData = Convert.ToDouble(nodata[0]);
-                } else {
-                    this._gv.elevationNoData = Convert.ToDouble(nodata);
+                nodata = demLayer.GetRaster().GetNoDataValue();
+                if (nodata is not null) { 
+                    var typ = nodata.GetType();
+                    if (typ.IsArray) {
+                        this._gv.elevationNoData = Convert.ToDouble(nodata[0]);
+                    } else {
+                        this._gv.elevationNoData = Convert.ToDouble(nodata);
+                    }
                 }
             });
 
+            if (nodata is null) {
+                Utils.loginfo("demProcessed failed: dem does not have a nodata value");
+                return false;
+            }
             var crsProject = await QueuedTask.Run(() => demLayer.GetSpatialReference());
-            var units = crsProject.Unit;
-            var factor = units.Name == "Meter" ? 1.0 : units.Name == "Foot" ? 0.3048 : 0.0;
-            if (factor == 0) {
-                Utils.loginfo(string.Format("demProcessed failed: units are {0}", units));
+            if (!crsProject.IsProjected) { 
+                Utils.loginfo(string.Format("demProcessed failed: DEM is not projected"));
                 return false;
             }
             var XYSizes = await QueuedTask.Run<Tuple<double, double>>(() => {
                 return demLayer.GetRaster().GetMeanCellSize();
             });
+            var units = crsProject.Unit;
+            double factor = units.ConversionFactor;
             this._gv.cellArea = XYSizes.Item1 * XYSizes.Item2 * factor * factor;
             // hillshade
             //Delineation.addHillshade(demFile, root, demLayer, this._gv);
@@ -615,16 +662,16 @@ namespace ArcSWAT3
         //         Create them if necessary.
         //         
         public static async Task setLegendGroups() {
-            var map = MapView.Active.Map;
+            var map = ArcSWAT.mainMap;
             await QueuedTask.Run(async () => {
                 var groups = new List<string> {
                     Utils._SLOPE_GROUP_NAME,
                     Utils._SOIL_GROUP_NAME,
                     Utils._LANDUSE_GROUP_NAME,
-                    Utils._WATERSHED_GROUP_NAME,
-                    Utils._RESULTS_GROUP_NAME,
-                    Utils._ANIMATION_GROUP_NAME
+                    Utils._WATERSHED_GROUP_NAME
                 };
+                    //Utils._RESULTS_GROUP_NAME,
+                    //Utils._ANIMATION_GROUP_NAME
                 foreach (string name in groups) {
                     var layer = Utils.getGroupLayerByName(name);
                     if (layer is null) {
@@ -632,8 +679,8 @@ namespace ArcSWAT3
                         //layer.SetExpanded(true);
                     }
                 }
-                // clear anything left accidentally in animation group
-                await Utils.clearAnimationGroup();
+                // clear any animations left accidentally
+                await Utils.clearAnimationMaps();
                 // don't do this - hides landuse, soil and slope
                 //// move world hillshade layer to base of watershed group
                 //GroupLayer wshedGroup = Utils.getGroupLayerByName(Utils._WATERSHED_GROUP_NAME);

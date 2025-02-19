@@ -25,1123 +25,1128 @@
         /// the contents of this method with the code editor.
         /// </summary>
         private void InitializeComponent() {
-            this.components = new System.ComponentModel.Container();
+            components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(VisualiseForm));
-            this.scenarioBox = new System.Windows.Forms.GroupBox();
-            this.scenariosCombo = new System.Windows.Forms.ComboBox();
-            this.outputBox = new System.Windows.Forms.GroupBox();
-            this.outputCombo = new System.Windows.Forms.ComboBox();
-            this.periodBox = new System.Windows.Forms.GroupBox();
-            this.label8 = new System.Windows.Forms.Label();
-            this.label7 = new System.Windows.Forms.Label();
-            this.label6 = new System.Windows.Forms.Label();
-            this.label5 = new System.Windows.Forms.Label();
-            this.label4 = new System.Windows.Forms.Label();
-            this.label3 = new System.Windows.Forms.Label();
-            this.startYear = new System.Windows.Forms.TextBox();
-            this.finishYear = new System.Windows.Forms.TextBox();
-            this.startMonth = new System.Windows.Forms.ComboBox();
-            this.finishMonth = new System.Windows.Forms.ComboBox();
-            this.finishDay = new System.Windows.Forms.ComboBox();
-            this.startDay = new System.Windows.Forms.ComboBox();
-            this.label2 = new System.Windows.Forms.Label();
-            this.label1 = new System.Windows.Forms.Label();
-            this.tabWidget = new System.Windows.Forms.TabControl();
-            this.tabPage1 = new System.Windows.Forms.TabPage();
-            this.printGroup = new System.Windows.Forms.GroupBox();
-            this.printButton = new System.Windows.Forms.Button();
-            this.label10 = new System.Windows.Forms.Label();
-            this.printCount = new System.Windows.Forms.NumericUpDown();
-            this.portraitButton = new System.Windows.Forms.RadioButton();
-            this.landscapeButton = new System.Windows.Forms.RadioButton();
-            this.saveButton = new System.Windows.Forms.Button();
-            this.compareGroup = new System.Windows.Forms.GroupBox();
-            this.compareButton = new System.Windows.Forms.Button();
-            this.compareLabel = new System.Windows.Forms.Label();
-            this.summaryBox = new System.Windows.Forms.GroupBox();
-            this.summaryCombo = new System.Windows.Forms.ComboBox();
-            this.variablesBox = new System.Windows.Forms.GroupBox();
-            this.variableList = new System.Windows.Forms.ListBox();
-            this.clearbutton = new System.Windows.Forms.Button();
-            this.delButton = new System.Windows.Forms.Button();
-            this.allButton = new System.Windows.Forms.Button();
-            this.addButton = new System.Windows.Forms.Button();
-            this.variableCombo = new System.Windows.Forms.ComboBox();
-            this.groupBox1 = new System.Windows.Forms.GroupBox();
-            this.resultsFileButton = new System.Windows.Forms.Button();
-            this.resultsFileEdit = new System.Windows.Forms.TextBox();
-            this.tabPage2 = new System.Windows.Forms.TabPage();
-            this.label14 = new System.Windows.Forms.Label();
-            this.recordLabel = new System.Windows.Forms.Label();
-            this.playButton = new System.Windows.Forms.Button();
-            this.recordButton = new System.Windows.Forms.Button();
-            this.label13 = new System.Windows.Forms.Label();
-            this.spinBox = new System.Windows.Forms.NumericUpDown();
-            this.slider = new System.Windows.Forms.TrackBar();
-            this.dateLabel = new System.Windows.Forms.Label();
-            this.pauseCommand = new System.Windows.Forms.Button();
-            this.playCommand = new System.Windows.Forms.Button();
-            this.rewindCommand = new System.Windows.Forms.Button();
-            this.composeOptions = new System.Windows.Forms.GroupBox();
-            this.composeCount = new System.Windows.Forms.NumericUpDown();
-            this.label12 = new System.Windows.Forms.Label();
-            this.composePortrait = new System.Windows.Forms.RadioButton();
-            this.composeLandscape = new System.Windows.Forms.RadioButton();
-            this.animationMode = new System.Windows.Forms.GroupBox();
-            this.printAnimation = new System.Windows.Forms.RadioButton();
-            this.canvasAnimation = new System.Windows.Forms.RadioButton();
-            this.animationSetup = new System.Windows.Forms.GroupBox();
-            this.animationVariableCombo = new System.Windows.Forms.ComboBox();
-            this.label11 = new System.Windows.Forms.Label();
-            this.currentAnimation = new System.Windows.Forms.RadioButton();
-            this.newAnimation = new System.Windows.Forms.RadioButton();
-            this.tabPage3 = new System.Windows.Forms.TabPage();
-            this.label9 = new System.Windows.Forms.Label();
-            this.tableWidget = new System.Windows.Forms.DataGridView();
-            this.plotButton = new System.Windows.Forms.Button();
-            this.addObserved = new System.Windows.Forms.Button();
-            this.downPlot = new System.Windows.Forms.Button();
-            this.upPlot = new System.Windows.Forms.Button();
-            this.copyPlot = new System.Windows.Forms.Button();
-            this.deletePlot = new System.Windows.Forms.Button();
-            this.addPlot = new System.Windows.Forms.Button();
-            this.label17 = new System.Windows.Forms.Label();
-            this.label16 = new System.Windows.Forms.Label();
-            this.label15 = new System.Windows.Forms.Label();
-            this.variablePlot = new System.Windows.Forms.ComboBox();
-            this.hruPlot = new System.Windows.Forms.ComboBox();
-            this.subPlot = new System.Windows.Forms.ComboBox();
-            this.plotType = new System.Windows.Forms.ComboBox();
-            this.observedFileBox = new System.Windows.Forms.GroupBox();
-            this.observedFileButton = new System.Windows.Forms.Button();
-            this.observedFileEdit = new System.Windows.Forms.TextBox();
-            this.closeButton = new System.Windows.Forms.Button();
-            this.timer = new System.Windows.Forms.Timer(this.components);
-            this.scenarioBox.SuspendLayout();
-            this.outputBox.SuspendLayout();
-            this.periodBox.SuspendLayout();
-            this.tabWidget.SuspendLayout();
-            this.tabPage1.SuspendLayout();
-            this.printGroup.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.printCount)).BeginInit();
-            this.compareGroup.SuspendLayout();
-            this.summaryBox.SuspendLayout();
-            this.variablesBox.SuspendLayout();
-            this.groupBox1.SuspendLayout();
-            this.tabPage2.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.spinBox)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.slider)).BeginInit();
-            this.composeOptions.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.composeCount)).BeginInit();
-            this.animationMode.SuspendLayout();
-            this.animationSetup.SuspendLayout();
-            this.tabPage3.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.tableWidget)).BeginInit();
-            this.observedFileBox.SuspendLayout();
-            this.SuspendLayout();
+            scenarioBox = new System.Windows.Forms.GroupBox();
+            scenariosCombo = new System.Windows.Forms.ComboBox();
+            outputBox = new System.Windows.Forms.GroupBox();
+            outputCombo = new System.Windows.Forms.ComboBox();
+            periodBox = new System.Windows.Forms.GroupBox();
+            label8 = new System.Windows.Forms.Label();
+            label7 = new System.Windows.Forms.Label();
+            label6 = new System.Windows.Forms.Label();
+            label5 = new System.Windows.Forms.Label();
+            label4 = new System.Windows.Forms.Label();
+            label3 = new System.Windows.Forms.Label();
+            startYear = new System.Windows.Forms.TextBox();
+            finishYear = new System.Windows.Forms.TextBox();
+            startMonth = new System.Windows.Forms.ComboBox();
+            finishMonth = new System.Windows.Forms.ComboBox();
+            finishDay = new System.Windows.Forms.ComboBox();
+            startDay = new System.Windows.Forms.ComboBox();
+            label2 = new System.Windows.Forms.Label();
+            label1 = new System.Windows.Forms.Label();
+            tabWidget = new System.Windows.Forms.TabControl();
+            tabPage1 = new System.Windows.Forms.TabPage();
+            groupBox2 = new System.Windows.Forms.GroupBox();
+            newResultsMap = new System.Windows.Forms.RadioButton();
+            currrentResultsMap = new System.Windows.Forms.RadioButton();
+            printGroup = new System.Windows.Forms.GroupBox();
+            printButton = new System.Windows.Forms.Button();
+            label10 = new System.Windows.Forms.Label();
+            printCount = new System.Windows.Forms.NumericUpDown();
+            portraitButton = new System.Windows.Forms.RadioButton();
+            landscapeButton = new System.Windows.Forms.RadioButton();
+            saveButton = new System.Windows.Forms.Button();
+            compareGroup = new System.Windows.Forms.GroupBox();
+            compareButton = new System.Windows.Forms.Button();
+            compareLabel = new System.Windows.Forms.Label();
+            summaryBox = new System.Windows.Forms.GroupBox();
+            summaryCombo = new System.Windows.Forms.ComboBox();
+            variablesBox = new System.Windows.Forms.GroupBox();
+            variableList = new System.Windows.Forms.ListBox();
+            clearbutton = new System.Windows.Forms.Button();
+            delButton = new System.Windows.Forms.Button();
+            allButton = new System.Windows.Forms.Button();
+            addButton = new System.Windows.Forms.Button();
+            variableCombo = new System.Windows.Forms.ComboBox();
+            groupBox1 = new System.Windows.Forms.GroupBox();
+            resultsFileButton = new System.Windows.Forms.Button();
+            resultsFileEdit = new System.Windows.Forms.TextBox();
+            tabPage2 = new System.Windows.Forms.TabPage();
+            label14 = new System.Windows.Forms.Label();
+            recordLabel = new System.Windows.Forms.Label();
+            playButton = new System.Windows.Forms.Button();
+            recordButton = new System.Windows.Forms.Button();
+            label13 = new System.Windows.Forms.Label();
+            spinBox = new System.Windows.Forms.NumericUpDown();
+            slider = new System.Windows.Forms.TrackBar();
+            dateLabel = new System.Windows.Forms.Label();
+            pauseCommand = new System.Windows.Forms.Button();
+            playCommand = new System.Windows.Forms.Button();
+            rewindCommand = new System.Windows.Forms.Button();
+            composeOptions = new System.Windows.Forms.GroupBox();
+            composeCount = new System.Windows.Forms.NumericUpDown();
+            label12 = new System.Windows.Forms.Label();
+            composePortrait = new System.Windows.Forms.RadioButton();
+            composeLandscape = new System.Windows.Forms.RadioButton();
+            animationMode = new System.Windows.Forms.GroupBox();
+            printAnimation = new System.Windows.Forms.RadioButton();
+            canvasAnimation = new System.Windows.Forms.RadioButton();
+            animationSetup = new System.Windows.Forms.GroupBox();
+            animationVariableCombo = new System.Windows.Forms.ComboBox();
+            label11 = new System.Windows.Forms.Label();
+            currentAnimation = new System.Windows.Forms.RadioButton();
+            newAnimation = new System.Windows.Forms.RadioButton();
+            tabPage3 = new System.Windows.Forms.TabPage();
+            label9 = new System.Windows.Forms.Label();
+            tableWidget = new System.Windows.Forms.DataGridView();
+            plotButton = new System.Windows.Forms.Button();
+            addObserved = new System.Windows.Forms.Button();
+            downPlot = new System.Windows.Forms.Button();
+            upPlot = new System.Windows.Forms.Button();
+            copyPlot = new System.Windows.Forms.Button();
+            deletePlot = new System.Windows.Forms.Button();
+            addPlot = new System.Windows.Forms.Button();
+            label17 = new System.Windows.Forms.Label();
+            label16 = new System.Windows.Forms.Label();
+            label15 = new System.Windows.Forms.Label();
+            variablePlot = new System.Windows.Forms.ComboBox();
+            hruPlot = new System.Windows.Forms.ComboBox();
+            subPlot = new System.Windows.Forms.ComboBox();
+            plotType = new System.Windows.Forms.ComboBox();
+            observedFileBox = new System.Windows.Forms.GroupBox();
+            observedFileButton = new System.Windows.Forms.Button();
+            observedFileEdit = new System.Windows.Forms.TextBox();
+            closeButton = new System.Windows.Forms.Button();
+            timer = new System.Windows.Forms.Timer(components);
+            scenarioBox.SuspendLayout();
+            outputBox.SuspendLayout();
+            periodBox.SuspendLayout();
+            tabWidget.SuspendLayout();
+            tabPage1.SuspendLayout();
+            groupBox2.SuspendLayout();
+            printGroup.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)printCount).BeginInit();
+            compareGroup.SuspendLayout();
+            summaryBox.SuspendLayout();
+            variablesBox.SuspendLayout();
+            groupBox1.SuspendLayout();
+            tabPage2.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)spinBox).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)slider).BeginInit();
+            composeOptions.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)composeCount).BeginInit();
+            animationMode.SuspendLayout();
+            animationSetup.SuspendLayout();
+            tabPage3.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)tableWidget).BeginInit();
+            observedFileBox.SuspendLayout();
+            SuspendLayout();
             // 
             // scenarioBox
             // 
-            this.scenarioBox.Controls.Add(this.scenariosCombo);
-            this.scenarioBox.Location = new System.Drawing.Point(15, 12);
-            this.scenarioBox.Name = "scenarioBox";
-            this.scenarioBox.Size = new System.Drawing.Size(200, 46);
-            this.scenarioBox.TabIndex = 0;
-            this.scenarioBox.TabStop = false;
-            this.scenarioBox.Text = "Choose scenario";
+            scenarioBox.Controls.Add(scenariosCombo);
+            scenarioBox.Location = new System.Drawing.Point(15, 12);
+            scenarioBox.Name = "scenarioBox";
+            scenarioBox.Size = new System.Drawing.Size(200, 46);
+            scenarioBox.TabIndex = 0;
+            scenarioBox.TabStop = false;
+            scenarioBox.Text = "Choose scenario";
             // 
             // scenariosCombo
             // 
-            this.scenariosCombo.FormattingEnabled = true;
-            this.scenariosCombo.Location = new System.Drawing.Point(17, 17);
-            this.scenariosCombo.Name = "scenariosCombo";
-            this.scenariosCombo.Size = new System.Drawing.Size(177, 23);
-            this.scenariosCombo.TabIndex = 0;
-            this.scenariosCombo.SelectionChangeCommitted += new System.EventHandler(this.scenariosCombo_SelectionChangeCommitted);
+            scenariosCombo.FormattingEnabled = true;
+            scenariosCombo.Location = new System.Drawing.Point(17, 17);
+            scenariosCombo.Name = "scenariosCombo";
+            scenariosCombo.Size = new System.Drawing.Size(177, 23);
+            scenariosCombo.TabIndex = 0;
+            scenariosCombo.SelectionChangeCommitted += scenariosCombo_SelectionChangeCommitted;
             // 
             // outputBox
             // 
-            this.outputBox.Controls.Add(this.outputCombo);
-            this.outputBox.Location = new System.Drawing.Point(273, 12);
-            this.outputBox.Name = "outputBox";
-            this.outputBox.Size = new System.Drawing.Size(200, 46);
-            this.outputBox.TabIndex = 1;
-            this.outputBox.TabStop = false;
-            this.outputBox.Text = "Choose SWAT output table";
+            outputBox.Controls.Add(outputCombo);
+            outputBox.Location = new System.Drawing.Point(273, 12);
+            outputBox.Name = "outputBox";
+            outputBox.Size = new System.Drawing.Size(200, 46);
+            outputBox.TabIndex = 1;
+            outputBox.TabStop = false;
+            outputBox.Text = "Choose SWAT output table";
             // 
             // outputCombo
             // 
-            this.outputCombo.FormattingEnabled = true;
-            this.outputCombo.Location = new System.Drawing.Point(6, 17);
-            this.outputCombo.Name = "outputCombo";
-            this.outputCombo.Size = new System.Drawing.Size(177, 23);
-            this.outputCombo.TabIndex = 1;
-            this.outputCombo.SelectedIndexChanged += new System.EventHandler(this.outputCombo_SelectedChangeCommitted);
+            outputCombo.FormattingEnabled = true;
+            outputCombo.Location = new System.Drawing.Point(6, 17);
+            outputCombo.Name = "outputCombo";
+            outputCombo.Size = new System.Drawing.Size(177, 23);
+            outputCombo.TabIndex = 1;
+            outputCombo.SelectedIndexChanged += outputCombo_SelectedChangeCommitted;
             // 
             // periodBox
             // 
-            this.periodBox.Controls.Add(this.label8);
-            this.periodBox.Controls.Add(this.label7);
-            this.periodBox.Controls.Add(this.label6);
-            this.periodBox.Controls.Add(this.label5);
-            this.periodBox.Controls.Add(this.label4);
-            this.periodBox.Controls.Add(this.label3);
-            this.periodBox.Controls.Add(this.startYear);
-            this.periodBox.Controls.Add(this.finishYear);
-            this.periodBox.Controls.Add(this.startMonth);
-            this.periodBox.Controls.Add(this.finishMonth);
-            this.periodBox.Controls.Add(this.finishDay);
-            this.periodBox.Controls.Add(this.startDay);
-            this.periodBox.Controls.Add(this.label2);
-            this.periodBox.Controls.Add(this.label1);
-            this.periodBox.Location = new System.Drawing.Point(21, 64);
-            this.periodBox.Name = "periodBox";
-            this.periodBox.Size = new System.Drawing.Size(457, 98);
-            this.periodBox.TabIndex = 2;
-            this.periodBox.TabStop = false;
-            this.periodBox.Text = "Choose period";
+            periodBox.Controls.Add(label8);
+            periodBox.Controls.Add(label7);
+            periodBox.Controls.Add(label6);
+            periodBox.Controls.Add(label5);
+            periodBox.Controls.Add(label4);
+            periodBox.Controls.Add(label3);
+            periodBox.Controls.Add(startYear);
+            periodBox.Controls.Add(finishYear);
+            periodBox.Controls.Add(startMonth);
+            periodBox.Controls.Add(finishMonth);
+            periodBox.Controls.Add(finishDay);
+            periodBox.Controls.Add(startDay);
+            periodBox.Controls.Add(label2);
+            periodBox.Controls.Add(label1);
+            periodBox.Location = new System.Drawing.Point(21, 64);
+            periodBox.Name = "periodBox";
+            periodBox.Size = new System.Drawing.Size(457, 98);
+            periodBox.TabIndex = 2;
+            periodBox.TabStop = false;
+            periodBox.Text = "Choose period";
             // 
             // label8
             // 
-            this.label8.AutoSize = true;
-            this.label8.Location = new System.Drawing.Point(397, 69);
-            this.label8.Name = "label8";
-            this.label8.Size = new System.Drawing.Size(29, 15);
-            this.label8.TabIndex = 13;
-            this.label8.Text = "Year";
+            label8.AutoSize = true;
+            label8.Location = new System.Drawing.Point(397, 69);
+            label8.Name = "label8";
+            label8.Size = new System.Drawing.Size(29, 15);
+            label8.TabIndex = 13;
+            label8.Text = "Year";
             // 
             // label7
             // 
-            this.label7.AutoSize = true;
-            this.label7.Location = new System.Drawing.Point(313, 69);
-            this.label7.Name = "label7";
-            this.label7.Size = new System.Drawing.Size(43, 15);
-            this.label7.TabIndex = 12;
-            this.label7.Text = "Month";
+            label7.AutoSize = true;
+            label7.Location = new System.Drawing.Point(313, 69);
+            label7.Name = "label7";
+            label7.Size = new System.Drawing.Size(43, 15);
+            label7.TabIndex = 12;
+            label7.Text = "Month";
             // 
             // label6
             // 
-            this.label6.AutoSize = true;
-            this.label6.Location = new System.Drawing.Point(252, 69);
-            this.label6.Name = "label6";
-            this.label6.Size = new System.Drawing.Size(27, 15);
-            this.label6.TabIndex = 11;
-            this.label6.Text = "Day";
+            label6.AutoSize = true;
+            label6.Location = new System.Drawing.Point(252, 69);
+            label6.Name = "label6";
+            label6.Size = new System.Drawing.Size(27, 15);
+            label6.TabIndex = 11;
+            label6.Text = "Day";
             // 
             // label5
             // 
-            this.label5.AutoSize = true;
-            this.label5.Location = new System.Drawing.Point(174, 69);
-            this.label5.Name = "label5";
-            this.label5.Size = new System.Drawing.Size(29, 15);
-            this.label5.TabIndex = 10;
-            this.label5.Text = "Year";
+            label5.AutoSize = true;
+            label5.Location = new System.Drawing.Point(174, 69);
+            label5.Name = "label5";
+            label5.Size = new System.Drawing.Size(29, 15);
+            label5.TabIndex = 10;
+            label5.Text = "Year";
             // 
             // label4
             // 
-            this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(95, 69);
-            this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(43, 15);
-            this.label4.TabIndex = 9;
-            this.label4.Text = "Month";
+            label4.AutoSize = true;
+            label4.Location = new System.Drawing.Point(95, 69);
+            label4.Name = "label4";
+            label4.Size = new System.Drawing.Size(43, 15);
+            label4.TabIndex = 9;
+            label4.Text = "Month";
             // 
             // label3
             // 
-            this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(28, 69);
-            this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(27, 15);
-            this.label3.TabIndex = 8;
-            this.label3.Text = "Day";
+            label3.AutoSize = true;
+            label3.Location = new System.Drawing.Point(28, 69);
+            label3.Name = "label3";
+            label3.Size = new System.Drawing.Size(27, 15);
+            label3.TabIndex = 8;
+            label3.Text = "Day";
             // 
             // startYear
             // 
-            this.startYear.Location = new System.Drawing.Point(154, 43);
-            this.startYear.Name = "startYear";
-            this.startYear.Size = new System.Drawing.Size(69, 23);
-            this.startYear.TabIndex = 7;
+            startYear.Location = new System.Drawing.Point(154, 43);
+            startYear.Name = "startYear";
+            startYear.Size = new System.Drawing.Size(69, 23);
+            startYear.TabIndex = 7;
             // 
             // finishYear
             // 
-            this.finishYear.Location = new System.Drawing.Point(377, 43);
-            this.finishYear.Name = "finishYear";
-            this.finishYear.Size = new System.Drawing.Size(69, 23);
-            this.finishYear.TabIndex = 6;
+            finishYear.Location = new System.Drawing.Point(377, 43);
+            finishYear.Name = "finishYear";
+            finishYear.Size = new System.Drawing.Size(69, 23);
+            finishYear.TabIndex = 6;
             // 
             // startMonth
             // 
-            this.startMonth.FormattingEnabled = true;
-            this.startMonth.Location = new System.Drawing.Point(83, 43);
-            this.startMonth.Name = "startMonth";
-            this.startMonth.Size = new System.Drawing.Size(65, 23);
-            this.startMonth.TabIndex = 5;
+            startMonth.FormattingEnabled = true;
+            startMonth.Location = new System.Drawing.Point(83, 43);
+            startMonth.Name = "startMonth";
+            startMonth.Size = new System.Drawing.Size(65, 23);
+            startMonth.TabIndex = 5;
             // 
             // finishMonth
             // 
-            this.finishMonth.FormattingEnabled = true;
-            this.finishMonth.Location = new System.Drawing.Point(306, 43);
-            this.finishMonth.Name = "finishMonth";
-            this.finishMonth.Size = new System.Drawing.Size(65, 23);
-            this.finishMonth.TabIndex = 4;
+            finishMonth.FormattingEnabled = true;
+            finishMonth.Location = new System.Drawing.Point(306, 43);
+            finishMonth.Name = "finishMonth";
+            finishMonth.Size = new System.Drawing.Size(65, 23);
+            finishMonth.TabIndex = 4;
             // 
             // finishDay
             // 
-            this.finishDay.FormattingEnabled = true;
-            this.finishDay.Location = new System.Drawing.Point(235, 43);
-            this.finishDay.Name = "finishDay";
-            this.finishDay.Size = new System.Drawing.Size(65, 23);
-            this.finishDay.TabIndex = 3;
+            finishDay.FormattingEnabled = true;
+            finishDay.Location = new System.Drawing.Point(235, 43);
+            finishDay.Name = "finishDay";
+            finishDay.Size = new System.Drawing.Size(65, 23);
+            finishDay.TabIndex = 3;
             // 
             // startDay
             // 
-            this.startDay.FormattingEnabled = true;
-            this.startDay.Location = new System.Drawing.Point(12, 43);
-            this.startDay.Name = "startDay";
-            this.startDay.Size = new System.Drawing.Size(65, 23);
-            this.startDay.TabIndex = 2;
+            startDay.FormattingEnabled = true;
+            startDay.Location = new System.Drawing.Point(12, 43);
+            startDay.Name = "startDay";
+            startDay.Size = new System.Drawing.Size(65, 23);
+            startDay.TabIndex = 2;
             // 
             // label2
             // 
-            this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(292, 25);
-            this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(64, 15);
-            this.label2.TabIndex = 1;
-            this.label2.Text = "Finish date";
+            label2.AutoSize = true;
+            label2.Location = new System.Drawing.Point(292, 25);
+            label2.Name = "label2";
+            label2.Size = new System.Drawing.Size(64, 15);
+            label2.TabIndex = 1;
+            label2.Text = "Finish date";
             // 
             // label1
             // 
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(57, 25);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(57, 15);
-            this.label1.TabIndex = 0;
-            this.label1.Text = "Start date";
+            label1.AutoSize = true;
+            label1.Location = new System.Drawing.Point(57, 25);
+            label1.Name = "label1";
+            label1.Size = new System.Drawing.Size(57, 15);
+            label1.TabIndex = 0;
+            label1.Text = "Start date";
             // 
             // tabWidget
             // 
-            this.tabWidget.Controls.Add(this.tabPage1);
-            this.tabWidget.Controls.Add(this.tabPage2);
-            this.tabWidget.Controls.Add(this.tabPage3);
-            this.tabWidget.Location = new System.Drawing.Point(15, 168);
-            this.tabWidget.Name = "tabWidget";
-            this.tabWidget.SelectedIndex = 0;
-            this.tabWidget.Size = new System.Drawing.Size(469, 397);
-            this.tabWidget.TabIndex = 3;
-            this.tabWidget.SelectedIndexChanged += new System.EventHandler(this.tabWidget_SelectedIndexChanged);
+            tabWidget.Controls.Add(tabPage1);
+            tabWidget.Controls.Add(tabPage2);
+            tabWidget.Controls.Add(tabPage3);
+            tabWidget.Location = new System.Drawing.Point(15, 168);
+            tabWidget.Name = "tabWidget";
+            tabWidget.SelectedIndex = 0;
+            tabWidget.Size = new System.Drawing.Size(469, 397);
+            tabWidget.TabIndex = 3;
             // 
             // tabPage1
             // 
-            this.tabPage1.Controls.Add(this.printGroup);
-            this.tabPage1.Controls.Add(this.saveButton);
-            this.tabPage1.Controls.Add(this.compareGroup);
-            this.tabPage1.Controls.Add(this.summaryBox);
-            this.tabPage1.Controls.Add(this.variablesBox);
-            this.tabPage1.Controls.Add(this.groupBox1);
-            this.tabPage1.Location = new System.Drawing.Point(4, 24);
-            this.tabPage1.Name = "tabPage1";
-            this.tabPage1.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage1.Size = new System.Drawing.Size(461, 369);
-            this.tabPage1.TabIndex = 0;
-            this.tabPage1.Text = "Static maps";
-            this.tabPage1.UseVisualStyleBackColor = true;
+            tabPage1.Controls.Add(groupBox2);
+            tabPage1.Controls.Add(printGroup);
+            tabPage1.Controls.Add(saveButton);
+            tabPage1.Controls.Add(compareGroup);
+            tabPage1.Controls.Add(summaryBox);
+            tabPage1.Controls.Add(variablesBox);
+            tabPage1.Controls.Add(groupBox1);
+            tabPage1.Location = new System.Drawing.Point(4, 24);
+            tabPage1.Name = "tabPage1";
+            tabPage1.Padding = new System.Windows.Forms.Padding(3);
+            tabPage1.Size = new System.Drawing.Size(461, 369);
+            tabPage1.TabIndex = 0;
+            tabPage1.Text = "Static maps";
+            tabPage1.UseVisualStyleBackColor = true;
+            // 
+            // groupBox2
+            // 
+            groupBox2.Controls.Add(newResultsMap);
+            groupBox2.Controls.Add(currrentResultsMap);
+            groupBox2.Location = new System.Drawing.Point(14, 264);
+            groupBox2.Name = "groupBox2";
+            groupBox2.Size = new System.Drawing.Size(250, 35);
+            groupBox2.TabIndex = 6;
+            groupBox2.TabStop = false;
+            // 
+            // newResultsMap
+            // 
+            newResultsMap.AutoSize = true;
+            newResultsMap.Location = new System.Drawing.Point(142, 13);
+            newResultsMap.Name = "newResultsMap";
+            newResultsMap.Size = new System.Drawing.Size(76, 19);
+            newResultsMap.TabIndex = 6;
+            newResultsMap.TabStop = true;
+            newResultsMap.Text = "New map";
+            newResultsMap.UseVisualStyleBackColor = true;
+            // 
+            // currrentResultsMap
+            // 
+            currrentResultsMap.AutoSize = true;
+            currrentResultsMap.Checked = true;
+            currrentResultsMap.Location = new System.Drawing.Point(16, 13);
+            currrentResultsMap.Name = "currrentResultsMap";
+            currrentResultsMap.Size = new System.Drawing.Size(92, 19);
+            currrentResultsMap.TabIndex = 5;
+            currrentResultsMap.TabStop = true;
+            currrentResultsMap.Text = "Current map";
+            currrentResultsMap.UseVisualStyleBackColor = true;
             // 
             // printGroup
             // 
-            this.printGroup.Controls.Add(this.printButton);
-            this.printGroup.Controls.Add(this.label10);
-            this.printGroup.Controls.Add(this.printCount);
-            this.printGroup.Controls.Add(this.portraitButton);
-            this.printGroup.Controls.Add(this.landscapeButton);
-            this.printGroup.Location = new System.Drawing.Point(13, 305);
-            this.printGroup.Name = "printGroup";
-            this.printGroup.Size = new System.Drawing.Size(435, 57);
-            this.printGroup.TabIndex = 5;
-            this.printGroup.TabStop = false;
-            this.printGroup.Text = "Print";
+            printGroup.Controls.Add(printButton);
+            printGroup.Controls.Add(label10);
+            printGroup.Controls.Add(printCount);
+            printGroup.Controls.Add(portraitButton);
+            printGroup.Controls.Add(landscapeButton);
+            printGroup.Location = new System.Drawing.Point(13, 305);
+            printGroup.Name = "printGroup";
+            printGroup.Size = new System.Drawing.Size(435, 57);
+            printGroup.TabIndex = 5;
+            printGroup.TabStop = false;
+            printGroup.Text = "Print";
             // 
             // printButton
             // 
-            this.printButton.Location = new System.Drawing.Point(340, 22);
-            this.printButton.Name = "printButton";
-            this.printButton.Size = new System.Drawing.Size(75, 23);
-            this.printButton.TabIndex = 5;
-            this.printButton.Text = "Print";
-            this.printButton.UseVisualStyleBackColor = true;
-            this.printButton.Click += new System.EventHandler(this.printButton_Click);
+            printButton.Location = new System.Drawing.Point(340, 22);
+            printButton.Name = "printButton";
+            printButton.Size = new System.Drawing.Size(75, 23);
+            printButton.TabIndex = 5;
+            printButton.Text = "Print";
+            printButton.UseVisualStyleBackColor = true;
+            printButton.Click += printButton_Click;
             // 
             // label10
             // 
-            this.label10.AutoSize = true;
-            this.label10.Location = new System.Drawing.Point(185, 24);
-            this.label10.Name = "label10";
-            this.label10.Size = new System.Drawing.Size(97, 15);
-            this.label10.TabIndex = 3;
-            this.label10.Text = "Number of maps";
+            label10.AutoSize = true;
+            label10.Location = new System.Drawing.Point(185, 24);
+            label10.Name = "label10";
+            label10.Size = new System.Drawing.Size(97, 15);
+            label10.TabIndex = 3;
+            label10.Text = "Number of maps";
             // 
             // printCount
             // 
-            this.printCount.Location = new System.Drawing.Point(288, 22);
-            this.printCount.Maximum = new decimal(new int[] {
-            6,
-            0,
-            0,
-            0});
-            this.printCount.Minimum = new decimal(new int[] {
-            1,
-            0,
-            0,
-            0});
-            this.printCount.Name = "printCount";
-            this.printCount.Size = new System.Drawing.Size(31, 23);
-            this.printCount.TabIndex = 2;
-            this.printCount.Value = new decimal(new int[] {
-            1,
-            0,
-            0,
-            0});
+            printCount.Location = new System.Drawing.Point(288, 22);
+            printCount.Maximum = new decimal(new int[] { 6, 0, 0, 0 });
+            printCount.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
+            printCount.Name = "printCount";
+            printCount.Size = new System.Drawing.Size(31, 23);
+            printCount.TabIndex = 2;
+            printCount.Value = new decimal(new int[] { 1, 0, 0, 0 });
             // 
             // portraitButton
             // 
-            this.portraitButton.AutoSize = true;
-            this.portraitButton.Checked = true;
-            this.portraitButton.Location = new System.Drawing.Point(115, 22);
-            this.portraitButton.Name = "portraitButton";
-            this.portraitButton.Size = new System.Drawing.Size(64, 19);
-            this.portraitButton.TabIndex = 1;
-            this.portraitButton.TabStop = true;
-            this.portraitButton.Text = "Portrait";
-            this.portraitButton.UseVisualStyleBackColor = true;
+            portraitButton.AutoSize = true;
+            portraitButton.Checked = true;
+            portraitButton.Location = new System.Drawing.Point(115, 22);
+            portraitButton.Name = "portraitButton";
+            portraitButton.Size = new System.Drawing.Size(64, 19);
+            portraitButton.TabIndex = 1;
+            portraitButton.TabStop = true;
+            portraitButton.Text = "Portrait";
+            portraitButton.UseVisualStyleBackColor = true;
             // 
             // landscapeButton
             // 
-            this.landscapeButton.AutoSize = true;
-            this.landscapeButton.Location = new System.Drawing.Point(13, 22);
-            this.landscapeButton.Name = "landscapeButton";
-            this.landscapeButton.Size = new System.Drawing.Size(81, 19);
-            this.landscapeButton.TabIndex = 0;
-            this.landscapeButton.Text = "Landscape";
-            this.landscapeButton.UseVisualStyleBackColor = true;
+            landscapeButton.AutoSize = true;
+            landscapeButton.Location = new System.Drawing.Point(13, 22);
+            landscapeButton.Name = "landscapeButton";
+            landscapeButton.Size = new System.Drawing.Size(81, 19);
+            landscapeButton.TabIndex = 0;
+            landscapeButton.Text = "Landscape";
+            landscapeButton.UseVisualStyleBackColor = true;
             // 
             // saveButton
             // 
-            this.saveButton.Location = new System.Drawing.Point(353, 271);
-            this.saveButton.Name = "saveButton";
-            this.saveButton.Size = new System.Drawing.Size(75, 23);
-            this.saveButton.TabIndex = 4;
-            this.saveButton.Text = "Create";
-            this.saveButton.UseVisualStyleBackColor = true;
-            this.saveButton.Click += new System.EventHandler(this.saveButton_Click);
+            saveButton.Location = new System.Drawing.Point(326, 275);
+            saveButton.Name = "saveButton";
+            saveButton.Size = new System.Drawing.Size(75, 23);
+            saveButton.TabIndex = 4;
+            saveButton.Text = "Create";
+            saveButton.UseVisualStyleBackColor = true;
+            saveButton.Click += saveButton_Click;
             // 
             // compareGroup
             // 
-            this.compareGroup.Controls.Add(this.compareButton);
-            this.compareGroup.Controls.Add(this.compareLabel);
-            this.compareGroup.Location = new System.Drawing.Point(270, 175);
-            this.compareGroup.Name = "compareGroup";
-            this.compareGroup.Size = new System.Drawing.Size(158, 81);
-            this.compareGroup.TabIndex = 3;
-            this.compareGroup.TabStop = false;
-            this.compareGroup.Text = "Compare scenarios";
+            compareGroup.Controls.Add(compareButton);
+            compareGroup.Controls.Add(compareLabel);
+            compareGroup.Location = new System.Drawing.Point(270, 175);
+            compareGroup.Name = "compareGroup";
+            compareGroup.Size = new System.Drawing.Size(158, 81);
+            compareGroup.TabIndex = 3;
+            compareGroup.TabStop = false;
+            compareGroup.Text = "Compare scenarios";
             // 
             // compareButton
             // 
-            this.compareButton.Location = new System.Drawing.Point(66, 52);
-            this.compareButton.Name = "compareButton";
-            this.compareButton.Size = new System.Drawing.Size(75, 23);
-            this.compareButton.TabIndex = 1;
-            this.compareButton.Text = "Compare";
-            this.compareButton.UseVisualStyleBackColor = true;
-            this.compareButton.Click += new System.EventHandler(this.compareButton_Click);
+            compareButton.Location = new System.Drawing.Point(66, 52);
+            compareButton.Name = "compareButton";
+            compareButton.Size = new System.Drawing.Size(75, 23);
+            compareButton.TabIndex = 1;
+            compareButton.Text = "Compare";
+            compareButton.UseVisualStyleBackColor = true;
+            compareButton.Click += compareButton_Click;
             // 
             // compareLabel
             // 
-            this.compareLabel.Location = new System.Drawing.Point(11, 19);
-            this.compareLabel.Name = "compareLabel";
-            this.compareLabel.Size = new System.Drawing.Size(141, 30);
-            this.compareLabel.TabIndex = 0;
-            this.compareLabel.Text = "Compare X\r\nand Y\r\n";
+            compareLabel.Location = new System.Drawing.Point(11, 19);
+            compareLabel.Name = "compareLabel";
+            compareLabel.Size = new System.Drawing.Size(141, 30);
+            compareLabel.TabIndex = 0;
+            compareLabel.Text = "Compare X\r\nand Y\r\n";
             // 
             // summaryBox
             // 
-            this.summaryBox.Controls.Add(this.summaryCombo);
-            this.summaryBox.Location = new System.Drawing.Point(270, 105);
-            this.summaryBox.Name = "summaryBox";
-            this.summaryBox.Size = new System.Drawing.Size(158, 64);
-            this.summaryBox.TabIndex = 2;
-            this.summaryBox.TabStop = false;
-            this.summaryBox.Text = "Choose summary";
+            summaryBox.Controls.Add(summaryCombo);
+            summaryBox.Location = new System.Drawing.Point(270, 105);
+            summaryBox.Name = "summaryBox";
+            summaryBox.Size = new System.Drawing.Size(158, 64);
+            summaryBox.TabIndex = 2;
+            summaryBox.TabStop = false;
+            summaryBox.Text = "Choose summary";
             // 
             // summaryCombo
             // 
-            this.summaryCombo.Location = new System.Drawing.Point(15, 25);
-            this.summaryCombo.Name = "summaryCombo";
-            this.summaryCombo.Size = new System.Drawing.Size(130, 23);
-            this.summaryCombo.TabIndex = 0;
+            summaryCombo.Location = new System.Drawing.Point(15, 25);
+            summaryCombo.Name = "summaryCombo";
+            summaryCombo.Size = new System.Drawing.Size(130, 23);
+            summaryCombo.TabIndex = 0;
             // 
             // variablesBox
             // 
-            this.variablesBox.Controls.Add(this.variableList);
-            this.variablesBox.Controls.Add(this.clearbutton);
-            this.variablesBox.Controls.Add(this.delButton);
-            this.variablesBox.Controls.Add(this.allButton);
-            this.variablesBox.Controls.Add(this.addButton);
-            this.variablesBox.Controls.Add(this.variableCombo);
-            this.variablesBox.Location = new System.Drawing.Point(13, 95);
-            this.variablesBox.Name = "variablesBox";
-            this.variablesBox.Size = new System.Drawing.Size(251, 176);
-            this.variablesBox.TabIndex = 1;
-            this.variablesBox.TabStop = false;
-            this.variablesBox.Text = "Choose variables";
+            variablesBox.Controls.Add(variableList);
+            variablesBox.Controls.Add(clearbutton);
+            variablesBox.Controls.Add(delButton);
+            variablesBox.Controls.Add(allButton);
+            variablesBox.Controls.Add(addButton);
+            variablesBox.Controls.Add(variableCombo);
+            variablesBox.Location = new System.Drawing.Point(13, 95);
+            variablesBox.Name = "variablesBox";
+            variablesBox.Size = new System.Drawing.Size(251, 176);
+            variablesBox.TabIndex = 1;
+            variablesBox.TabStop = false;
+            variablesBox.Text = "Choose variables";
             // 
             // variableList
             // 
-            this.variableList.FormattingEnabled = true;
-            this.variableList.ItemHeight = 15;
-            this.variableList.Location = new System.Drawing.Point(97, 54);
-            this.variableList.Name = "variableList";
-            this.variableList.Size = new System.Drawing.Size(136, 109);
-            this.variableList.TabIndex = 6;
+            variableList.FormattingEnabled = true;
+            variableList.ItemHeight = 15;
+            variableList.Location = new System.Drawing.Point(97, 54);
+            variableList.Name = "variableList";
+            variableList.Size = new System.Drawing.Size(136, 109);
+            variableList.TabIndex = 6;
             // 
             // clearbutton
             // 
-            this.clearbutton.Location = new System.Drawing.Point(13, 138);
-            this.clearbutton.Name = "clearbutton";
-            this.clearbutton.Size = new System.Drawing.Size(68, 23);
-            this.clearbutton.TabIndex = 5;
-            this.clearbutton.Text = "Clear";
-            this.clearbutton.UseVisualStyleBackColor = true;
-            this.clearbutton.Click += new System.EventHandler(this.clearbutton_Click);
+            clearbutton.Location = new System.Drawing.Point(13, 138);
+            clearbutton.Name = "clearbutton";
+            clearbutton.Size = new System.Drawing.Size(68, 23);
+            clearbutton.TabIndex = 5;
+            clearbutton.Text = "Clear";
+            clearbutton.UseVisualStyleBackColor = true;
+            clearbutton.Click += clearbutton_Click;
             // 
             // delButton
             // 
-            this.delButton.Location = new System.Drawing.Point(13, 109);
-            this.delButton.Name = "delButton";
-            this.delButton.Size = new System.Drawing.Size(68, 23);
-            this.delButton.TabIndex = 4;
-            this.delButton.Text = "Delete";
-            this.delButton.UseVisualStyleBackColor = true;
-            this.delButton.Click += new System.EventHandler(this.delButton_Click);
+            delButton.Location = new System.Drawing.Point(13, 109);
+            delButton.Name = "delButton";
+            delButton.Size = new System.Drawing.Size(68, 23);
+            delButton.TabIndex = 4;
+            delButton.Text = "Delete";
+            delButton.UseVisualStyleBackColor = true;
+            delButton.Click += delButton_Click;
             // 
             // allButton
             // 
-            this.allButton.Location = new System.Drawing.Point(13, 80);
-            this.allButton.Name = "allButton";
-            this.allButton.Size = new System.Drawing.Size(68, 23);
-            this.allButton.TabIndex = 3;
-            this.allButton.Text = "All";
-            this.allButton.UseVisualStyleBackColor = true;
-            this.allButton.Click += new System.EventHandler(this.allButton_Click);
+            allButton.Location = new System.Drawing.Point(13, 80);
+            allButton.Name = "allButton";
+            allButton.Size = new System.Drawing.Size(68, 23);
+            allButton.TabIndex = 3;
+            allButton.Text = "All";
+            allButton.UseVisualStyleBackColor = true;
+            allButton.Click += allButton_Click;
             // 
             // addButton
             // 
-            this.addButton.Location = new System.Drawing.Point(13, 51);
-            this.addButton.Name = "addButton";
-            this.addButton.Size = new System.Drawing.Size(68, 23);
-            this.addButton.TabIndex = 2;
-            this.addButton.Text = "Add";
-            this.addButton.UseVisualStyleBackColor = true;
-            this.addButton.Click += new System.EventHandler(this.addButton_Click);
+            addButton.Location = new System.Drawing.Point(13, 51);
+            addButton.Name = "addButton";
+            addButton.Size = new System.Drawing.Size(68, 23);
+            addButton.TabIndex = 2;
+            addButton.Text = "Add";
+            addButton.UseVisualStyleBackColor = true;
+            addButton.Click += addButton_Click;
             // 
             // variableCombo
             // 
-            this.variableCombo.FormattingEnabled = true;
-            this.variableCombo.Location = new System.Drawing.Point(98, 23);
-            this.variableCombo.Name = "variableCombo";
-            this.variableCombo.Size = new System.Drawing.Size(135, 23);
-            this.variableCombo.TabIndex = 0;
+            variableCombo.FormattingEnabled = true;
+            variableCombo.Location = new System.Drawing.Point(98, 23);
+            variableCombo.Name = "variableCombo";
+            variableCombo.Size = new System.Drawing.Size(135, 23);
+            variableCombo.TabIndex = 0;
             // 
             // groupBox1
             // 
-            this.groupBox1.Controls.Add(this.resultsFileButton);
-            this.groupBox1.Controls.Add(this.resultsFileEdit);
-            this.groupBox1.Location = new System.Drawing.Point(13, 17);
-            this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(435, 67);
-            this.groupBox1.TabIndex = 0;
-            this.groupBox1.TabStop = false;
-            this.groupBox1.Text = "Choose results shapefile";
+            groupBox1.Controls.Add(resultsFileButton);
+            groupBox1.Controls.Add(resultsFileEdit);
+            groupBox1.Location = new System.Drawing.Point(13, 17);
+            groupBox1.Name = "groupBox1";
+            groupBox1.Size = new System.Drawing.Size(435, 67);
+            groupBox1.TabIndex = 0;
+            groupBox1.TabStop = false;
+            groupBox1.Text = "Choose results shapefile";
             // 
             // resultsFileButton
             // 
-            this.resultsFileButton.Location = new System.Drawing.Point(366, 26);
-            this.resultsFileButton.Name = "resultsFileButton";
-            this.resultsFileButton.Size = new System.Drawing.Size(52, 23);
-            this.resultsFileButton.TabIndex = 1;
-            this.resultsFileButton.Text = "...";
-            this.resultsFileButton.UseVisualStyleBackColor = true;
-            this.resultsFileButton.Click += new System.EventHandler(this.resultsFileButton_Click);
+            resultsFileButton.Location = new System.Drawing.Point(366, 26);
+            resultsFileButton.Name = "resultsFileButton";
+            resultsFileButton.Size = new System.Drawing.Size(52, 23);
+            resultsFileButton.TabIndex = 1;
+            resultsFileButton.Text = "...";
+            resultsFileButton.UseVisualStyleBackColor = true;
+            resultsFileButton.Click += resultsFileButton_Click;
             // 
             // resultsFileEdit
             // 
-            this.resultsFileEdit.Location = new System.Drawing.Point(13, 27);
-            this.resultsFileEdit.Name = "resultsFileEdit";
-            this.resultsFileEdit.Size = new System.Drawing.Size(347, 23);
-            this.resultsFileEdit.TabIndex = 0;
+            resultsFileEdit.Location = new System.Drawing.Point(13, 27);
+            resultsFileEdit.Name = "resultsFileEdit";
+            resultsFileEdit.Size = new System.Drawing.Size(347, 23);
+            resultsFileEdit.TabIndex = 0;
             // 
             // tabPage2
             // 
-            this.tabPage2.Controls.Add(this.label14);
-            this.tabPage2.Controls.Add(this.recordLabel);
-            this.tabPage2.Controls.Add(this.playButton);
-            this.tabPage2.Controls.Add(this.recordButton);
-            this.tabPage2.Controls.Add(this.label13);
-            this.tabPage2.Controls.Add(this.spinBox);
-            this.tabPage2.Controls.Add(this.slider);
-            this.tabPage2.Controls.Add(this.dateLabel);
-            this.tabPage2.Controls.Add(this.pauseCommand);
-            this.tabPage2.Controls.Add(this.playCommand);
-            this.tabPage2.Controls.Add(this.rewindCommand);
-            this.tabPage2.Controls.Add(this.composeOptions);
-            this.tabPage2.Controls.Add(this.animationMode);
-            this.tabPage2.Controls.Add(this.animationSetup);
-            this.tabPage2.Location = new System.Drawing.Point(4, 24);
-            this.tabPage2.Name = "tabPage2";
-            this.tabPage2.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage2.Size = new System.Drawing.Size(461, 369);
-            this.tabPage2.TabIndex = 1;
-            this.tabPage2.Text = "Animated maps";
-            this.tabPage2.UseVisualStyleBackColor = true;
+            tabPage2.Controls.Add(label14);
+            tabPage2.Controls.Add(recordLabel);
+            tabPage2.Controls.Add(playButton);
+            tabPage2.Controls.Add(recordButton);
+            tabPage2.Controls.Add(label13);
+            tabPage2.Controls.Add(spinBox);
+            tabPage2.Controls.Add(slider);
+            tabPage2.Controls.Add(dateLabel);
+            tabPage2.Controls.Add(pauseCommand);
+            tabPage2.Controls.Add(playCommand);
+            tabPage2.Controls.Add(rewindCommand);
+            tabPage2.Controls.Add(composeOptions);
+            tabPage2.Controls.Add(animationMode);
+            tabPage2.Controls.Add(animationSetup);
+            tabPage2.Location = new System.Drawing.Point(4, 24);
+            tabPage2.Name = "tabPage2";
+            tabPage2.Padding = new System.Windows.Forms.Padding(3);
+            tabPage2.Size = new System.Drawing.Size(461, 369);
+            tabPage2.TabIndex = 1;
+            tabPage2.Text = "Animated maps";
+            tabPage2.UseVisualStyleBackColor = true;
             // 
             // label14
             // 
-            this.label14.AutoSize = true;
-            this.label14.Location = new System.Drawing.Point(260, 330);
-            this.label14.Name = "label14";
-            this.label14.Size = new System.Drawing.Size(83, 15);
-            this.label14.TabIndex = 14;
-            this.label14.Text = "Play recording";
+            label14.AutoSize = true;
+            label14.Location = new System.Drawing.Point(260, 330);
+            label14.Name = "label14";
+            label14.Size = new System.Drawing.Size(83, 15);
+            label14.TabIndex = 14;
+            label14.Text = "Play recording";
             // 
             // recordLabel
             // 
-            this.recordLabel.AutoSize = true;
-            this.recordLabel.Location = new System.Drawing.Point(78, 330);
-            this.recordLabel.Name = "recordLabel";
-            this.recordLabel.Size = new System.Drawing.Size(85, 15);
-            this.recordLabel.TabIndex = 13;
-            this.recordLabel.Text = "Start recording";
+            recordLabel.AutoSize = true;
+            recordLabel.Location = new System.Drawing.Point(78, 330);
+            recordLabel.Name = "recordLabel";
+            recordLabel.Size = new System.Drawing.Size(85, 15);
+            recordLabel.TabIndex = 13;
+            recordLabel.Text = "Start recording";
             // 
             // playButton
             // 
-            this.playButton.Location = new System.Drawing.Point(194, 326);
-            this.playButton.Name = "playButton";
-            this.playButton.Size = new System.Drawing.Size(66, 23);
-            this.playButton.TabIndex = 12;
-            this.playButton.Text = "Play";
-            this.playButton.UseVisualStyleBackColor = true;
-            this.playButton.Click += new System.EventHandler(this.playButton_Click);
+            playButton.Location = new System.Drawing.Point(194, 326);
+            playButton.Name = "playButton";
+            playButton.Size = new System.Drawing.Size(66, 23);
+            playButton.TabIndex = 12;
+            playButton.Text = "Play";
+            playButton.UseVisualStyleBackColor = true;
+            playButton.Click += playButton_Click;
             // 
             // recordButton
             // 
-            this.recordButton.BackColor = System.Drawing.Color.Green;
-            this.recordButton.FlatAppearance.BorderSize = 0;
-            this.recordButton.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.recordButton.Location = new System.Drawing.Point(13, 326);
-            this.recordButton.Name = "recordButton";
-            this.recordButton.Size = new System.Drawing.Size(66, 23);
-            this.recordButton.TabIndex = 11;
-            this.recordButton.UseVisualStyleBackColor = false;
-            this.recordButton.Click += new System.EventHandler(this.recordButton_Click);
+            recordButton.BackColor = System.Drawing.Color.Green;
+            recordButton.FlatAppearance.BorderSize = 0;
+            recordButton.ForeColor = System.Drawing.SystemColors.ControlText;
+            recordButton.Location = new System.Drawing.Point(13, 326);
+            recordButton.Name = "recordButton";
+            recordButton.Size = new System.Drawing.Size(66, 23);
+            recordButton.TabIndex = 11;
+            recordButton.UseVisualStyleBackColor = false;
+            recordButton.Click += recordButton_Click;
             // 
             // label13
             // 
-            this.label13.AutoSize = true;
-            this.label13.Location = new System.Drawing.Point(349, 297);
-            this.label13.Name = "label13";
-            this.label13.Size = new System.Drawing.Size(39, 15);
-            this.label13.TabIndex = 10;
-            this.label13.Text = "Speed";
+            label13.AutoSize = true;
+            label13.Location = new System.Drawing.Point(349, 297);
+            label13.Name = "label13";
+            label13.Size = new System.Drawing.Size(39, 15);
+            label13.TabIndex = 10;
+            label13.Text = "Speed";
             // 
             // spinBox
             // 
-            this.spinBox.Location = new System.Drawing.Point(399, 295);
-            this.spinBox.Minimum = new decimal(new int[] {
-            1,
-            0,
-            0,
-            0});
-            this.spinBox.Name = "spinBox";
-            this.spinBox.Size = new System.Drawing.Size(49, 23);
-            this.spinBox.TabIndex = 9;
-            this.spinBox.Value = new decimal(new int[] {
-            1,
-            0,
-            0,
-            0});
-            this.spinBox.ValueChanged += new System.EventHandler(this.spinBox_ValueChanged);
+            spinBox.Location = new System.Drawing.Point(399, 295);
+            spinBox.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
+            spinBox.Name = "spinBox";
+            spinBox.Size = new System.Drawing.Size(49, 23);
+            spinBox.TabIndex = 9;
+            spinBox.Value = new decimal(new int[] { 1, 0, 0, 0 });
+            spinBox.ValueChanged += spinBox_ValueChanged;
             // 
             // slider
             // 
-            this.slider.Location = new System.Drawing.Point(17, 244);
-            this.slider.Name = "slider";
-            this.slider.Size = new System.Drawing.Size(431, 45);
-            this.slider.TabIndex = 8;
-            this.slider.Scroll += new System.EventHandler(this.trackBar1_Scroll);
-            this.slider.ValueChanged += new System.EventHandler(this.slider_ValueChanged);
-            this.slider.MouseDown += new System.Windows.Forms.MouseEventHandler(this.trackBar1_MouseDown);
+            slider.Location = new System.Drawing.Point(17, 244);
+            slider.Name = "slider";
+            slider.Size = new System.Drawing.Size(431, 45);
+            slider.TabIndex = 8;
+            slider.Scroll += trackBar1_Scroll;
+            slider.ValueChanged += slider_ValueChanged;
+            slider.MouseDown += trackBar1_MouseDown;
             // 
             // dateLabel
             // 
-            this.dateLabel.AutoSize = true;
-            this.dateLabel.Location = new System.Drawing.Point(203, 226);
-            this.dateLabel.Name = "dateLabel";
-            this.dateLabel.Size = new System.Drawing.Size(31, 15);
-            this.dateLabel.TabIndex = 7;
-            this.dateLabel.Text = "Date";
+            dateLabel.AutoSize = true;
+            dateLabel.Location = new System.Drawing.Point(203, 226);
+            dateLabel.Name = "dateLabel";
+            dateLabel.Size = new System.Drawing.Size(31, 15);
+            dateLabel.TabIndex = 7;
+            dateLabel.Text = "Date";
             // 
             // pauseCommand
             // 
-            this.pauseCommand.Image = ((System.Drawing.Image)(resources.GetObject("pauseCommand.Image")));
-            this.pauseCommand.Location = new System.Drawing.Point(379, 204);
-            this.pauseCommand.Name = "pauseCommand";
-            this.pauseCommand.Size = new System.Drawing.Size(25, 25);
-            this.pauseCommand.TabIndex = 6;
-            this.pauseCommand.UseVisualStyleBackColor = true;
-            this.pauseCommand.Click += new System.EventHandler(this.pauseCommand_Click);
+            pauseCommand.Image = (System.Drawing.Image)resources.GetObject("pauseCommand.Image");
+            pauseCommand.Location = new System.Drawing.Point(379, 204);
+            pauseCommand.Name = "pauseCommand";
+            pauseCommand.Size = new System.Drawing.Size(25, 25);
+            pauseCommand.TabIndex = 6;
+            pauseCommand.UseVisualStyleBackColor = true;
+            pauseCommand.Click += pauseCommand_Click;
             // 
             // playCommand
             // 
-            this.playCommand.Image = ((System.Drawing.Image)(resources.GetObject("playCommand.Image")));
-            this.playCommand.Location = new System.Drawing.Point(333, 204);
-            this.playCommand.Name = "playCommand";
-            this.playCommand.Size = new System.Drawing.Size(25, 25);
-            this.playCommand.TabIndex = 5;
-            this.playCommand.UseVisualStyleBackColor = true;
-            this.playCommand.Click += new System.EventHandler(this.playCommand_Click);
+            playCommand.Image = (System.Drawing.Image)resources.GetObject("playCommand.Image");
+            playCommand.Location = new System.Drawing.Point(333, 204);
+            playCommand.Name = "playCommand";
+            playCommand.Size = new System.Drawing.Size(25, 25);
+            playCommand.TabIndex = 5;
+            playCommand.UseVisualStyleBackColor = true;
+            playCommand.Click += playCommand_Click;
             // 
             // rewindCommand
             // 
-            this.rewindCommand.Image = ((System.Drawing.Image)(resources.GetObject("rewindCommand.Image")));
-            this.rewindCommand.Location = new System.Drawing.Point(423, 204);
-            this.rewindCommand.Name = "rewindCommand";
-            this.rewindCommand.Size = new System.Drawing.Size(25, 25);
-            this.rewindCommand.TabIndex = 4;
-            this.rewindCommand.UseVisualStyleBackColor = true;
-            this.rewindCommand.Click += new System.EventHandler(this.rewindCommand_Click);
+            rewindCommand.Image = (System.Drawing.Image)resources.GetObject("rewindCommand.Image");
+            rewindCommand.Location = new System.Drawing.Point(423, 204);
+            rewindCommand.Name = "rewindCommand";
+            rewindCommand.Size = new System.Drawing.Size(25, 25);
+            rewindCommand.TabIndex = 4;
+            rewindCommand.UseVisualStyleBackColor = true;
+            rewindCommand.Click += rewindCommand_Click;
             // 
             // composeOptions
             // 
-            this.composeOptions.Controls.Add(this.composeCount);
-            this.composeOptions.Controls.Add(this.label12);
-            this.composeOptions.Controls.Add(this.composePortrait);
-            this.composeOptions.Controls.Add(this.composeLandscape);
-            this.composeOptions.Location = new System.Drawing.Point(14, 141);
-            this.composeOptions.Name = "composeOptions";
-            this.composeOptions.Size = new System.Drawing.Size(359, 57);
-            this.composeOptions.TabIndex = 2;
-            this.composeOptions.TabStop = false;
-            this.composeOptions.Text = "Layout options";
+            composeOptions.Controls.Add(composeCount);
+            composeOptions.Controls.Add(label12);
+            composeOptions.Controls.Add(composePortrait);
+            composeOptions.Controls.Add(composeLandscape);
+            composeOptions.Location = new System.Drawing.Point(14, 141);
+            composeOptions.Name = "composeOptions";
+            composeOptions.Size = new System.Drawing.Size(359, 57);
+            composeOptions.TabIndex = 2;
+            composeOptions.TabStop = false;
+            composeOptions.Text = "Layout options";
             // 
             // composeCount
             // 
-            this.composeCount.Location = new System.Drawing.Point(308, 22);
-            this.composeCount.Maximum = new decimal(new int[] {
-            6,
-            0,
-            0,
-            0});
-            this.composeCount.Minimum = new decimal(new int[] {
-            1,
-            0,
-            0,
-            0});
-            this.composeCount.Name = "composeCount";
-            this.composeCount.Size = new System.Drawing.Size(36, 23);
-            this.composeCount.TabIndex = 3;
-            this.composeCount.Value = new decimal(new int[] {
-            1,
-            0,
-            0,
-            0});
+            composeCount.Location = new System.Drawing.Point(308, 22);
+            composeCount.Maximum = new decimal(new int[] { 6, 0, 0, 0 });
+            composeCount.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
+            composeCount.Name = "composeCount";
+            composeCount.Size = new System.Drawing.Size(36, 23);
+            composeCount.TabIndex = 3;
+            composeCount.Value = new decimal(new int[] { 1, 0, 0, 0 });
             // 
             // label12
             // 
-            this.label12.AutoSize = true;
-            this.label12.Location = new System.Drawing.Point(205, 24);
-            this.label12.Name = "label12";
-            this.label12.Size = new System.Drawing.Size(97, 15);
-            this.label12.TabIndex = 2;
-            this.label12.Text = "Number of maps";
+            label12.AutoSize = true;
+            label12.Location = new System.Drawing.Point(205, 24);
+            label12.Name = "label12";
+            label12.Size = new System.Drawing.Size(97, 15);
+            label12.TabIndex = 2;
+            label12.Text = "Number of maps";
             // 
             // composePortrait
             // 
-            this.composePortrait.AutoSize = true;
-            this.composePortrait.Checked = true;
-            this.composePortrait.Location = new System.Drawing.Point(93, 22);
-            this.composePortrait.Name = "composePortrait";
-            this.composePortrait.Size = new System.Drawing.Size(64, 19);
-            this.composePortrait.TabIndex = 1;
-            this.composePortrait.TabStop = true;
-            this.composePortrait.Text = "Portrait";
-            this.composePortrait.UseVisualStyleBackColor = true;
+            composePortrait.AutoSize = true;
+            composePortrait.Checked = true;
+            composePortrait.Location = new System.Drawing.Point(93, 22);
+            composePortrait.Name = "composePortrait";
+            composePortrait.Size = new System.Drawing.Size(64, 19);
+            composePortrait.TabIndex = 1;
+            composePortrait.TabStop = true;
+            composePortrait.Text = "Portrait";
+            composePortrait.UseVisualStyleBackColor = true;
             // 
             // composeLandscape
             // 
-            this.composeLandscape.AutoSize = true;
-            this.composeLandscape.Location = new System.Drawing.Point(6, 22);
-            this.composeLandscape.Name = "composeLandscape";
-            this.composeLandscape.Size = new System.Drawing.Size(81, 19);
-            this.composeLandscape.TabIndex = 0;
-            this.composeLandscape.Text = "Landscape";
-            this.composeLandscape.UseVisualStyleBackColor = true;
+            composeLandscape.AutoSize = true;
+            composeLandscape.Location = new System.Drawing.Point(6, 22);
+            composeLandscape.Name = "composeLandscape";
+            composeLandscape.Size = new System.Drawing.Size(81, 19);
+            composeLandscape.TabIndex = 0;
+            composeLandscape.Text = "Landscape";
+            composeLandscape.UseVisualStyleBackColor = true;
             // 
             // animationMode
             // 
-            this.animationMode.Controls.Add(this.printAnimation);
-            this.animationMode.Controls.Add(this.canvasAnimation);
-            this.animationMode.Location = new System.Drawing.Point(14, 78);
-            this.animationMode.Name = "animationMode";
-            this.animationMode.Size = new System.Drawing.Size(191, 57);
-            this.animationMode.TabIndex = 1;
-            this.animationMode.TabStop = false;
-            this.animationMode.Text = "Animation mode";
+            animationMode.Controls.Add(printAnimation);
+            animationMode.Controls.Add(canvasAnimation);
+            animationMode.Location = new System.Drawing.Point(14, 78);
+            animationMode.Name = "animationMode";
+            animationMode.Size = new System.Drawing.Size(191, 57);
+            animationMode.TabIndex = 1;
+            animationMode.TabStop = false;
+            animationMode.Text = "Animation mode";
             // 
             // printAnimation
             // 
-            this.printAnimation.AutoSize = true;
-            this.printAnimation.Location = new System.Drawing.Point(100, 22);
-            this.printAnimation.Name = "printAnimation";
-            this.printAnimation.Size = new System.Drawing.Size(86, 19);
-            this.printAnimation.TabIndex = 1;
-            this.printAnimation.Text = "Print layout";
-            this.printAnimation.UseVisualStyleBackColor = true;
-            this.printAnimation.CheckedChanged += new System.EventHandler(this.printAnimation_CheckedChanged);
+            printAnimation.AutoSize = true;
+            printAnimation.Location = new System.Drawing.Point(100, 22);
+            printAnimation.Name = "printAnimation";
+            printAnimation.Size = new System.Drawing.Size(86, 19);
+            printAnimation.TabIndex = 1;
+            printAnimation.Text = "Print layout";
+            printAnimation.UseVisualStyleBackColor = true;
+            printAnimation.CheckedChanged += printAnimation_CheckedChanged;
             // 
             // canvasAnimation
             // 
-            this.canvasAnimation.AutoSize = true;
-            this.canvasAnimation.Checked = true;
-            this.canvasAnimation.Location = new System.Drawing.Point(6, 22);
-            this.canvasAnimation.Name = "canvasAnimation";
-            this.canvasAnimation.Size = new System.Drawing.Size(88, 19);
-            this.canvasAnimation.TabIndex = 0;
-            this.canvasAnimation.TabStop = true;
-            this.canvasAnimation.Text = "Map canvas";
-            this.canvasAnimation.UseVisualStyleBackColor = true;
-            this.canvasAnimation.CheckedChanged += new System.EventHandler(this.canvasAnimation_CheckedChanged);
+            canvasAnimation.AutoSize = true;
+            canvasAnimation.Checked = true;
+            canvasAnimation.Location = new System.Drawing.Point(6, 22);
+            canvasAnimation.Name = "canvasAnimation";
+            canvasAnimation.Size = new System.Drawing.Size(88, 19);
+            canvasAnimation.TabIndex = 0;
+            canvasAnimation.TabStop = true;
+            canvasAnimation.Text = "Map canvas";
+            canvasAnimation.UseVisualStyleBackColor = true;
+            canvasAnimation.CheckedChanged += canvasAnimation_CheckedChanged;
             // 
             // animationSetup
             // 
-            this.animationSetup.Controls.Add(this.animationVariableCombo);
-            this.animationSetup.Controls.Add(this.label11);
-            this.animationSetup.Controls.Add(this.currentAnimation);
-            this.animationSetup.Controls.Add(this.newAnimation);
-            this.animationSetup.Location = new System.Drawing.Point(17, 15);
-            this.animationSetup.Name = "animationSetup";
-            this.animationSetup.Size = new System.Drawing.Size(356, 57);
-            this.animationSetup.TabIndex = 0;
-            this.animationSetup.TabStop = false;
-            this.animationSetup.Text = "Set up animation";
+            animationSetup.Controls.Add(animationVariableCombo);
+            animationSetup.Controls.Add(label11);
+            animationSetup.Controls.Add(currentAnimation);
+            animationSetup.Controls.Add(newAnimation);
+            animationSetup.Location = new System.Drawing.Point(17, 15);
+            animationSetup.Name = "animationSetup";
+            animationSetup.Size = new System.Drawing.Size(356, 57);
+            animationSetup.TabIndex = 0;
+            animationSetup.TabStop = false;
+            animationSetup.Text = "Set up animation";
             // 
             // animationVariableCombo
             // 
-            this.animationVariableCombo.FormattingEnabled = true;
-            this.animationVariableCombo.Location = new System.Drawing.Point(186, 21);
-            this.animationVariableCombo.Name = "animationVariableCombo";
-            this.animationVariableCombo.Size = new System.Drawing.Size(164, 23);
-            this.animationVariableCombo.TabIndex = 3;
-            this.animationVariableCombo.SelectedIndexChanged += new System.EventHandler(this.animationVariableCombo_SelectionChangeCommitted);
+            animationVariableCombo.FormattingEnabled = true;
+            animationVariableCombo.Location = new System.Drawing.Point(186, 21);
+            animationVariableCombo.Name = "animationVariableCombo";
+            animationVariableCombo.Size = new System.Drawing.Size(164, 23);
+            animationVariableCombo.TabIndex = 3;
+            animationVariableCombo.SelectedIndexChanged += animationVariableCombo_SelectionChangeCommitted;
             // 
             // label11
             // 
-            this.label11.AutoSize = true;
-            this.label11.Location = new System.Drawing.Point(132, 24);
-            this.label11.Name = "label11";
-            this.label11.Size = new System.Drawing.Size(48, 15);
-            this.label11.TabIndex = 2;
-            this.label11.Text = "Variable";
+            label11.AutoSize = true;
+            label11.Location = new System.Drawing.Point(132, 24);
+            label11.Name = "label11";
+            label11.Size = new System.Drawing.Size(48, 15);
+            label11.TabIndex = 2;
+            label11.Text = "Variable";
             // 
             // currentAnimation
             // 
-            this.currentAnimation.AutoSize = true;
-            this.currentAnimation.Location = new System.Drawing.Point(61, 22);
-            this.currentAnimation.Name = "currentAnimation";
-            this.currentAnimation.Size = new System.Drawing.Size(65, 19);
-            this.currentAnimation.TabIndex = 1;
-            this.currentAnimation.Text = "Current";
-            this.currentAnimation.UseVisualStyleBackColor = true;
+            currentAnimation.AutoSize = true;
+            currentAnimation.Location = new System.Drawing.Point(61, 22);
+            currentAnimation.Name = "currentAnimation";
+            currentAnimation.Size = new System.Drawing.Size(65, 19);
+            currentAnimation.TabIndex = 1;
+            currentAnimation.Text = "Current";
+            currentAnimation.UseVisualStyleBackColor = true;
             // 
             // newAnimation
             // 
-            this.newAnimation.AutoSize = true;
-            this.newAnimation.Checked = true;
-            this.newAnimation.Location = new System.Drawing.Point(6, 22);
-            this.newAnimation.Name = "newAnimation";
-            this.newAnimation.Size = new System.Drawing.Size(49, 19);
-            this.newAnimation.TabIndex = 0;
-            this.newAnimation.TabStop = true;
-            this.newAnimation.Text = "New";
-            this.newAnimation.UseVisualStyleBackColor = true;
+            newAnimation.AutoSize = true;
+            newAnimation.Checked = true;
+            newAnimation.Location = new System.Drawing.Point(6, 22);
+            newAnimation.Name = "newAnimation";
+            newAnimation.Size = new System.Drawing.Size(49, 19);
+            newAnimation.TabIndex = 0;
+            newAnimation.TabStop = true;
+            newAnimation.Text = "New";
+            newAnimation.UseVisualStyleBackColor = true;
             // 
             // tabPage3
             // 
-            this.tabPage3.Controls.Add(this.label9);
-            this.tabPage3.Controls.Add(this.tableWidget);
-            this.tabPage3.Controls.Add(this.plotButton);
-            this.tabPage3.Controls.Add(this.addObserved);
-            this.tabPage3.Controls.Add(this.downPlot);
-            this.tabPage3.Controls.Add(this.upPlot);
-            this.tabPage3.Controls.Add(this.copyPlot);
-            this.tabPage3.Controls.Add(this.deletePlot);
-            this.tabPage3.Controls.Add(this.addPlot);
-            this.tabPage3.Controls.Add(this.label17);
-            this.tabPage3.Controls.Add(this.label16);
-            this.tabPage3.Controls.Add(this.label15);
-            this.tabPage3.Controls.Add(this.variablePlot);
-            this.tabPage3.Controls.Add(this.hruPlot);
-            this.tabPage3.Controls.Add(this.subPlot);
-            this.tabPage3.Controls.Add(this.plotType);
-            this.tabPage3.Controls.Add(this.observedFileBox);
-            this.tabPage3.Location = new System.Drawing.Point(4, 24);
-            this.tabPage3.Name = "tabPage3";
-            this.tabPage3.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage3.Size = new System.Drawing.Size(461, 369);
-            this.tabPage3.TabIndex = 2;
-            this.tabPage3.Text = "Plots";
-            this.tabPage3.UseVisualStyleBackColor = true;
+            tabPage3.Controls.Add(label9);
+            tabPage3.Controls.Add(tableWidget);
+            tabPage3.Controls.Add(plotButton);
+            tabPage3.Controls.Add(addObserved);
+            tabPage3.Controls.Add(downPlot);
+            tabPage3.Controls.Add(upPlot);
+            tabPage3.Controls.Add(copyPlot);
+            tabPage3.Controls.Add(deletePlot);
+            tabPage3.Controls.Add(addPlot);
+            tabPage3.Controls.Add(label17);
+            tabPage3.Controls.Add(label16);
+            tabPage3.Controls.Add(label15);
+            tabPage3.Controls.Add(variablePlot);
+            tabPage3.Controls.Add(hruPlot);
+            tabPage3.Controls.Add(subPlot);
+            tabPage3.Controls.Add(plotType);
+            tabPage3.Controls.Add(observedFileBox);
+            tabPage3.Location = new System.Drawing.Point(4, 24);
+            tabPage3.Name = "tabPage3";
+            tabPage3.Padding = new System.Windows.Forms.Padding(3);
+            tabPage3.Size = new System.Drawing.Size(461, 369);
+            tabPage3.TabIndex = 2;
+            tabPage3.Text = "Plots";
+            tabPage3.UseVisualStyleBackColor = true;
             // 
             // label9
             // 
-            this.label9.AutoSize = true;
-            this.label9.Location = new System.Drawing.Point(39, 84);
-            this.label9.Name = "label9";
-            this.label9.Size = new System.Drawing.Size(54, 15);
-            this.label9.TabIndex = 17;
-            this.label9.Text = "Plot type";
+            label9.AutoSize = true;
+            label9.Location = new System.Drawing.Point(39, 84);
+            label9.Name = "label9";
+            label9.Size = new System.Drawing.Size(54, 15);
+            label9.TabIndex = 17;
+            label9.Text = "Plot type";
             // 
             // tableWidget
             // 
-            this.tableWidget.BackgroundColor = System.Drawing.SystemColors.Control;
-            this.tableWidget.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            this.tableWidget.Location = new System.Drawing.Point(98, 137);
-            this.tableWidget.Name = "tableWidget";
-            this.tableWidget.RowHeadersWidth = 25;
-            this.tableWidget.RowTemplate.Height = 25;
-            this.tableWidget.Size = new System.Drawing.Size(350, 191);
-            this.tableWidget.TabIndex = 16;
-            this.tableWidget.CurrentCellChanged += new System.EventHandler(this.tableWidget_CurrentCellChanged);
+            tableWidget.BackgroundColor = System.Drawing.SystemColors.Control;
+            tableWidget.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            tableWidget.Location = new System.Drawing.Point(98, 137);
+            tableWidget.Name = "tableWidget";
+            tableWidget.RowHeadersWidth = 25;
+            tableWidget.Size = new System.Drawing.Size(350, 191);
+            tableWidget.TabIndex = 16;
+            tableWidget.CurrentCellChanged += tableWidget_CurrentCellChanged;
             // 
             // plotButton
             // 
-            this.plotButton.Location = new System.Drawing.Point(369, 340);
-            this.plotButton.Name = "plotButton";
-            this.plotButton.Size = new System.Drawing.Size(79, 23);
-            this.plotButton.TabIndex = 15;
-            this.plotButton.Text = "Plot";
-            this.plotButton.UseVisualStyleBackColor = true;
-            this.plotButton.Click += new System.EventHandler(this.plotButton_Click);
+            plotButton.Location = new System.Drawing.Point(369, 340);
+            plotButton.Name = "plotButton";
+            plotButton.Size = new System.Drawing.Size(79, 23);
+            plotButton.TabIndex = 15;
+            plotButton.Text = "Plot";
+            plotButton.UseVisualStyleBackColor = true;
+            plotButton.Click += plotButton_Click;
             // 
             // addObserved
             // 
-            this.addObserved.Location = new System.Drawing.Point(13, 288);
-            this.addObserved.Name = "addObserved";
-            this.addObserved.Size = new System.Drawing.Size(79, 40);
-            this.addObserved.TabIndex = 14;
-            this.addObserved.Text = "Add observed";
-            this.addObserved.UseVisualStyleBackColor = true;
-            this.addObserved.Click += new System.EventHandler(this.addObserved_Click);
+            addObserved.Location = new System.Drawing.Point(13, 288);
+            addObserved.Name = "addObserved";
+            addObserved.Size = new System.Drawing.Size(79, 40);
+            addObserved.TabIndex = 14;
+            addObserved.Text = "Add observed";
+            addObserved.UseVisualStyleBackColor = true;
+            addObserved.Click += addObserved_Click;
             // 
             // downPlot
             // 
-            this.downPlot.Location = new System.Drawing.Point(14, 259);
-            this.downPlot.Name = "downPlot";
-            this.downPlot.Size = new System.Drawing.Size(79, 23);
-            this.downPlot.TabIndex = 13;
-            this.downPlot.Text = "Move down";
-            this.downPlot.UseVisualStyleBackColor = true;
-            this.downPlot.Click += new System.EventHandler(this.downPlot_Click);
+            downPlot.Location = new System.Drawing.Point(14, 259);
+            downPlot.Name = "downPlot";
+            downPlot.Size = new System.Drawing.Size(79, 23);
+            downPlot.TabIndex = 13;
+            downPlot.Text = "Move down";
+            downPlot.UseVisualStyleBackColor = true;
+            downPlot.Click += downPlot_Click;
             // 
             // upPlot
             // 
-            this.upPlot.Location = new System.Drawing.Point(14, 230);
-            this.upPlot.Name = "upPlot";
-            this.upPlot.Size = new System.Drawing.Size(79, 23);
-            this.upPlot.TabIndex = 12;
-            this.upPlot.Text = "Move up";
-            this.upPlot.UseVisualStyleBackColor = true;
-            this.upPlot.Click += new System.EventHandler(this.upPlot_Click);
+            upPlot.Location = new System.Drawing.Point(14, 230);
+            upPlot.Name = "upPlot";
+            upPlot.Size = new System.Drawing.Size(79, 23);
+            upPlot.TabIndex = 12;
+            upPlot.Text = "Move up";
+            upPlot.UseVisualStyleBackColor = true;
+            upPlot.Click += upPlot_Click;
             // 
             // copyPlot
             // 
-            this.copyPlot.Location = new System.Drawing.Point(14, 201);
-            this.copyPlot.Name = "copyPlot";
-            this.copyPlot.Size = new System.Drawing.Size(79, 23);
-            this.copyPlot.TabIndex = 11;
-            this.copyPlot.Text = "Copy plot";
-            this.copyPlot.UseVisualStyleBackColor = true;
-            this.copyPlot.Click += new System.EventHandler(this.copyPlot_Click);
+            copyPlot.Location = new System.Drawing.Point(14, 201);
+            copyPlot.Name = "copyPlot";
+            copyPlot.Size = new System.Drawing.Size(79, 23);
+            copyPlot.TabIndex = 11;
+            copyPlot.Text = "Copy plot";
+            copyPlot.UseVisualStyleBackColor = true;
+            copyPlot.Click += copyPlot_Click;
             // 
             // deletePlot
             // 
-            this.deletePlot.Location = new System.Drawing.Point(13, 172);
-            this.deletePlot.Name = "deletePlot";
-            this.deletePlot.Size = new System.Drawing.Size(79, 23);
-            this.deletePlot.TabIndex = 10;
-            this.deletePlot.Text = "Delete plot";
-            this.deletePlot.UseVisualStyleBackColor = true;
-            this.deletePlot.Click += new System.EventHandler(this.deletePlot_Click);
+            deletePlot.Location = new System.Drawing.Point(13, 172);
+            deletePlot.Name = "deletePlot";
+            deletePlot.Size = new System.Drawing.Size(79, 23);
+            deletePlot.TabIndex = 10;
+            deletePlot.Text = "Delete plot";
+            deletePlot.UseVisualStyleBackColor = true;
+            deletePlot.Click += deletePlot_Click;
             // 
             // addPlot
             // 
-            this.addPlot.Location = new System.Drawing.Point(13, 143);
-            this.addPlot.Name = "addPlot";
-            this.addPlot.Size = new System.Drawing.Size(79, 23);
-            this.addPlot.TabIndex = 9;
-            this.addPlot.Text = "Add plot";
-            this.addPlot.UseVisualStyleBackColor = true;
-            this.addPlot.Click += new System.EventHandler(this.addPlot_Click);
+            addPlot.Location = new System.Drawing.Point(13, 143);
+            addPlot.Name = "addPlot";
+            addPlot.Size = new System.Drawing.Size(79, 23);
+            addPlot.TabIndex = 9;
+            addPlot.Text = "Add plot";
+            addPlot.UseVisualStyleBackColor = true;
+            addPlot.Click += addPlot_Click;
             // 
             // label17
             // 
-            this.label17.AutoSize = true;
-            this.label17.Location = new System.Drawing.Point(364, 84);
-            this.label17.Name = "label17";
-            this.label17.Size = new System.Drawing.Size(48, 15);
-            this.label17.TabIndex = 8;
-            this.label17.Text = "Variable";
+            label17.AutoSize = true;
+            label17.Location = new System.Drawing.Point(364, 84);
+            label17.Name = "label17";
+            label17.Size = new System.Drawing.Size(48, 15);
+            label17.TabIndex = 8;
+            label17.Text = "Variable";
             // 
             // label16
             // 
-            this.label16.AutoSize = true;
-            this.label16.Location = new System.Drawing.Point(247, 84);
-            this.label16.Name = "label16";
-            this.label16.Size = new System.Drawing.Size(31, 15);
-            this.label16.TabIndex = 7;
-            this.label16.Text = "HRU";
+            label16.AutoSize = true;
+            label16.Location = new System.Drawing.Point(247, 84);
+            label16.Name = "label16";
+            label16.Size = new System.Drawing.Size(31, 15);
+            label16.TabIndex = 7;
+            label16.Text = "HRU";
             // 
             // label15
             // 
-            this.label15.AutoSize = true;
-            this.label15.Location = new System.Drawing.Point(144, 84);
-            this.label15.Name = "label15";
-            this.label15.Size = new System.Drawing.Size(55, 15);
-            this.label15.TabIndex = 6;
-            this.label15.Text = "Subbasin";
+            label15.AutoSize = true;
+            label15.Location = new System.Drawing.Point(144, 84);
+            label15.Name = "label15";
+            label15.Size = new System.Drawing.Size(55, 15);
+            label15.TabIndex = 6;
+            label15.Text = "Subbasin";
             // 
             // variablePlot
             // 
-            this.variablePlot.FormattingEnabled = true;
-            this.variablePlot.Location = new System.Drawing.Point(308, 108);
-            this.variablePlot.Name = "variablePlot";
-            this.variablePlot.Size = new System.Drawing.Size(140, 23);
-            this.variablePlot.TabIndex = 5;
-            this.variablePlot.SelectionChangeCommitted += new System.EventHandler(this.variablePlot_SelectionChangeCommitted);
+            variablePlot.FormattingEnabled = true;
+            variablePlot.Location = new System.Drawing.Point(308, 108);
+            variablePlot.Name = "variablePlot";
+            variablePlot.Size = new System.Drawing.Size(140, 23);
+            variablePlot.TabIndex = 5;
+            variablePlot.SelectionChangeCommitted += variablePlot_SelectionChangeCommitted;
             // 
             // hruPlot
             // 
-            this.hruPlot.FormattingEnabled = true;
-            this.hruPlot.Location = new System.Drawing.Point(237, 108);
-            this.hruPlot.Name = "hruPlot";
-            this.hruPlot.Size = new System.Drawing.Size(54, 23);
-            this.hruPlot.TabIndex = 4;
-            this.hruPlot.SelectionChangeCommitted += new System.EventHandler(this.hruPlot_SelectionChangeCommitted);
+            hruPlot.FormattingEnabled = true;
+            hruPlot.Location = new System.Drawing.Point(237, 108);
+            hruPlot.Name = "hruPlot";
+            hruPlot.Size = new System.Drawing.Size(54, 23);
+            hruPlot.TabIndex = 4;
+            hruPlot.SelectionChangeCommitted += hruPlot_SelectionChangeCommitted;
             // 
             // subPlot
             // 
-            this.subPlot.FormattingEnabled = true;
-            this.subPlot.Location = new System.Drawing.Point(144, 108);
-            this.subPlot.Name = "subPlot";
-            this.subPlot.Size = new System.Drawing.Size(61, 23);
-            this.subPlot.TabIndex = 3;
-            this.subPlot.SelectionChangeCommitted += new System.EventHandler(this.subPlot_SelectionChangeCommitted);
+            subPlot.FormattingEnabled = true;
+            subPlot.Location = new System.Drawing.Point(144, 108);
+            subPlot.Name = "subPlot";
+            subPlot.Size = new System.Drawing.Size(61, 23);
+            subPlot.TabIndex = 3;
+            subPlot.SelectionChangeCommitted += subPlot_SelectionChangeCommitted;
             // 
             // plotType
             // 
-            this.plotType.FormattingEnabled = true;
-            this.plotType.Location = new System.Drawing.Point(12, 108);
-            this.plotType.Name = "plotType";
-            this.plotType.Size = new System.Drawing.Size(115, 23);
-            this.plotType.TabIndex = 2;
+            plotType.FormattingEnabled = true;
+            plotType.Location = new System.Drawing.Point(12, 108);
+            plotType.Name = "plotType";
+            plotType.Size = new System.Drawing.Size(115, 23);
+            plotType.TabIndex = 2;
             // 
             // observedFileBox
             // 
-            this.observedFileBox.Controls.Add(this.observedFileButton);
-            this.observedFileBox.Controls.Add(this.observedFileEdit);
-            this.observedFileBox.Location = new System.Drawing.Point(13, 6);
-            this.observedFileBox.Name = "observedFileBox";
-            this.observedFileBox.Size = new System.Drawing.Size(435, 67);
-            this.observedFileBox.TabIndex = 1;
-            this.observedFileBox.TabStop = false;
-            this.observedFileBox.Text = "Choose observed data file (optional)";
+            observedFileBox.Controls.Add(observedFileButton);
+            observedFileBox.Controls.Add(observedFileEdit);
+            observedFileBox.Location = new System.Drawing.Point(13, 6);
+            observedFileBox.Name = "observedFileBox";
+            observedFileBox.Size = new System.Drawing.Size(435, 67);
+            observedFileBox.TabIndex = 1;
+            observedFileBox.TabStop = false;
+            observedFileBox.Text = "Choose observed data file (optional)";
             // 
             // observedFileButton
             // 
-            this.observedFileButton.Location = new System.Drawing.Point(366, 26);
-            this.observedFileButton.Name = "observedFileButton";
-            this.observedFileButton.Size = new System.Drawing.Size(52, 23);
-            this.observedFileButton.TabIndex = 1;
-            this.observedFileButton.Text = "...";
-            this.observedFileButton.UseVisualStyleBackColor = true;
-            this.observedFileButton.Click += new System.EventHandler(this.observedFileButton_Click);
+            observedFileButton.Location = new System.Drawing.Point(366, 26);
+            observedFileButton.Name = "observedFileButton";
+            observedFileButton.Size = new System.Drawing.Size(52, 23);
+            observedFileButton.TabIndex = 1;
+            observedFileButton.Text = "...";
+            observedFileButton.UseVisualStyleBackColor = true;
+            observedFileButton.Click += observedFileButton_Click;
             // 
             // observedFileEdit
             // 
-            this.observedFileEdit.Location = new System.Drawing.Point(13, 27);
-            this.observedFileEdit.Name = "observedFileEdit";
-            this.observedFileEdit.Size = new System.Drawing.Size(347, 23);
-            this.observedFileEdit.TabIndex = 0;
+            observedFileEdit.Location = new System.Drawing.Point(13, 27);
+            observedFileEdit.Name = "observedFileEdit";
+            observedFileEdit.Size = new System.Drawing.Size(347, 23);
+            observedFileEdit.TabIndex = 0;
             // 
             // closeButton
             // 
-            this.closeButton.Location = new System.Drawing.Point(403, 571);
-            this.closeButton.Name = "closeButton";
-            this.closeButton.Size = new System.Drawing.Size(75, 23);
-            this.closeButton.TabIndex = 4;
-            this.closeButton.Text = "Close";
-            this.closeButton.UseVisualStyleBackColor = true;
-            this.closeButton.Click += new System.EventHandler(this.closeButton_Click);
+            closeButton.Location = new System.Drawing.Point(403, 571);
+            closeButton.Name = "closeButton";
+            closeButton.Size = new System.Drawing.Size(75, 23);
+            closeButton.TabIndex = 4;
+            closeButton.Text = "Close";
+            closeButton.UseVisualStyleBackColor = true;
+            closeButton.Click += closeButton_Click;
             // 
             // timer
             // 
-            this.timer.Tick += new System.EventHandler(this.timer1_Tick);
+            timer.Tick += timer1_Tick;
             // 
             // VisualiseForm
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(498, 603);
-            this.Controls.Add(this.closeButton);
-            this.Controls.Add(this.tabWidget);
-            this.Controls.Add(this.periodBox);
-            this.Controls.Add(this.outputBox);
-            this.Controls.Add(this.scenarioBox);
-            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
-            this.Name = "VisualiseForm";
-            this.Text = "Visualise Results";
-            this.KeyUp += new System.Windows.Forms.KeyEventHandler(this.VisualiseForm_KeyUp);
-            this.scenarioBox.ResumeLayout(false);
-            this.outputBox.ResumeLayout(false);
-            this.periodBox.ResumeLayout(false);
-            this.periodBox.PerformLayout();
-            this.tabWidget.ResumeLayout(false);
-            this.tabPage1.ResumeLayout(false);
-            this.printGroup.ResumeLayout(false);
-            this.printGroup.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.printCount)).EndInit();
-            this.compareGroup.ResumeLayout(false);
-            this.summaryBox.ResumeLayout(false);
-            this.variablesBox.ResumeLayout(false);
-            this.groupBox1.ResumeLayout(false);
-            this.groupBox1.PerformLayout();
-            this.tabPage2.ResumeLayout(false);
-            this.tabPage2.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.spinBox)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.slider)).EndInit();
-            this.composeOptions.ResumeLayout(false);
-            this.composeOptions.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.composeCount)).EndInit();
-            this.animationMode.ResumeLayout(false);
-            this.animationMode.PerformLayout();
-            this.animationSetup.ResumeLayout(false);
-            this.animationSetup.PerformLayout();
-            this.tabPage3.ResumeLayout(false);
-            this.tabPage3.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.tableWidget)).EndInit();
-            this.observedFileBox.ResumeLayout(false);
-            this.observedFileBox.PerformLayout();
-            this.ResumeLayout(false);
-
+            AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
+            AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            ClientSize = new System.Drawing.Size(498, 603);
+            Controls.Add(closeButton);
+            Controls.Add(tabWidget);
+            Controls.Add(periodBox);
+            Controls.Add(outputBox);
+            Controls.Add(scenarioBox);
+            Icon = (System.Drawing.Icon)resources.GetObject("$this.Icon");
+            Name = "VisualiseForm";
+            Text = "Visualise Results";
+            KeyUp += VisualiseForm_KeyUp;
+            scenarioBox.ResumeLayout(false);
+            outputBox.ResumeLayout(false);
+            periodBox.ResumeLayout(false);
+            periodBox.PerformLayout();
+            tabWidget.ResumeLayout(false);
+            tabPage1.ResumeLayout(false);
+            groupBox2.ResumeLayout(false);
+            groupBox2.PerformLayout();
+            printGroup.ResumeLayout(false);
+            printGroup.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)printCount).EndInit();
+            compareGroup.ResumeLayout(false);
+            summaryBox.ResumeLayout(false);
+            variablesBox.ResumeLayout(false);
+            groupBox1.ResumeLayout(false);
+            groupBox1.PerformLayout();
+            tabPage2.ResumeLayout(false);
+            tabPage2.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)spinBox).EndInit();
+            ((System.ComponentModel.ISupportInitialize)slider).EndInit();
+            composeOptions.ResumeLayout(false);
+            composeOptions.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)composeCount).EndInit();
+            animationMode.ResumeLayout(false);
+            animationMode.PerformLayout();
+            animationSetup.ResumeLayout(false);
+            animationSetup.PerformLayout();
+            tabPage3.ResumeLayout(false);
+            tabPage3.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)tableWidget).EndInit();
+            observedFileBox.ResumeLayout(false);
+            observedFileBox.PerformLayout();
+            ResumeLayout(false);
         }
 
         #endregion
@@ -1233,8 +1238,11 @@
         private System.Windows.Forms.ComboBox hruPlot;
         private System.Windows.Forms.ComboBox subPlot;
         private System.Windows.Forms.DataGridView tableWidget;
-        private System.Windows.Forms.Timer timer;
         private System.Windows.Forms.ListBox variableList;
         private System.Windows.Forms.Label label9;
+        private System.Windows.Forms.GroupBox groupBox2;
+        private System.Windows.Forms.RadioButton newResultsMap;
+        private System.Windows.Forms.RadioButton currrentResultsMap;
+        private System.Windows.Forms.Timer timer;
     }
 }
