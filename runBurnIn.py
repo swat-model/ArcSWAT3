@@ -1,4 +1,9 @@
 import arcpy
+
+# Check out the ArcGIS Spatial Analyst
+# extension license
+arcpy.CheckOutExtension("Spatial")
+
 arcpy.env.overwriteOutput = True
 from arcpy.sa import *
 import os

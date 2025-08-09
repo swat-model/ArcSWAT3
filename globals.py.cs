@@ -590,18 +590,20 @@ namespace ArcSWAT3
                 return;
             }
             string sql = DBUtils.sqlSelect(exemptTable, "LANDUSE", "OID", "");
-            var reader = DBUtils.getReader(this.db.conn, sql);
-            while (reader.Read()) {
-                this.exemptLanduses.Add(reader.GetString(0));
+            using (var reader = DBUtils.getReader(this.db.conn, sql)) {
+                while (reader.Read()) {
+                    this.exemptLanduses.Add(reader.GetString(0));
+                }
             }
             sql = DBUtils.sqlSelect(splitTable, "LANDUSE, SUBLU, PERCENT", "OID", "");
-            reader = DBUtils.getReader(this.db.conn, sql);
-            while (reader.Read()) {
-                var luse = reader.GetString(0);
-                if (!this.splitLanduses.ContainsKey(luse)) {
-                    this.splitLanduses[luse] = new Dictionary<string, int>();
+            using (var reader = DBUtils.getReader(this.db.conn, sql)) {
+                while (reader.Read()) {
+                    var luse = reader.GetString(0);
+                    if (!this.splitLanduses.ContainsKey(luse)) {
+                        this.splitLanduses[luse] = new Dictionary<string, int>();
+                    }
+                    this.splitLanduses[luse][reader.GetString(1)] = Convert.ToInt32(reader.GetValue(2));
                 }
-                this.splitLanduses[luse][reader.GetString(1)] = Convert.ToInt32(reader.GetValue(2));
             }
         }
 
@@ -642,52 +644,53 @@ namespace ArcSWAT3
             int doneDelinNum;
             int doneSoilLandNum;
             // allow table not to exist for HUC
-            var reader = DBUtils.getReader(this.db.conn, DBUtils.sqlSelect(table, "*", "", ""));
-            if (reader.HasRows) {
-                reader.Read();
-                if (doneDelin == -1) {
-                    doneDelinNum = Convert.ToInt32(reader.GetValue(8));
+            using (var reader = DBUtils.getReader(this.db.conn, DBUtils.sqlSelect(table, "*", "", ""))) {
+                if (reader.HasRows) {
+                    reader.Read();
+                    if (doneDelin == -1) {
+                        doneDelinNum = Convert.ToInt32(reader.GetValue(8));
+                    } else {
+                        doneDelinNum = doneDelin;
+                    }
+                    if (doneSoilLand == -1) {
+                        doneSoilLandNum = Convert.ToInt32(reader.GetValue(9));
+                    } else {
+                        doneSoilLandNum = doneSoilLand;
+                    }
+                    string sql = "UPDATE " + table + String.Format(" SET SoilOption='{0}',NumLuClasses={1},DoneWSDDel={2},DoneSoilLand={3}", soilOption, numLUs, doneDelinNum, doneSoilLandNum);
+                    this.db.execNonQuery(sql);
                 } else {
-                    doneDelinNum = doneDelin;
-                }
-                if (doneSoilLand == -1) {
-                    doneSoilLandNum = Convert.ToInt32(reader.GetValue(9));
-                } else {
-                    doneSoilLandNum = doneSoilLand;
-                }
-                string sql = "UPDATE " + table + String.Format(" SET SoilOption='{0}',NumLuClasses={1},DoneWSDDel={2},DoneSoilLand={3}", soilOption, numLUs, doneDelinNum, doneSoilLandNum);
-                this.db.execNonQuery(sql);
-            } else {
-                reader.Close();
-                reader.Dispose();
-                if (doneDelin == -1) {
-                    doneDelinNum = 0;
-                } else {
-                    doneDelinNum = doneDelin;
-                }
-                if (doneSoilLand == -1) {
-                    doneSoilLandNum = 0;
-                } else {
-                    doneSoilLandNum = doneSoilLand;
-                }
-                // SWAT Editor 2012.10.19 added a ModelDoneRun field, and we have no data
-                // so easiest to make a new table with this field, so we know how many fields to fill
-                if (true) { //(this.db.createMasterProgressTable()) {
-                    var insert = "(" +
-                        DBUtils.quote(workdir) + "," +
-                        DBUtils.quote(gdb) + "," +
-                        "\"\"," +
-                        DBUtils.quote(swatgdb) + "," +
-                        "\"\"," +
-                        "\"\"," +
-                        DBUtils.quote(soilOption) + "," +
-                        numLUs.ToString() + "," +
-                        doneDelinNum.ToString() + "," +
-                        doneSoilLandNum.ToString() + "," +
-                        "0, 0, 1, 0, \"\"," +
-                        DBUtils.quote(swatEditorVersion) + "," +
-                        "\"\", 0)";
-                    this.db.InsertInTable(table, insert);
+                    reader.Close();
+                    reader.Dispose();
+                    if (doneDelin == -1) {
+                        doneDelinNum = 0;
+                    } else {
+                        doneDelinNum = doneDelin;
+                    }
+                    if (doneSoilLand == -1) {
+                        doneSoilLandNum = 0;
+                    } else {
+                        doneSoilLandNum = doneSoilLand;
+                    }
+                    // SWAT Editor 2012.10.19 added a ModelDoneRun field, and we have no data
+                    // so easiest to make a new table with this field, so we know how many fields to fill
+                    if (true) { //(this.db.createMasterProgressTable()) {
+                        var insert = "(" +
+                            DBUtils.quote(workdir) + "," +
+                            DBUtils.quote(gdb) + "," +
+                            "\"\"," +
+                            DBUtils.quote(swatgdb) + "," +
+                            "\"\"," +
+                            "\"\"," +
+                            DBUtils.quote(soilOption) + "," +
+                            numLUs.ToString() + "," +
+                            doneDelinNum.ToString() + "," +
+                            doneSoilLandNum.ToString() + "," +
+                            "0, 0, 1, 0, \"\"," +
+                            DBUtils.quote(swatEditorVersion) + "," +
+                            "\"\", 0)";
+                        this.db.InsertInTable(table, insert);
+                    }
                 }
             }
         }
@@ -699,26 +702,28 @@ namespace ArcSWAT3
                 return false;
             }
             string table = "MasterProgress";
-            var reader = DBUtils.getReader(this.db.conn, DBUtils.sqlSelect(table, "DoneWSDDel", "", ""));
-            if (!reader.HasRows) return false;
-            //object[] vals = new object[20];
-            reader.Read();
-            //reader.GetValues(vals);
-            //return (short)vals[0] == 1;
-            return Convert.ToInt32(reader.GetValue(0)) == 1;
+            using (var reader = DBUtils.getReader(this.db.conn, DBUtils.sqlSelect(table, "DoneWSDDel", "", ""))) {
+                if (!reader.HasRows) return false;
+                //object[] vals = new object[20];
+                reader.Read();
+                //reader.GetValues(vals);
+                //return (short)vals[0] == 1;
+                return Convert.ToInt32(reader.GetValue(0)) == 1;
+            }
         }
 
         // Return true if HRU creation is done according to MasterProgress table.
         public bool isHRUsDone() {
             this.db.connect();
             if (this.db.conn is null) {
-                    return false;
+                return false;
             }
             string table = "MasterProgress";
-            var reader = DBUtils.getReader(this.db.conn, DBUtils.sqlSelect(table, "DoneSoilLand", "", ""));
-            if (!reader.HasRows) return false;
-            reader.Read();
-            return Convert.ToInt32(reader.GetValue(0)) == 1;
+            using (var reader = DBUtils.getReader(this.db.conn, DBUtils.sqlSelect(table, "DoneSoilLand", "", ""))) {
+                if (!reader.HasRows) return false;
+                reader.Read();
+                return Convert.ToInt32(reader.GetValue(0)) == 1;
+            }
         }
 
         // Save SWAT Editor initial parameters in its configuration file.

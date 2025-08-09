@@ -2413,6 +2413,10 @@ namespace ArcSWAT3
                     // get the number of colours needed
                     var grps = colorizer.Groups;
                     var classes = grps[0].Classes;
+                    if (classes is null || classes.Length == 0) {
+                        Utils.loginfo("Cannot create colorizer for soils");
+                        return;
+                    }
                     var total_colours = classes.Length;
                     var colours = ColorFactory.Instance.GenerateColorsFromColorRamp(ramp, total_colours);
                     foreach (int i in Enumerable.Range(0, total_colours)) {

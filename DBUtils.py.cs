@@ -372,11 +372,10 @@ namespace ArcSWAT3
             try {
                 this.connect();
                 string sql = sqlSelect(table, "*", "", "");
-                var reader = getReader(this.conn, sql);
-                var result = reader.HasRows;
-                reader = null;
-                this.conn.Close();
-                return result;
+                using (var reader = getReader(this.conn, sql)) {
+                    var result = reader.HasRows;
+                    return result;
+                }
             } catch (Exception) {
                 return false;
             }
@@ -528,17 +527,18 @@ namespace ArcSWAT3
                 if (this.conn is SQLiteConnection) {
                     string sql = "SELECT name FROM sqlite_master WHERE TYPE='table'";
                     var cmd = new SQLiteCommand(sql, (SQLiteConnection)this.conn);
-                    var reader = cmd.ExecuteReader();
-                    if (reader.HasRows) {
-                        while (reader.Read()) {
-                            string table = reader.GetString(0);
-                            if (table.Contains("landuse") && !table.Contains("config_landuse")) {
-                                this.landuseTableNames.Add(table);
-                            } else if (table.Contains("soil") && !table.Contains("usersoil") &&
-                                        !table.Contains("config_soil")) {
-                                this.soilTableNames.Add(table);
+                    using (var reader = cmd.ExecuteReader()) {
+                        if (reader.HasRows) {
+                            while (reader.Read()) {
+                                string table = reader.GetString(0);
+                                if (table.Contains("landuse") && !table.Contains("config_landuse")) {
+                                    this.landuseTableNames.Add(table);
+                                } else if (table.Contains("soil") && !table.Contains("usersoil") &&
+                                            !table.Contains("config_soil")) {
+                                    this.soilTableNames.Add(table);
+                                }
+                                this._allTableNames.Add(table);
                             }
-                            this._allTableNames.Add(table);
                         }
                     }
                 } else {
@@ -575,43 +575,36 @@ namespace ArcSWAT3
             this.urbanIds.Clear();
             this.connect();
             string sql = sqlSelect(landuseTable, "LANDUSE_ID, SWAT_CODE", "", "");
-            DbDataReader reader = getReader(this.conn, sql);
-            try
-            {
-                if (reader.HasRows)
-                {
-                    while (reader.Read())
-                    {
-                        int nxt = Convert.ToInt32(reader.GetValue(0));
-                        string landuseCode = reader.GetString(1);
-                        if (nxt == 0 || this.defaultLanduse < 0)
-                        {
-                            this.defaultLanduse = nxt;
-                            this.defaultLanduseCode = landuseCode;
-                        }
-                        // check if code already defined
-                        int val = -1;
-                        if (revLanduseCodes.TryGetValue(landuseCode, out val))
-                        {
-                            this.storeLanduseTranslate(nxt, val);
-                        } else
-                        {
-                            // landuseCode was not already defined
-                            if (!this.storeLanduseCode(nxt, landuseCode))
-                            {
-                                OK = false;
+            using (DbDataReader reader = getReader(this.conn, sql)) {
+                try {
+                    if (reader.HasRows) {
+                        while (reader.Read()) {
+                            int nxt = Convert.ToInt32(reader.GetValue(0));
+                            string landuseCode = reader.GetString(1);
+                            if (nxt == 0 || this.defaultLanduse < 0) {
+                                this.defaultLanduse = nxt;
+                                this.defaultLanduseCode = landuseCode;
                             }
-                            revLanduseCodes[landuseCode] = nxt;
+                            // check if code already defined
+                            int val = -1;
+                            if (revLanduseCodes.TryGetValue(landuseCode, out val)) {
+                                this.storeLanduseTranslate(nxt, val);
+                            } else {
+                                // landuseCode was not already defined
+                                if (!this.storeLanduseCode(nxt, landuseCode)) {
+                                    OK = false;
+                                }
+                                revLanduseCodes[landuseCode] = nxt;
+                            }
                         }
+                        Utils.loginfo(String.Format("Default landuse set to {0}", this.defaultLanduseCode));
                     }
-                    Utils.loginfo(String.Format("Default landuse set to {0}", this.defaultLanduseCode));
+                    return OK;
                 }
-                return OK;
-            }
-            catch (Exception ex)
-            {
-                Utils.error(String.Format("Could not read table {0} in project database {1}: {2}", landuseTable, this.dbFile, ex.Message), this.isBatch);
-                return false;
+                catch (Exception ex) {
+                    Utils.error(String.Format("Could not read table {0} in project database {1}: {2}", landuseTable, this.dbFile, ex.Message), this.isBatch);
+                    return false;
+                }
             }
         }
         
@@ -648,11 +641,12 @@ namespace ArcSWAT3
             var urbanId = -1;
             var OK = true;
             var isUrban = landuseCode.StartsWith("U");
+            DbDataReader reader = null;
             if (isUrban) {
                 table = "urban";
                 sql2 = sqlSelect(table, "IUNUM, OV_N", "", String.Format("URBNAME='{0}'", landuseCode));
                 try {
-                    var reader = getReader(this.connRef, sql2);
+                    reader = getReader(this.connRef, sql2);
                     if (reader.HasRows)
                     {
                         reader.Read();
@@ -662,6 +656,10 @@ namespace ArcSWAT3
                 } catch (Exception ex) {
                     Utils.error(String.Format("Could not read table {0} in reference database {1}: {2}", table, this.dbRefFile, ex.Message), this.isBatch);
                     return false;
+                } finally {
+                    reader.Close();
+                    reader.Dispose();
+                    reader = null;
                 }
             }
             if (urbanId < 0) {
@@ -669,7 +667,7 @@ namespace ArcSWAT3
                 table = "crop";
                 sql2 = sqlSelect(table, "ICNUM, IDC, OV_N", "", String.Format("CPNM='{0}'", landuseCode));
                 try {
-                    var reader = getReader(this.connRef, sql2);
+                    reader = getReader(this.connRef, sql2);
                     if (reader.HasRows)
                     {
                         reader.Read();
@@ -705,6 +703,10 @@ namespace ArcSWAT3
                 } catch (Exception ex) {
                     Utils.error(String.Format("Could not read table {0} in reference database {1}: {2}", table, this.dbRefFile, ex.Message), this.isBatch);
                     return false;
+                } finally {
+                    reader.Close();
+                    reader.Dispose();
+                    reader = null;
                 }
             }
             this.landuseCodes[landuseCat] = landuseCode;
@@ -772,35 +774,32 @@ namespace ArcSWAT3
                 return false;
             }
             string sql = sqlSelect(soilTable, "SOIL_ID, SNAM", "", "");
-            var reader = getReader(conn, sql);
-            if (reader.HasRows) {
-                try {
-                    while (reader.Read())
-                    {
-                        int nxt = Convert.ToInt32(reader.GetValue(0));
-                        string soilName = reader.GetString(1);
-                        if (nxt == 0 || this.defaultSoil < 0)
-                        {
-                            this.defaultSoil = nxt;
-                            this.defaultSoilName = soilName;
-                            Utils.loginfo(String.Format("Default soil set to {0}", this.defaultSoilName));
-                        }
-                        // check if code already defined
-                        int key = -1;
-                        if (revSoilNames.TryGetValue(soilName, out key))
-                        {
-                            this.storeSoilTranslate(nxt, key);
-                        }
-                        else
-                        {
-                            // soilName not found
-                            this.soilNames[nxt] = soilName;
-                            revSoilNames[soilName] = nxt;
+            using (var reader = getReader(conn, sql)) {
+                if (reader.HasRows) {
+                    try {
+                        while (reader.Read()) {
+                            int nxt = Convert.ToInt32(reader.GetValue(0));
+                            string soilName = reader.GetString(1);
+                            if (nxt == 0 || this.defaultSoil < 0) {
+                                this.defaultSoil = nxt;
+                                this.defaultSoilName = soilName;
+                                Utils.loginfo(String.Format("Default soil set to {0}", this.defaultSoilName));
+                            }
+                            // check if code already defined
+                            int key = -1;
+                            if (revSoilNames.TryGetValue(soilName, out key)) {
+                                this.storeSoilTranslate(nxt, key);
+                            } else {
+                                // soilName not found
+                                this.soilNames[nxt] = soilName;
+                                revSoilNames[soilName] = nxt;
+                            }
                         }
                     }
-                } catch (Exception ex) {
-                    Utils.error(String.Format("Could not read table {0} in project database {1}: {2}", soilTable, this.dbFile, ex.Message), this.isBatch);
-                    return false;
+                    catch (Exception ex) {
+                        Utils.error(String.Format("Could not read table {0} in project database {1}: {2}", soilTable, this.dbFile, ex.Message), this.isBatch);
+                        return false;
+                    }
                 }
             }
             // only need to check usersoil table if not STATSGO 
@@ -845,10 +844,11 @@ namespace ArcSWAT3
         public bool checkSoilsDefined() {
             var sql = sqlSelect(this.usersoil, "SNAM", "", "SNAM='{0}'");
             var errorReported = false;
+            DbDataReader reader = null;
             foreach (var soilName in this.soilNames.Values) {
                 try {
                     var sql2 = String.Format(sql, soilName);
-                    var reader = getReader(this.connRef, sql2);
+                    reader = getReader(this.connRef, sql2);
                     if (!reader.HasRows) {
                         if (!errorReported) {
                             Utils.error(String.Format("Soil name {0} (and perhaps others) not defined in {1} table in database {2}.", soilName, this.usersoil, this.dbRefFile), this.isBatch);
@@ -862,6 +862,10 @@ namespace ArcSWAT3
                 {
                     Utils.error(String.Format("Could not read {0} table in database {1}: {2}", this.usersoil, this.dbRefFile, ex.Message), this.isBatch);
                     return false;
+                } finally {
+                    reader.Close();
+                    reader.Dispose();
+                    reader = null;
                 }
             }
             return true;
@@ -944,38 +948,40 @@ namespace ArcSWAT3
             }
             var sql = sqlSelect("statsgo_ssurgo_lkey", "Source, MUKEY", "", String.Format("LKEY={0}", sid.ToString()));
             this.connect();
-            var reader = getReader(conn, sql);
-            if (!reader.HasRows) {
-                Utils.information(String.Format("WARNING: SSURGO soil map value {0} not defined as lkey in statsgo_ssurgo_lkey", sid), this.isBatch, logFile: this.logFile);
-                this._undefinedSoilIds.Add(sid);
-                ok = false;
-                return sid;
+            using (var reader = getReader(conn, sql)) {
+                if (!reader.HasRows) {
+                    Utils.information(String.Format("WARNING: SSURGO soil map value {0} not defined as lkey in statsgo_ssurgo_lkey", sid), this.isBatch, logFile: this.logFile);
+                    this._undefinedSoilIds.Add(sid);
+                    ok = false;
+                    return sid;
+                }
+                reader.Read();
+                // only an information issue, not an error for now 
+                if (reader.GetString(0).ToUpper().Trim() == "STATSGO") {
+                    Utils.information(String.Format("WARNING: SSURGO soil map value {0} is a STATSGO soil according to statsgo_ssurgo_lkey", sid), this.isBatch, logFile: this.logFile);
+                    // self._undefinedSoilIds.append(sid)
+                    // return sid
+                }
+                sql = sqlSelect("SSURGO_Soils", "SNAM", "", String.Format("MUID='{0}'", reader.GetString(1)));
             }
-            reader.Read();
-            // only an information issue, not an error for now 
-            if (reader.GetString(0).ToUpper().Trim() == "STATSGO") {
-                Utils.information(String.Format("WARNING: SSURGO soil map value {0} is a STATSGO soil according to statsgo_ssurgo_lkey", sid), this.isBatch, logFile: this.logFile);
-                // self._undefinedSoilIds.append(sid)
-                // return sid
-            }
-            sql = sqlSelect("SSURGO_Soils", "SNAM", "", String.Format("MUID='{0}'", reader.GetString(1)));
-            reader = getReader(this.SSURGOConn, sql);
-            if (!reader.HasRows) {
-                Utils.information(String.Format("WARNING: SSURGO soil lkey value {0} and MUID {1} not defined", sid, reader.GetString(1)), this.isBatch, logFile: this.logFile);
-                this._undefinedSoilIds.Add(sid);
-                ok = false;
-                return this.SSURGOUndefined;
-            }
-            reader.Read();
-            if (reader.GetString(0).ToLower().Trim() == "water") {
-                this.SSURGOSoils[Convert.ToInt32(sid)] = Parameters._SSURGOWater;
-                ok = true;
-                return Parameters._SSURGOWater;
-            } else {
-                muid = Convert.ToInt32(reader.GetString(1));
-                this.SSURGOSoils[Convert.ToInt32(sid)] = muid;
-                ok = true;
-                return muid;
+            using (var reader = getReader(this.SSURGOConn, sql)) {
+                if (!reader.HasRows) {
+                    Utils.information(String.Format("WARNING: SSURGO soil lkey value {0} and MUID {1} not defined", sid, reader.GetString(1)), this.isBatch, logFile: this.logFile);
+                    this._undefinedSoilIds.Add(sid);
+                    ok = false;
+                    return this.SSURGOUndefined;
+                }
+                reader.Read();
+                if (reader.GetString(0).ToLower().Trim() == "water") {
+                    this.SSURGOSoils[Convert.ToInt32(sid)] = Parameters._SSURGOWater;
+                    ok = true;
+                    return Parameters._SSURGOWater;
+                } else {
+                    muid = Convert.ToInt32(reader.GetString(1));
+                    this.SSURGOSoils[Convert.ToInt32(sid)] = muid;
+                    ok = true;
+                    return muid;
+                }
             }
         }
         
@@ -989,24 +995,27 @@ namespace ArcSWAT3
             if (this.connRef is null) {
                 return luses;
             }
-            var reader = getReader(this.connRef, landuseSql);
-            try {
-                while (reader.Read()) {
-                    luses.Add(reader.GetString(0) + " (" + reader.GetString(1) + ")");
+            using (var reader = getReader(this.connRef, landuseSql)) {
+                try {
+                    while (reader.Read()) {
+                        luses.Add(reader.GetString(0) + " (" + reader.GetString(1) + ")");
+                    }
                 }
-            } catch (Exception ex) {
-                Utils.error(String.Format("Could not read table {0} in reference database {1}: {2}", landuseTable, this.dbRefFile, ex.Message), this.isBatch);
-                return luses;
+                catch (Exception ex) {
+                    Utils.error(String.Format("Could not read table {0} in reference database {1}: {2}", landuseTable, this.dbRefFile, ex.Message), this.isBatch);
+                    return luses;
+                }
             }
-            reader = getReader(this.connRef, urbanSql);
-            try {
-                while (reader.Read())
-                {
-                    luses.Add(reader.GetString(0) + " (" + reader.GetString(1) + ")");
+            using (var reader = getReader(this.connRef, urbanSql)) {
+                try {
+                    while (reader.Read()) {
+                        luses.Add(reader.GetString(0) + " (" + reader.GetString(1) + ")");
+                    }
                 }
-            } catch (Exception ex) {
-                Utils.error(String.Format("Could not read table {0} in reference database {1}: {2}", urbanTable, this.dbRefFile, ex.Message), this.isBatch);
-                return luses;
+                catch (Exception ex) {
+                    Utils.error(String.Format("Could not read table {0} in reference database {1}: {2}", urbanTable, this.dbRefFile, ex.Message), this.isBatch);
+                    return luses;
+                }
             }
             luses.Sort();
             return luses;
@@ -1365,45 +1374,47 @@ namespace ArcSWAT3
                 if (this.isHUC || this.isHAWQS || this.forTNC) {
                     try
                     {
-                        var reader = getReader(this.conn, sqlSelect(DBUtils._BASINSDATAHUC1, "*", "", ""));
-                        while (reader.Read()) {
-                            var bd = new BasinData(Convert.ToInt32(reader.GetValue(11)), Convert.ToInt32(reader.GetValue(12)), reader.GetDouble(13), Convert.ToInt32(reader.GetValue(14)), Convert.ToInt32(reader.GetValue(15)), reader.GetDouble(16), reader.GetDouble(17), reader.GetDouble(22));
-                            bd.cellCount = Convert.ToInt32(reader.GetValue(1));
-                            bd.area = reader.GetDouble(2);
-                            bd.drainArea = reader.GetDouble(3);
-                            bd.pondArea = reader.GetDouble(4);
-                            bd.reservoirArea = reader.GetDouble(5);
-                            bd.playaArea = reader.GetDouble(6);
-                            bd.lakeArea = reader.GetDouble(7);
-                            bd.wetlandArea = reader.GetDouble(8);
-                            bd.totalElevation = reader.GetDouble(9);
-                            bd.totalSlope = reader.GetDouble(10);
-                            bd.maxElevation = reader.GetDouble(23);
-                            bd.farCol = Convert.ToInt32(reader.GetValue(18));
-                            bd.farRow = Convert.ToInt32(reader.GetValue(19));
-                            bd.farthest = Convert.ToInt32(reader.GetValue(20));
-                            bd.farElevation = reader.GetDouble(21);
-                            bd.cropSoilSlopeArea = reader.GetDouble(24);
-                            bd.relHru = Convert.ToInt32(reader.GetValue(25));
-                            bd.streamArea = reader.GetDouble(26);
-                            bd.WATRInStreamArea = reader.GetDouble(27);
-                            int basin = Convert.ToInt32(reader.GetValue(0));
-                            basins[basin] = bd;
-                            var reader2 = getReader(this.conn, sqlSelect(_BASINSDATA2, "*", "", String.Format("basin={0}", basin)));
-                            while (reader2.Read()){
-                                int crop = Convert.ToInt32(reader2.GetValue(2));
-                                int soil = Convert.ToInt32(reader2.GetValue(3));
-                                int slope = Convert.ToInt32(reader2.GetValue(4));
-                                if (!bd.cropSoilSlopeNumbers.ContainsKey(crop)) {
-                                    bd.cropSoilSlopeNumbers[crop] = new Dictionary<int, Dictionary<int, int>>();
-                                    ListFuns.insertIntoSortedIntList(crop, this.landuseVals, true);
+                        using (var reader = getReader(this.conn, sqlSelect(DBUtils._BASINSDATAHUC1, "*", "", ""))) {
+                            while (reader.Read()) {
+                                var bd = new BasinData(Convert.ToInt32(reader.GetValue(11)), Convert.ToInt32(reader.GetValue(12)), reader.GetDouble(13), Convert.ToInt32(reader.GetValue(14)), Convert.ToInt32(reader.GetValue(15)), reader.GetDouble(16), reader.GetDouble(17), reader.GetDouble(22));
+                                bd.cellCount = Convert.ToInt32(reader.GetValue(1));
+                                bd.area = reader.GetDouble(2);
+                                bd.drainArea = reader.GetDouble(3);
+                                bd.pondArea = reader.GetDouble(4);
+                                bd.reservoirArea = reader.GetDouble(5);
+                                bd.playaArea = reader.GetDouble(6);
+                                bd.lakeArea = reader.GetDouble(7);
+                                bd.wetlandArea = reader.GetDouble(8);
+                                bd.totalElevation = reader.GetDouble(9);
+                                bd.totalSlope = reader.GetDouble(10);
+                                bd.maxElevation = reader.GetDouble(23);
+                                bd.farCol = Convert.ToInt32(reader.GetValue(18));
+                                bd.farRow = Convert.ToInt32(reader.GetValue(19));
+                                bd.farthest = Convert.ToInt32(reader.GetValue(20));
+                                bd.farElevation = reader.GetDouble(21);
+                                bd.cropSoilSlopeArea = reader.GetDouble(24);
+                                bd.relHru = Convert.ToInt32(reader.GetValue(25));
+                                bd.streamArea = reader.GetDouble(26);
+                                bd.WATRInStreamArea = reader.GetDouble(27);
+                                int basin = Convert.ToInt32(reader.GetValue(0));
+                                basins[basin] = bd;
+                                using (var reader2 = getReader(this.conn, sqlSelect(_BASINSDATA2, "*", "", String.Format("basin={0}", basin)))) {
+                                    while (reader2.Read()) {
+                                        int crop = Convert.ToInt32(reader2.GetValue(2));
+                                        int soil = Convert.ToInt32(reader2.GetValue(3));
+                                        int slope = Convert.ToInt32(reader2.GetValue(4));
+                                        if (!bd.cropSoilSlopeNumbers.ContainsKey(crop)) {
+                                            bd.cropSoilSlopeNumbers[crop] = new Dictionary<int, Dictionary<int, int>>();
+                                            ListFuns.insertIntoSortedIntList(crop, this.landuseVals, true);
+                                        }
+                                        if (!bd.cropSoilSlopeNumbers[crop].ContainsKey(soil)) {
+                                            bd.cropSoilSlopeNumbers[crop][soil] = new Dictionary<int, int>();
+                                        }
+                                        bd.cropSoilSlopeNumbers[crop][soil][slope] = Convert.ToInt32(reader2.GetValue(5));
+                                        var cellData = new CellData(Convert.ToInt32(reader2.GetValue(6)), reader2.GetDouble(7), reader2.GetDouble(8), crop);
+                                        bd.hruMap[Convert.ToInt32(reader2.GetValue(5))] = cellData;
+                                    }
                                 }
-                                if (!bd.cropSoilSlopeNumbers[crop].ContainsKey(soil)) {
-                                    bd.cropSoilSlopeNumbers[crop][soil] = new Dictionary<int, int>();
-                                }
-                                bd.cropSoilSlopeNumbers[crop][soil][slope] = Convert.ToInt32(reader2.GetValue(5));
-                                var cellData = new CellData(Convert.ToInt32(reader2.GetValue(6)), reader2.GetDouble(7), reader2.GetDouble(8), crop);
-                                bd.hruMap[Convert.ToInt32(reader2.GetValue(5))] = cellData;
                             }
                         }
                     } catch (Exception ex) {
@@ -1417,47 +1428,45 @@ namespace ArcSWAT3
                     }
                 } else {
                     try {
-                        var reader = getReader(this.conn, sqlSelect(DBUtils._BASINSDATA1, "*", "", ""));
-                        while (reader.Read())
-                        {
-                            var bd = new BasinData(Convert.ToInt32(reader.GetValue(8)), Convert.ToInt32(reader.GetValue(9)), reader.GetDouble(10), Convert.ToInt32(reader.GetValue(11)), Convert.ToInt32(reader.GetValue(12)), reader.GetDouble(13), reader.GetDouble(14), reader.GetDouble(19));
-                            bd.cellCount = Convert.ToInt32(reader.GetValue(1));
-                            bd.area = reader.GetDouble(2);
-                            bd.drainArea = reader.GetDouble(3);
-                            bd.pondArea = reader.GetDouble(4);
-                            bd.reservoirArea = reader.GetDouble(5);
-                            bd.totalElevation = reader.GetDouble(6);
-                            bd.totalSlope = reader.GetDouble(7);
-                            bd.maxElevation = reader.GetDouble(20);
-                            bd.farCol = Convert.ToInt32(reader.GetValue(15));
-                            bd.farRow = Convert.ToInt32(reader.GetValue(16));
-                            bd.farthest = Convert.ToInt32(reader.GetValue(17));
-                            bd.farElevation = reader.GetDouble(18);
-                            bd.cropSoilSlopeArea = reader.GetDouble(21);
-                            bd.relHru = Convert.ToInt32(reader.GetValue(22));
-                            int basin = Convert.ToInt32(reader.GetValue(0));
-                            basins[basin] = bd;
-                            var reader2 = getReader(this.conn, sqlSelect(_BASINSDATA2, "*", "", String.Format("basin={0}", basin)));
-                            while (reader2.Read())
-                            {
-                                int crop = Convert.ToInt32(reader2.GetValue(2));
-                                int soil = Convert.ToInt32(reader2.GetValue(3));
-                                int slope = Convert.ToInt32(reader2.GetValue(4));
-                                if (!bd.cropSoilSlopeNumbers.ContainsKey(crop))
-                                {
-                                    bd.cropSoilSlopeNumbers[crop] = new Dictionary<int, Dictionary<int, int>>();
-                                    ListFuns.insertIntoSortedIntList(crop, this.landuseVals, true);
+                        using (var reader = getReader(this.conn, sqlSelect(DBUtils._BASINSDATA1, "*", "", ""))) {
+                            while (reader.Read()) {
+                                var bd = new BasinData(Convert.ToInt32(reader.GetValue(8)), Convert.ToInt32(reader.GetValue(9)), reader.GetDouble(10), Convert.ToInt32(reader.GetValue(11)), Convert.ToInt32(reader.GetValue(12)), reader.GetDouble(13), reader.GetDouble(14), reader.GetDouble(19));
+                                bd.cellCount = Convert.ToInt32(reader.GetValue(1));
+                                bd.area = reader.GetDouble(2);
+                                bd.drainArea = reader.GetDouble(3);
+                                bd.pondArea = reader.GetDouble(4);
+                                bd.reservoirArea = reader.GetDouble(5);
+                                bd.totalElevation = reader.GetDouble(6);
+                                bd.totalSlope = reader.GetDouble(7);
+                                bd.maxElevation = reader.GetDouble(20);
+                                bd.farCol = Convert.ToInt32(reader.GetValue(15));
+                                bd.farRow = Convert.ToInt32(reader.GetValue(16));
+                                bd.farthest = Convert.ToInt32(reader.GetValue(17));
+                                bd.farElevation = reader.GetDouble(18);
+                                bd.cropSoilSlopeArea = reader.GetDouble(21);
+                                bd.relHru = Convert.ToInt32(reader.GetValue(22));
+                                int basin = Convert.ToInt32(reader.GetValue(0));
+                                basins[basin] = bd;
+                                using (var reader2 = getReader(this.conn, sqlSelect(_BASINSDATA2, "*", "", String.Format("basin={0}", basin)))) {
+                                    while (reader2.Read()) {
+                                        int crop = Convert.ToInt32(reader2.GetValue(2));
+                                        int soil = Convert.ToInt32(reader2.GetValue(3));
+                                        int slope = Convert.ToInt32(reader2.GetValue(4));
+                                        if (!bd.cropSoilSlopeNumbers.ContainsKey(crop)) {
+                                            bd.cropSoilSlopeNumbers[crop] = new Dictionary<int, Dictionary<int, int>>();
+                                            ListFuns.insertIntoSortedIntList(crop, this.landuseVals, true);
+                                        }
+                                        if (!bd.cropSoilSlopeNumbers[crop].ContainsKey(soil)) {
+                                            bd.cropSoilSlopeNumbers[crop][soil] = new Dictionary<int, int>();
+                                        }
+                                        bd.cropSoilSlopeNumbers[crop][soil][slope] = Convert.ToInt32(reader2.GetValue(5));
+                                        var cellCount = Convert.ToInt32(reader2.GetValue(6));
+                                        var area = reader2.GetDouble(7);
+                                        var totalSlope = reader2.GetDouble(8);
+                                        var cellData = new CellData(cellCount, area, totalSlope, crop);
+                                        bd.hruMap[Convert.ToInt32(reader2.GetValue(5))] = cellData;
+                                    }
                                 }
-                                if (!bd.cropSoilSlopeNumbers[crop].ContainsKey(soil))
-                                {
-                                    bd.cropSoilSlopeNumbers[crop][soil] = new Dictionary<int, int>();
-                                }
-                                bd.cropSoilSlopeNumbers[crop][soil][slope] = Convert.ToInt32(reader2.GetValue(5));
-                                var cellCount = Convert.ToInt32(reader2.GetValue(6));
-                                var area = reader2.GetDouble(7);
-                                var totalSlope = reader2.GetDouble(8);
-                                var cellData = new CellData(cellCount, area, totalSlope, crop);
-                                bd.hruMap[Convert.ToInt32(reader2.GetValue(5))] = cellData;
                             }
                         }
                     } catch (Exception ex) {

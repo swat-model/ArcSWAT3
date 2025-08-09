@@ -3,12 +3,12 @@
 		xmlns="http://schemas.esri.com/DADF/Registry" 
 		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
 		xsi:schemaLocation="http://schemas.esri.com/DADF/Registry file:///C:/Program%20Files/ArcGIS/Pro/bin/ArcGIS.Desktop.Framework.xsd">
-  <AddInInfo id="{c0ba4fb8-0911-4188-9dc2-b57230e6b969}" version="1.0.2" desktopVersion="3.0.36056">
+  <AddInInfo id="{c0ba4fb8-0911-4188-9dc2-b57230e6b969}" version="1.0.3" desktopVersion="3.4.2">
     <Name>ArcSWAT3</Name>
     <Description>ArcSWAT3 description</Description>
     <Image>Install/Images/QSWAT32.png</Image>
     <Author>Chris George</Author>
-    <Company>TAMU</Company>
+    <Company>AgriLife</Company>
     <Date>10/13/2022 11:50:51 AM</Date>
     <Subject>Geoprocessing</Subject>
     <!-- Note subject can be one or more of these topics:

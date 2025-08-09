@@ -345,7 +345,7 @@ namespace ArcSWAT3
             await QueuedTask.Run(() => Project.Current.AddItem(styleItem));
             //ARCSWAT3 custom style
             this._gv.arcSWAT3Style =
-                Project.Current.GetItems<StyleProjectItem>().FirstOrDefault(s => s.Name == "ArcSWAT3");
+                Project.Current.GetItems<StyleProjectItem>().FirstOrDefault(s => s.Name == "ArcSWAT3" && File.Exists(s.Path));
             if (await this.demProcessed(proj)) {
                 this._demIsProcessed = true;
                 this._odlg.allowCreateHRU();

@@ -602,12 +602,13 @@ namespace ArcSWAT3 {
             void setMinimalReach() {
                 int SWATBasin = gv.topo.basinToSWATBasin[basin];
                 string sql1 = String.Format("SELECT MinEl FROM Reach WHERE Subbasin={0}", SWATBasin);
-                var reader = DBUtils.getReader(conn, sql1);
-                reader.Read();
-                double minEl = reader.GetDouble(0);
-                double maxEl = minEl + Parameters._WATERMAXSLOPE * 100;
-                string sql2 = String.Format("UPDATE Reach SET Len2=100, MaxEl={0}, Shape_Length=100 WHERE Subbasin={1}", maxEl, SWATBasin);
-                gv.db.execNonQuery(sql2);
+                using (var reader = DBUtils.getReader(conn, sql1)) {
+                    reader.Read();
+                    double minEl = reader.GetDouble(0);
+                    double maxEl = minEl + Parameters._WATERMAXSLOPE * 100;
+                    string sql2 = String.Format("UPDATE Reach SET Len2=100, MaxEl={0}, Shape_Length=100 WHERE Subbasin={1}", maxEl, SWATBasin);
+                    gv.db.execNonQuery(sql2);
+                }
             }
 
             double getWaterHRUArea(int waterLanduse) {

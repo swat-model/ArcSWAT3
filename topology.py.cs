@@ -2598,8 +2598,8 @@ namespace ArcSWAT3 {
 
         // Convert (X,Y)-coordinates to column and row numbers.
         public static (int, int) projToCell(double x, double y, double[] transform) {
-            var col = Convert.ToInt32((x - transform[0]) / transform[1]);
-            var row = Convert.ToInt32((y - transform[3]) / transform[5]);
+            var col = (int)Math.Truncate((x - transform[0]) / transform[1]);
+            var row = (int)Math.Truncate((y - transform[3]) / transform[5]);
             return (col, row);
         }
 

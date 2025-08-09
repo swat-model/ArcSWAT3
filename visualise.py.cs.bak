@@ -1032,14 +1032,13 @@ namespace ArcSWAT3 {
             //    hru = int(row.HRUGIS[6:])
             var varz = string.Format("[SUB], [{0}]", Topology._HRUGIS);
             var sql = DBUtils.sqlSelect("hru", varz, "", "");
-            using (var reader = DBUtils.getReader(this.conn, sql)) {
-                while (reader.Read()) {
-                    if (reader.GetInt32(0) != sub) {
-                        continue;
-                    }
-                    var hru = Convert.ToInt32(reader.GetString(0).Substring(6));
-                    maxHru = Math.Max(maxHru, hru);
+            var reader = DBUtils.getReader(this.conn, sql);
+            while (reader.Read()) {
+                if (reader.GetInt32(0) != sub) {
+                    continue;
                 }
+                var hru = Convert.ToInt32(reader.GetString(0).Substring(6));
+                maxHru = Math.Max(maxHru, hru);
             }
             foreach (var i in Enumerable.Range(0, maxHru)) {
                 this._dlg.PhruPlot.Items.Add((i + 1).ToString());
@@ -2710,54 +2709,54 @@ namespace ArcSWAT3 {
                 var data = this.animateResultsData[layerName][dat];
                 await QueuedTask.Run(async () => {
                     // TODO
-                    //Debug.Assert(this.mapTitle is not null);
-                    //this.mapTitle.updateLine2(date);
-                    if (!animateLayer.CanEditData()) {
-                        animateLayer.SetEditable(true);
-                        if (!animateLayer.CanEditData()) {
+                    // maybe find way to change text of element instead of destroy and recreate
+                    this.setMapTitle(this.animateLayer, line2: date);
+                    if (!this.animateLayer.CanEditData()) {
+                        this.animateLayer.SetEditable(true);
+                        if (!this.animateLayer.CanEditData()) {
                             Utils.error("Cannot edit animation layer " + layerName, false);
                             return;
                         }
-                        var layerDefn = this.animateLayer.GetFeatureClass().GetDefinition();
-                        // cannot use useHRUs as it will only be correct for top layer
-                        var subIdx = 0;
-                        var hruIdx = layerDefn.FindField(Topology._HRUGIS);
-                        if (hruIdx < 0) {
-                            // not an HRUs layer
-                            subIdx = layerDefn.FindField(Topology._SUBBASIN);
-                        }
-                        using (var rc = this.animateLayer.Search()) {
-                            while (rc.MoveNext()) {
-                                using (var f = rc.Current as ArcGIS.Core.Data.Feature) {
-                                    bool result = false;
-                                    var op = new ArcGIS.Desktop.Editing.EditOperation();
+                    }
+                    var layerDefn = this.animateLayer.GetFeatureClass().GetDefinition();
+                    // cannot use useHRUs as it will only be correct for top layer
+                    var subIdx = 0;
+                    var hruIdx = layerDefn.FindField(Topology._HRUGIS);
+                    if (hruIdx < 0) {
+                        // not an HRUs layer
+                        subIdx = layerDefn.FindField(Topology._SUBBASIN);
+                    }
+                    using (var rc = this.animateLayer.Search()) {
+                        while (rc.MoveNext()) {
+                            using (var f = rc.Current as ArcGIS.Core.Data.Feature) {
+                                bool result = false;
+                                var op = new ArcGIS.Desktop.Editing.EditOperation();
+                                if (hruIdx >= 0) {
+                                    // May be split HRUs; just use first
+                                    // This is inadequate for some variables, but no way to know if correct val is sum of vals, mean, etc.
+                                    sub = Convert.ToInt32(f[hruIdx].ToString().Split(',')[0]);
+                                } else {
+                                    sub = Convert.ToInt32(f[subIdx]);
+                                }
+                                double val;
+                                if (data.ContainsKey(sub)) {
+                                    val = data[sub];
+                                } else {
                                     if (hruIdx >= 0) {
-                                        // May be split HRUs; just use first
-                                        // This is inadequate for some variables, but no way to know if correct val is sum of vals, mean, etc.
-                                        sub = Convert.ToInt32(f[hruIdx].ToString().Split(',')[0]);
+                                        @ref = string.Format("HRU {0}", sub);
                                     } else {
-                                        sub = Convert.ToInt32(f[subIdx]);
+                                        @ref = string.Format("subbasin {0}", sub);
                                     }
-                                    double val;
-                                    if (data.ContainsKey(sub)) {
-                                        val = data[sub];
-                                    } else {
-                                        if (hruIdx >= 0) {
-                                            @ref = string.Format("HRU {0}", sub);
-                                        } else {
-                                            @ref = string.Format("subbasin {0}", sub);
-                                        }
-                                        Utils.error(string.Format("Cannot get data for {0}: have you run SWAT and saved data since running QSWAT", @ref), this._gv.isBatch);
-                                        return;
-                                    }
-                                    op.Modify(f, animateVarShort, val);
-                                    if (!op.IsEmpty) {
-                                        result = await op.ExecuteAsync();
-                                    }
-                                    if (!result) {
-                                        Utils.error(string.Format("Could not set attributes in results file {0}", this.resultsFile), this._gv.isBatch);
-                                        return;
-                                    }
+                                    Utils.error(string.Format("Cannot get data for {0}: have you run SWAT and saved data since running QSWAT", @ref), this._gv.isBatch);
+                                    return;
+                                }
+                                op.Modify(f, animateVarShort, val);
+                                if (!op.IsEmpty) {
+                                    result = await op.ExecuteAsync();
+                                }
+                                if (!result) {
+                                    Utils.error(string.Format("Could not set attributes in results file {0}", this.resultsFile), this._gv.isBatch);
+                                    return;
                                 }
                             }
                         }
