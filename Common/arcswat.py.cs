@@ -1,45 +1,44 @@
 
 
 
-using System.Diagnostics;
-
-using System.Collections.Generic;
-
-using System;
-using System.IO;
-using Path = System.IO.Path;
-
-using System.Linq;
-using System.Threading;
-using System.Windows.Forms;
-
-using Microsoft.VisualBasic;
-
-using ArcGIS.Desktop.Core;
-using ArcGIS.Desktop.Mapping;
-using ArcGIS.Desktop.Framework.Threading.Tasks;
-using System.Threading.Tasks;
-using ArcGIS.Core.Geometry;
-using LinearUnit = ArcGIS.Core.Geometry.LinearUnit;
+using ArcGIS.Core.CIM;
 using ArcGIS.Core.Data;
-using ArcGIS.Core.Internal.CIM;
-using ArcGIS.Desktop.Layouts;
 using ArcGIS.Core.Data.Raster;
-using ArcGIS.Desktop.Core.Geoprocessing;
-using System.Runtime.CompilerServices;
-using System.Security.Cryptography.X509Certificates;
-using System.Windows.Shapes;
-using ArcGIS.Desktop.Framework.AddIns;
-using ArcGIS.Desktop.Internal.Framework;
-using System.Runtime.InteropServices;
-using System.Data.Entity.Core.Mapping;
-using System.IO.Compression;
-using System.Xml;
 using ArcGIS.Core.Data.UtilityNetwork.Trace;
-using ArcGIS.Desktop.Core.Events;
 using ArcGIS.Core.Events;
-using System.Windows.Documents;
+using ArcGIS.Core.Geometry;
+using ArcGIS.Core.Internal.CIM;
+using ArcGIS.Desktop.Core;
+using ArcGIS.Desktop.Core.Events;
+using ArcGIS.Desktop.Core.Geoprocessing;
+using ArcGIS.Desktop.Framework.AddIns;
+using ArcGIS.Desktop.Framework.Threading.Tasks;
+using ArcGIS.Desktop.Internal.Core.Events;
+using ArcGIS.Desktop.Internal.Framework;
+using ArcGIS.Desktop.Layouts;
+using ArcGIS.Desktop.Mapping;
+using Microsoft.VisualBasic;
+using System;
+using System.Collections.Generic;
+//using System.Data.Entity.Core.Mapping;
+using System.Diagnostics;
+using System.IO;
+using System.IO.Compression;
+using System.Linq;
+using System.Reflection.Metadata;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Security.Cryptography.X509Certificates;
 using System.Text.RegularExpressions;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Windows.Documents;
+using System.Windows.Forms;
+using System.Windows.Shapes;
+using System.Xml;
+using System.Xml.XPath;
+using LinearUnit = ArcGIS.Core.Geometry.LinearUnit;
+using Path = System.IO.Path;
 
 
 
@@ -213,31 +212,174 @@ namespace ArcSWAT3
 
         // Create a new project.
         public async Task newProject() {
-            var title = Utils.trans("Choose parent directory for project");
-            string parentDir = "";
-            using (FolderBrowserDialog dialog = new FolderBrowserDialog()) {
-                dialog.Description = title;
-                dialog.UseDescriptionForTitle = true;
-                if (dialog.ShowDialog() == DialogResult.OK) {
-                    parentDir = dialog.SelectedPath;
-                } else { return; }
+            var proj = Project.Current;
+            var path = proj.Path;
+            var projFile = Path.GetFileName(path);
+            bool madeCopy = false;
+            if (projFile != "Untitled.aprx") {
+                // we have a current project to copy
+                var query = Utils.question("Do you want to create a new copy of the current project?", false, false);
+                if (query == System.Windows.MessageBoxResult.Yes) {
+                    // save current project to avoid query before closing when opening new project
+                    if (!proj.ReadOnly && proj.IsDirty) { 
+                        await proj.SaveAsync(); 
+                    }
+                    await this.copyProject(proj);
+                    madeCopy = true;
+                    proj = Project.Current;
+                }
             }
-            title = Utils.trans("Pleae provide a project name");
-            string projName = Interaction.InputBox(title, "", "", 10, 20);
-            if (string.IsNullOrEmpty(projName)) { return; }
-            CreateProjectSettings settings = new CreateProjectSettings() {
-                LocationPath = parentDir,
-                Name = projName,
-                TemplateType = TemplateType.Map
-            };
-            await Project.CreateAsync(settings);
-            while (MapView.Active is null) {
-                await Task.Delay(1000);
+            if (!madeCopy) {
+                var title = Utils.trans("Choose parent directory for project");
+                string parentDir = "";
+                using (FolderBrowserDialog dialog = new FolderBrowserDialog()) {
+                    dialog.Description = title;
+                    dialog.UseDescriptionForTitle = true;
+                    if (dialog.ShowDialog() == DialogResult.OK) {
+                        parentDir = dialog.SelectedPath;
+                    } else { return; }
+                }
+                title = Utils.trans("Pleae provide a project name");
+                string projName = Interaction.InputBox(title, "", "", 10, 20);
+                if (string.IsNullOrEmpty(projName)) { return; }
+                CreateProjectSettings settings = new CreateProjectSettings() {
+                    LocationPath = parentDir,
+                    Name = projName,
+                    TemplateType = TemplateType.Map
+                };
+                await Project.CreateAsync(settings);
+                while (MapView.Active is null) {
+                    await Task.Delay(1000);
+                }
+                this._odlg.initButtons();
             }
-            this._odlg.initButtons();
             await this.setupProject(false);
             this._gv.writeMasterProgress(0, 0);
         }
+
+        public Task copyProject(Project proj) {
+            string projFile = Path.GetFullPath(proj.Path);
+            string projDir = Path.GetDirectoryName(projFile);
+            string aprxFile = Path.GetFileName(projFile);
+            string projName = Path.GetFileNameWithoutExtension(aprxFile);
+
+            string newProjDir;
+            string newProjName;
+            string newProjFile;
+            while (true) {
+                try {
+                    string newProjParent = null;
+                    string title = "Select parent directory for copied project.";
+                    using (var fbd = new FolderBrowserDialog()) {
+                        fbd.Description = title;
+                        fbd.SelectedPath = Path.GetDirectoryName(projDir);
+                        if (fbd.ShowDialog() == DialogResult.OK) {
+                            newProjParent = fbd.SelectedPath;
+                        }
+                    }
+                    if (string.IsNullOrEmpty(newProjParent)) {
+                        return null;
+                    }
+
+                    newProjName = null;
+                    newProjName = Interaction.InputBox("Please enter the new project name, starting with a letter:", "", "");
+                    if (string.IsNullOrEmpty(newProjName)) {
+                        return null;
+                    }
+                    if (!char.IsLetter(newProjName[0])) {
+                        Utils.error("Project name must start with a letter", false);
+                        continue;
+                    }
+                    newProjDir = Path.Combine(newProjParent, newProjName);
+                    newProjFile = Path.GetFullPath(Path.Combine(newProjDir, newProjName + ".aprx"));
+                    if (string.Equals(projFile, newProjFile, StringComparison.OrdinalIgnoreCase)) {
+                        Utils.error("You are trying to copy a project to itself.  Please choose a different directory or a different project name.", false);
+                        continue;
+                    } else if (string.Equals(projDir, newProjDir, StringComparison.OrdinalIgnoreCase)) {
+                        // same directory but different project names: no problem
+                        break;
+                    } else if (newProjDir.StartsWith(projDir, StringComparison.OrdinalIgnoreCase)) {
+                        Utils.error("Current project inside new project: please choose another directory", false);
+                        continue;
+                    } else if (projDir.StartsWith(newProjDir, StringComparison.OrdinalIgnoreCase)) {
+                        Utils.error("New project inside current project: please choose another directory", false);
+                        continue;
+                    } else {
+                        // ok
+                        break;
+                    }
+                }
+                catch (Exception ex) {
+                    Utils.error($"Failed to copy project: {ex}", false);
+                    return null;
+                }
+            }
+
+            if (File.Exists(newProjFile)) {
+                var result = Utils.question($"Project {newProjFile} already exists.  Do you want to overwrite it and its data?", false, false);
+                if (result == System.Windows.MessageBoxResult.No) {
+                    return null;
+                }
+            }
+
+            // copy files
+            CopyDirectory(projDir, newProjDir, true);
+            if (!string.Equals(projName, newProjName)) {
+                // give new project name to .aprx file name
+                File.Move(Path.Combine(newProjDir, projName + ".aprx"), newProjFile, true);
+                // rename project database
+                File.Move(Path.Combine(newProjDir, projName + ".mdb"), Path.Combine(newProjDir, newProjName + ".mdb"), true);
+            }
+            // we need to change path of project file in DocumentInfo.xml inside .aprx file
+            using (ZipArchive archive = System.IO.Compression.ZipFile.Open(newProjFile, ZipArchiveMode.Update)) {
+                try {
+                    var entry = archive.GetEntry("DocumentInfo.xml");
+                    var stream = entry.Open();
+                    XmlDocument doc = new XmlDocument();
+                    using (var reader = new StreamReader(stream)) {
+                        doc.Load(reader);
+                        XPathNavigator navigator = doc.CreateNavigator();
+                        foreach (XPathNavigator nav in navigator.Select("/CIMDocumentInfo/DocumentTitle")) {
+                            nav.SetValue(newProjFile);
+                        }
+                        stream.SetLength(0);
+                        stream.Seek(0, SeekOrigin.Begin);
+                        using (var writer = new StreamWriter(stream)) {
+                            doc.Save(writer);
+                        }
+                    }
+                }
+                catch (Exception ex) {
+                    Utils.error(string.Format("Editing {0} file failed: {1}", newProjFile, ex.Message), false);
+                    return null;
+                }
+            }
+            return Project.OpenAsync(newProjFile);
+        }
+
+        private void CopyDirectory(string sourceDir, string destinationDir, bool overwrite) {
+            var dir = new DirectoryInfo(sourceDir);
+            if (!dir.Exists)
+                throw new DirectoryNotFoundException($"Source directory not found: {sourceDir}");
+
+            DirectoryInfo[] dirs = dir.GetDirectories();
+            if (!Directory.Exists(destinationDir)) {
+                Directory.CreateDirectory(destinationDir);
+            }
+
+            foreach (FileInfo file in dir.GetFiles()) {
+                string targetFilePath = Path.Combine(destinationDir, file.Name);
+                file.CopyTo(targetFilePath, overwrite);
+            }
+
+            foreach (DirectoryInfo dir0 in dirs) {
+                string destDir = Path.Combine(destinationDir, dir0.Name);
+                CopyDirectory(dir0.FullName, destDir, overwrite);
+            }
+        }
+    
+
+
 
         // Open an existing project.
         public async Task existingProject() {
@@ -300,6 +442,7 @@ namespace ArcSWAT3
             } else {
                 (fromGRASS, found) = proj.readBoolEntry("", "delin/fromGRASS", false);
             }
+
             //TODO
             //if (!string.IsNullOrEmpty(TNCDir)) {
             //    proj.writeEntry(title, "delin/TNCDir", TNCDir);
@@ -345,7 +488,7 @@ namespace ArcSWAT3
             await QueuedTask.Run(() => Project.Current.AddItem(styleItem));
             //ARCSWAT3 custom style
             this._gv.arcSWAT3Style =
-                Project.Current.GetItems<StyleProjectItem>().FirstOrDefault(s => s.Name == "ArcSWAT3" && File.Exists(s.Path));
+                Project.Current.GetItems<StyleProjectItem>().FirstOrDefault(s => s.Name.StartsWith("ArcSWAT3") && File.Exists(s.Path));
             if (await this.demProcessed(proj)) {
                 this._demIsProcessed = true;
                 this._odlg.allowCreateHRU();

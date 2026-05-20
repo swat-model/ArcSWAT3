@@ -1,11 +1,10 @@
 
 
 using System;
-using System.IO;
-
 using System.Collections;
-
 using System.Collections.Generic;
+using System.IO;
+using System.Runtime.InteropServices;
 
 namespace ArcSWAT3
 {
@@ -24,7 +23,12 @@ namespace ArcSWAT3
 
             public GlobalVars _gv;
 
-            public ParamForm _dlg;
+            public ParamForm _dlg; 
+        
+            public static string _HOMEDIR =
+                RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ?
+                Environment.ExpandEnvironmentVariables("%HOMEDRIVE%%HOMEPATH%") :
+                Environment.ExpandEnvironmentVariables("HOME");
 
             public static string _SWATEDITOR = "SwatEditor.exe";
 
@@ -99,6 +103,8 @@ namespace ArcSWAT3
             public static string _HRUS = "hrus";
 
             public static string _SUBS1 = "subs1";
+
+            public static string _SUBS2 = "subs2";
 
             public static string _RIV1 = "riv1";
 

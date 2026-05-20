@@ -16,14 +16,10 @@ using ArcGIS.Core.Data.UtilityNetwork.Trace;
 using ArcGIS.Desktop.Framework.Dialogs;
 using MessageBox = ArcGIS.Desktop.Framework.Dialogs.MessageBox;
 
-using MaxRev.Gdal.Core;
-using OSGeo.OGR;
-using OSGeo.GDAL;
 using ArcGIS.Core.CIM;
 using ArcGIS.Desktop.Internal.Mapping.CommonControls;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
 using ArcGIS.Desktop.Core.Geoprocessing;
-using OSGeo.OSR;
 using ArcGIS.Desktop.Editing.Attributes;
 using ArcGIS.Desktop.Editing;
 using ArcGIS.Core.Data;
@@ -1262,725 +1258,765 @@ namespace ArcSWAT3 {
             int cropReadRows;
             int elevationReadRows;
             double minDist;
-            OSGeo.GDAL.Dataset hrusRasterDs;
-            OSGeo.GDAL.Dataset slopeBandsDs;
-            OSGeo.GDAL.Driver driver;
             string proj;
             int basin;
             int link;
-            OSGeo.GDAL.Dataset distDs = null;
-            //GdalBase.ConfigureAll();
             // in case this is a rerun
             this.basins.Clear();
-            var elevationDs = Gdal.Open(this._gv.demFile, Access.GA_ReadOnly);
-            if (elevationDs is null) {
-                Utils.error(string.Format("Cannot open DEM {0}", this._gv.demFile), this._gv.isBatch);
-                return false;
-            }
-            var basinDs = Gdal.Open(this._gv.basinFile, Access.GA_ReadOnly);
-            if (basinDs is null) {
-                Utils.error(string.Format("Cannot open watershed grid {0}", this._gv.basinFile), this._gv.isBatch);
-                return false;
-            }
-            var basinNumberRows = basinDs.RasterYSize;
-            var basinNumberCols = basinDs.RasterXSize;
-            var fivePercent = Convert.ToInt32(basinNumberRows / 20);
-            double[] basinTransform = new double[6];
-            basinDs.GetGeoTransform(basinTransform);
-            var basinBand = basinDs.GetRasterBand(1);
-            double basinNoData;
-            int basinHasNoData;
-            basinBand.GetNoDataValue(out basinNoData, out basinHasNoData);
-            // can have -128 as the nodata value while map read returns 128
-            basinNoData = Math.Abs(basinNoData);
+            RasterDataset elevationDs;
+            Raster elevationBand;
+            RasterDataset basinDs;
+            Raster basinBand;
+            RasterDataset distDs;
+            Raster distBand;
+            RasterDataset cropDs;
+            Raster cropBand;
+            RasterDataset soilDs;
+            Raster soilBand;
+            RasterDataset slopeDs;
+            Raster slopeBand;
+            FileSystemConnectionPath demPath =
+                new FileSystemConnectionPath(new System.Uri(Path.GetDirectoryName(this._gv.demFile)), FileSystemDatastoreType.Raster);
+            FileSystemDatastore demStore = new FileSystemDatastore(demPath);
+            FileSystemConnectionPath basinPath =
+                new FileSystemConnectionPath(new System.Uri(Path.GetDirectoryName(this._gv.basinFile)), FileSystemDatastoreType.Raster);
+            FileSystemDatastore basinStore = new FileSystemDatastore(basinPath);
+            FileSystemConnectionPath cropPath =
+                new FileSystemConnectionPath(new System.Uri(Path.GetDirectoryName(this._gv.landuseFile)), FileSystemDatastoreType.Raster);
+            FileSystemDatastore cropStore = new FileSystemDatastore(cropPath);
+            FileSystemConnectionPath soilPath =
+                new FileSystemConnectionPath(new System.Uri(Path.GetDirectoryName(this._gv.soilFile)), FileSystemDatastoreType.Raster);
+            FileSystemDatastore soilStore = new FileSystemDatastore(soilPath);
+            FileSystemConnectionPath slopePath =
+                new FileSystemConnectionPath(new System.Uri(Path.GetDirectoryName(this._gv.slopeFile)), FileSystemDatastoreType.Raster);
+            FileSystemDatastore slopeStore = new FileSystemDatastore(slopePath);
             if (!this._gv.existingWshed && !this._gv.useGridModel) {
-                distDs = Gdal.Open(this._gv.distFile, Access.GA_ReadOnly);
-                if (distDs is null) {
-                    Utils.error(string.Format("Cannot open distance to outlets file {0}", this._gv.distFile), this._gv.isBatch);
-                    return false;
-                }
+                FileSystemConnectionPath distPath =
+                new FileSystemConnectionPath(new System.Uri(Path.GetDirectoryName(this._gv.distFile)), FileSystemDatastoreType.Raster);
+                FileSystemDatastore distStore = new FileSystemDatastore(distPath);
             }
-            var cropDs = Gdal.Open(this._gv.landuseFile, Access.GA_ReadOnly);
-            if (cropDs is null) {
-                Utils.error(string.Format("Cannot open landuse file {0}", this._gv.landuseFile), this._gv.isBatch);
-                return false;
-            }
-            var soilDs = Gdal.Open(this._gv.soilFile, Access.GA_ReadOnly);
-            if (soilDs is null) {
-                Utils.error(string.Format("Cannot open soil file {0}", this._gv.soilFile), this._gv.isBatch);
-                return false;
-            }
-            var slopeDs = Gdal.Open(this._gv.slopeFile, Access.GA_ReadOnly);
-            if (slopeDs is null) {
-                Utils.error(string.Format("Cannot open slope file {0}", this._gv.slopeFile), this._gv.isBatch);
-                return false;
-            }
-            var distNumberRows = 0;
-            var distNumberCols = 0;
-            // Loop reading grids is MUCH slower if these are not stored locally
-            if (!this._gv.existingWshed && !this._gv.useGridModel) {
-                distNumberRows = distDs.RasterYSize;
-                distNumberCols = distDs.RasterXSize;
-            }
-            var cropNumberRows = cropDs.RasterYSize;
-            var cropNumberCols = cropDs.RasterXSize;
-            var soilNumberRows = soilDs.RasterYSize;
-            var soilNumberCols = soilDs.RasterXSize;
-            var slopeNumberRows = slopeDs.RasterYSize;
-            var slopeNumberCols = slopeDs.RasterXSize;
-            var elevationNumberRows = elevationDs.RasterYSize;
-            var elevationNumberCols = elevationDs.RasterXSize;
-            var distTransform = new double[6];
-            if (!this._gv.existingWshed && !this._gv.useGridModel) {
-                distDs.GetGeoTransform(distTransform);
-            }
-            var cropTransform = new double[6];
-            cropDs.GetGeoTransform(cropTransform);
-            var soilTransform = new double[6];
-            soilDs.GetGeoTransform(soilTransform);
-            var slopeTransform = new double[6];
-            slopeDs.GetGeoTransform(slopeTransform);
-            var elevationTransform = new double[6];
-            elevationDs.GetGeoTransform(elevationTransform);
-            // if rasters have same coords we can use (col, row) from one in another
-            Func<int, double, int> cropRowFun = null;
-            Func<int, double, int> cropColFun = null;
-            Func<int, double, int> soilRowFun = null;
-            Func<int, double, int> soilColFun = null;
-            Func<int, double, int> slopeRowFun = null;
-            Func<int, double, int> slopeColFun = null;
-            Func<int, double, int> distRowFun = null;
-            Func<int, double, int> distColFun = null;
-            Func<int, double, int> elevationRowFun = null;
-            Func<int, double, int> elevationColFun = null;
-            if (this._gv.useGridModel) {
-                (cropRowFun, cropColFun) = Topology.translateCoords(elevationTransform, cropTransform, elevationNumberRows, elevationNumberCols);
-                (soilRowFun, soilColFun) = Topology.translateCoords(elevationTransform, soilTransform, elevationNumberRows, elevationNumberCols);
-                (slopeRowFun, slopeColFun) = Topology.translateCoords(elevationTransform, slopeTransform, elevationNumberRows, elevationNumberCols);
-            } else {
-                if (!this._gv.existingWshed) {
-                    (distRowFun, distColFun) = Topology.translateCoords(basinTransform, distTransform, basinNumberRows, basinNumberCols);
-                }
-                (cropRowFun, cropColFun) = Topology.translateCoords(basinTransform, cropTransform, basinNumberRows, basinNumberCols);
-                (soilRowFun, soilColFun) = Topology.translateCoords(basinTransform, soilTransform, basinNumberRows, basinNumberCols);
-                (slopeRowFun, slopeColFun) = Topology.translateCoords(basinTransform, slopeTransform, basinNumberRows, basinNumberCols);
-                (elevationRowFun, elevationColFun) = Topology.translateCoords(basinTransform, elevationTransform, basinNumberRows, basinNumberCols);
-            }
-            Band distBand = null;
-            if (!this._gv.existingWshed && !this._gv.useGridModel) {
-                distBand = distDs.GetRasterBand(1);
-            }
-            var cropBand = cropDs.GetRasterBand(1);
-            var soilBand = soilDs.GetRasterBand(1);
-            var slopeBand = slopeDs.GetRasterBand(1);
-            var elevationBand = elevationDs.GetRasterBand(1);
-            double elevationNoData;
-            int elevationHasNoData;
-            elevationBand.GetNoDataValue(out elevationNoData, out elevationHasNoData);
-            if (elevationHasNoData == 0) {
-                elevationNoData = this.defaultNoData;
-            }
-            double distNoData;
-            int distHasNoData;
-            if (this._gv.existingWshed || this._gv.useGridModel) {
-                distNoData = elevationNoData;
-            } else {
-                distBand.GetNoDataValue(out distNoData, out distHasNoData);
-            }
-            double cropNoData;
-            int cropHasNoData;
-            cropBand.GetNoDataValue(out cropNoData, out cropHasNoData);
-            if (cropHasNoData == 0) {
-                cropNoData = this.defaultNoData;
-            }
-            double soilNoData;
-            int soilHasNoData;
-            soilBand.GetNoDataValue(out soilNoData, out soilHasNoData);
-            if (soilHasNoData == 0) {
-                soilNoData = this.defaultNoData;
-            }
-            var streamGeoms = new Dictionary<int, OSGeo.OGR.Geometry>();
-            var basinStreamWaterData = new Dictionary<int, (OSGeo.OGR.Geometry, double, double)>();
-            if (this._gv.isHUC || this._gv.isHAWQS) {
-                this._gv.db.SSURGOUndefined = (int)soilNoData;
-                // collect data basin -> stream buffer shape, buffer area, WATR area 
-                // map basin -> stream geometry
-                var streamDs = Ogr.Open(this._gv.streamFile, 0);
-                var streamLayer = streamDs.GetLayerByIndex(0);
-                var linkIndex = this._gv.topo.getIndex(streamLayer, Topology._LINKNO);
-                for (int i = 0; i < streamLayer.GetFeatureCount(1); i++) {
-                    var stream = streamLayer.GetFeature(i);
-                    link = stream.GetFieldAsInteger(linkIndex);
-                    basin = this._gv.topo.linkToBasin[link];
-                    streamGeoms[basin] = stream.GetGeometryRef();
-                }
-            }
-            //if (this._gv.useGridModel && this._gv.topo.basinCentroids.Count == 0) {
-            //    // need to calculate centroids from wshedFile
-            //    var gridLayer = QgsVectorLayer(this._gv.wshedFile, "grid", "ogr");
-            //    var basinIndex = this._gv.topo.getIndex(gridLayer, Topology._POLYGONID);
-            //    foreach (var feature in gridLayer.getFeatures()) {
-            //        basin = feature[basinIndex];
-            //        var centroid = Utils.centreGridCell(feature);
-            //        this._gv.topo.basinCentroids[basin] = (centroid.x(), centroid.y());
-            //    }
-            //}
-            double slopeNoData;
-            int slopeHasNoData;
-            slopeBand.GetNoDataValue(out slopeNoData, out slopeHasNoData);
-            if (slopeHasNoData == 0) {
-                slopeNoData = this.defaultNoData;
-            }
-            if (!this._gv.useGridModel) {
-                this._gv.basinNoData = (int)basinNoData;
-            }
-            this._gv.distNoData = (int)distNoData;
-            this._gv.cropNoData = (int)cropNoData;
-            this._gv.soilNoData = (int)soilNoData;
-            this._gv.slopeNoData = (int)slopeNoData;
-            this._gv.elevationNoData = elevationNoData;
-            // counts to calculate landuse and soil overlaps with basins grid or watershed grid
-            var landuseCount = 0;
-            var landuseNoDataCount = 0;
-            var soilDefinedCount = 0;
-            var soilUndefinedCount = 0;
-            var soilNoDataCount = 0;
-            var slopeBandsNoData = -1;
-            Band slopeBandsBand = null;
-            var hrusRasterNoData = -1;
-            Band hrusRasterBand = null;
-            // prepare slope bands grid
-            // remove old one since may not be wanted: will be recalculated if it is needed
-            this._gv.slopeBandsFile = Path.ChangeExtension(this._gv.demFile, null) + "slope_bands.tif";
-            await Utils.removeLayerAndFiles(this._gv.slopeBandsFile);
-            if (!this._gv.useGridModel && this._gv.db.slopeLimits.Count > 0) {
-                proj = slopeDs.GetProjection();
-                driver = Gdal.GetDriverByName("GTiff");
-                if (File.Exists(this._gv.slopeBandsFile)) {
-                    // failed to remove it - already open in ArcGIS
-                    slopeBandsDs = Gdal.Open(this._gv.slopeBandsFile, Access.GA_Update);
-                } else {
-                    slopeBandsDs = driver.Create(this._gv.slopeBandsFile, slopeNumberCols, slopeNumberRows, 1, DataType.GDT_Byte, null);
-                }
-                slopeBandsBand = slopeBandsDs.GetRasterBand(1);
-                slopeBandsBand.SetNoDataValue(slopeBandsNoData);
-                slopeBandsDs.SetGeoTransform(slopeTransform);
-                slopeBandsDs.SetProjection(proj);
-                Utils.copyPrj(this._gv.slopeFile, this._gv.slopeBandsFile);
-            }
-            // prepare HRUs raster
-            if (!this._gv.useGridModel) {
-                proj = basinDs.GetProjection();
-                driver = Gdal.GetDriverByName("GTiff");
-                var hrusRasterFile = Utils.join(this._gv.gridDir, Parameters._HRUSRASTER);
-                await Utils.removeLayerAndFiles(hrusRasterFile);
-                if (File.Exists(hrusRasterFile)) {
-                    // ArcGIS does not let go
-                    hrusRasterDs = Gdal.Open(hrusRasterFile, Access.GA_Update);
-                } else { 
-                    hrusRasterDs = driver.Create(hrusRasterFile, basinNumberCols, basinNumberRows, 1, DataType.GDT_Int32, null);
-                } 
-                hrusRasterBand = hrusRasterDs.GetRasterBand(1);
-                hrusRasterBand.SetNoDataValue(hrusRasterNoData);
-                hrusRasterDs.SetGeoTransform(basinTransform);
-                hrusRasterDs.SetProjection(proj);
-                Utils.copyPrj(this._gv.basinFile, hrusRasterFile);
-            }
-            int hasMinVal;
-            elevationBand.GetMinimum(out this.minElev, out hasMinVal);
-            double maxElev;
-            int hasMaxVal;
-            elevationBand.GetMaximum(out maxElev, out hasMaxVal);
-            if (hasMinVal == 0 || hasMaxVal == 0) {
+            await QueuedTask.Run(() => {
                 try {
-                    double[] extrema = new double[2];
-                    elevationBand.ComputeRasterMinMax(extrema, 1);
-                    this.minElev = extrema[0];
-                    maxElev = extrema[1];
-                } catch {
-                    Utils.error("Failed to calculate Math.Min/Math.Max values of your DEM.  Is it too small?", this._gv.isBatch);
+                    elevationDs = demStore.OpenDataset<RasterDataset>(Path.GetFileName(this._gv.demFile));
+                }
+                catch {
+                    Utils.error(string.Format("Cannot open DEM {0}", this._gv.demFile), this._gv.isBatch);
                     return false;
                 }
-            }
-            // convert to metres
-            this.minElev *= this._gv.verticalFactor;
-            maxElev *= this._gv.verticalFactor;
-            // have seen minInt for minElev, so let's assume metres and play safe
-            // else will get absurdly large list of elevations
-            var globalMinElev = -419;
-            var globalMaxElev = 8849;
-            if (this.minElev < globalMinElev) {
-                this.minElev = globalMinElev;
-            } else {
-                // make sure it is an integer
-                this.minElev = Convert.ToInt32(this.minElev);
-            }
-            if (maxElev > globalMaxElev) {
-                maxElev = globalMaxElev;
-            } else {
-                maxElev = Convert.ToInt32(maxElev);
-            }
-            var elevMapSize = Convert.ToInt32(1 + maxElev - this.minElev);
-            this.elevMap = new List<int>();
-            for (var i = 0; i < elevMapSize; i++) {
-                this.elevMap.Add(0);
-            }
-            // We read raster data in complete rows, using several rows for the grid model if necessary.
-            // Complete rows should be reasonably efficient, and for the grid model
-            // reading all rows necessary for each row of grid cells avoids rereading any row
-            if (this._gv.useGridModel) {
-                // cell dimensions may be negative!
-                this._gv.cellArea = Math.Abs(elevationTransform[1] * elevationTransform[5]);
-                // minimum flow distance is minimum of x and y cell dimensions
-                minDist = Math.Min(Math.Abs(elevationTransform[1]), Math.Abs(elevationTransform[5])) * this._gv.topo.gridRows;
-                elevationReadRows = this._gv.topo.gridRows;
-                var elevationRowDepth = elevationReadRows * elevationTransform[5];
-                // we add an extra 2 rows since edges of rows may not
-                // line up with elevation map.
-                cropReadRows = Math.Max(1, Convert.ToInt32(elevationRowDepth / cropTransform[5] + 2));
-                cropActReadRows = cropReadRows;
-                soilReadRows = Math.Max(1, Convert.ToInt32(elevationRowDepth / soilTransform[5] + 2));
-                soilActReadRows = soilReadRows;
-                slopeReadRows = Math.Max(1, Convert.ToInt32(elevationRowDepth / slopeTransform[5] + 2));
-                slopeActReadRows = slopeReadRows;
-                basinReadRows = 1;
-                Utils.loginfo(string.Format("{0}, {1}, {2} rows of landuse, soil and slope for each grid cell", cropReadRows, soilReadRows, slopeReadRows));
-            } else {
-                // cell dimensions may be negative!
-                this._gv.cellArea = Math.Abs(basinTransform[1] * basinTransform[5]);
-                // minimum flow distance is minimum of x and y cell dimensions
-                minDist = Math.Min(Math.Abs(basinTransform[1]), Math.Abs(basinTransform[5]));
-                elevationReadRows = 1;
-                cropReadRows = 1;
-                soilReadRows = 1;
-                slopeReadRows = 1;
-                basinReadRows = 1;
-                //var distReadRows = 1;
-                // create empty arrays to hold raster data when read
-                // to avoid danger of allocating and deallocating with main loop
-                // currentRow is the top row when using grid model
-            }
-            int[] hruRow = null;
-            int[] hruRows = null;
-            int[] hrusData = null;
-            Dictionary<int, Dictionary<int, Dictionary<int, Dictionary<int, int>>>> basinCropSoilSlopeNumbers = null;
-            var hrusRasterWanted = !this._gv.isHUC && !this._gv.forTNC;
-            Polygonize shapes = null;
-            if (this.fullHRUsWanted || hrusRasterWanted) {
-                // last HRU number used
-                lastHru = 0;
-                basinCropSoilSlopeNumbers = new Dictionary<int, Dictionary<int, Dictionary<int, Dictionary<int, int>>>>();
-                // grid models are based on the DEM raster, and non-grid models on the basins grid
-                if (this._gv.useGridModel) {
-                    transform = elevationTransform;
-                    hruRows = new int[elevationNumberCols * elevationReadRows];
-                    for (int i = 0; i < elevationReadRows; i++) {
-                        for (int j = 0; j < elevationNumberCols; j++) {
-                            hruRows[i * elevationNumberCols + j] = -1;
-                        }
-                    }
-                } else {
-                    transform = basinTransform;
-                    hruRow = new int[basinNumberCols];
+                elevationBand = elevationDs.CreateRaster([0]);
+                try {
+                    basinDs = basinStore.OpenDataset<RasterDataset>(Path.GetFileName(this._gv.basinFile));
                 }
-                var pt = ArcGIS.Core.Geometry.MapPointBuilderEx.CreateMapPoint(transform[0], transform[3]);
-                shapes = new Polygonize(true, basinNumberCols, -1, pt, transform[1], Math.Abs(transform[5]));
-                hrusData = new int[basinNumberCols * basinReadRows];
-            }
-            var cropCurrentRow = -1;
-            var cropData = new int[cropNumberCols * cropReadRows];
-            var soilCurrentRow = -1;
-            var soilData = new int[soilNumberCols * soilReadRows];
-            var slopeCurrentRow = -1;
-            var slopeData = new double[slopeNumberCols * slopeReadRows];
-            var elevationCurrentRow = -1;
-            var elevationData = new double[elevationNumberCols * elevationReadRows];
-            var progressCount = 0;
-            //if (this._gv.useGridModel) {
-            //    if (this._gv.soilTable == Parameters._TNCFAOLOOKUP) {
-            //        var waterSoil = Parameters._TNCFAOWATERSOIL;
-            //        var waterSoils = Parameters._TNCFAOWATERSOILS;
-            //    } else if (this._gv.soilTable == Parameters._TNCHWSDLOOKUP) {
-            //        waterSoil = Parameters._TNCHWSDWATERSOIL;
-            //        waterSoils = Parameters._TNCHWSDWATERSOILS;
-            //    } else {
-            //        waterSoil = -1;
-            //        waterSoils = new HashSet<object>();
-            //    }
-            //    if (this._gv.isBig) {
-            //        var conn = this._gv.db.connect();
-            //        var cursor = conn.cursor();
-            //        (sql1, sql2, sql3, sql4) = this._gv.db.initWHUTables(cursor);
-            //        var oid = 0;
-            //        var elevBandId = 0;
-            //    }
-            //    fivePercent = Convert.ToInt32(this._gv.topo.basinToSWATBasin.Count / 20);
-            //    var gridCount = 0;
-            //    foreach (var (link, basin) in this._gv.topo.linkToBasin) {
-            //        this.basinElevMap[basin] = new List<int> {
-            //            0
-            //        } * elevMapSize;
-            //        var SWATBasin = this._gv.topo.basinToSWATBasin.get(basin, 0);
-            //        if (SWATBasin == 0) {
-            //            continue;
-            //        }
-            //        if (progressCount == fivePercent) {
-            //            progressBar.setValue(progressBar.Value + 5);
-            //            if (this._gv.forTNC) {
-            //                Console.WriteLine(string.Format("Percentage of rasters read: {0} at {1}", progressBar.Value, datetime.now().ToString()));
-            //            }
-            //            progressCount = 1;
-            //        } else {
-            //            progressCount += 1;
-            //        }
-            //        gridCount += 1;
-            //        reachData = this._gv.topo.reachesData[link];
-            //        // centroid was taken from accumulation grid, but does not matter since in projected units
-            //        (centreX, centreY) = this._gv.topo.basinCentroids[basin];
-            //        var centroidll = this._gv.topo.pointToLatLong(QgsPointXY(centreX, centreY));
-            //        var n = elevationReadRows;
-            //        // each grid subbasin contains n x n DEM cells
-            //        if (n % 2 == 0) {
-            //            // even number of rows and columns - start half a row and column NW of centre
-            //            (centreCol, centreRow) = Topology.projToCell(centreX - elevationTransform[1] / 2.0, centreY - elevationTransform[5] / 2.0, elevationTransform);
-            //            elevationTopRow = centreRow - (n - 2) / 2;
-            //            // beware of rows or columns not dividing by n:
-            //            // last grid row or column may be short
-            //            rowRange = Enumerable.Range(elevationTopRow, Math.Min(centreRow + (n + 2) / 2, elevationNumberRows) - elevationTopRow);
-            //            colRange = Enumerable.Range(centreCol - (n - 2) / 2, Math.Min(centreCol + (n + 2) / 2, elevationNumberCols) - (centreCol - (n - 2) / 2));
-            //        } else {
-            //            // odd number of rows and columns
-            //            (centreCol, centreRow) = Topology.projToCell(centreX, centreY, elevationTransform);
-            //            elevationTopRow = centreRow - (n - 1) / 2;
-            //            // beware of rows or columns not dividing by n:
-            //            // last grid row or column may be short
-            //            rowRange = Enumerable.Range(elevationTopRow, Math.Min(centreRow + (n + 1) / 2, elevationNumberRows) - elevationTopRow);
-            //            colRange = Enumerable.Range(centreCol - (n - 1) / 2, Math.Min(centreCol + (n + 1) / 2, elevationNumberCols) - (centreCol - (n - 1) / 2));
-            //        }
-            //        (outletCol, outletRow) = Topology.projToCell(reachData.lowerX, reachData.lowerY, elevationTransform);
-            //        (sourceCol, sourceRow) = Topology.projToCell(reachData.upperX, reachData.upperY, elevationTransform);
-            //        // Utils.loginfo('Outlet at ({0:.0F},{1:.0F}) for source at ({2:.0F},{3:.0F})', reachData.lowerX, reachData.lowerY, reachData.upperX, reachData.upperY))
-            //        outletElev = reachData.lowerZ;
-            //        // allow for upper < lower in case unfilled dem is used
-            //        drop = reachData.upperZ < outletElev ? 0 : reachData.upperZ - outletElev;
-            //        length = this._gv.topo.streamLengths[link];
-            //        if (length == 0) {
-            //            // is zero for outlet grid cells
-            //            length = elevationTransform[1];
-            //        }
-            //        data = BasinData(outletCol, outletRow, outletElev, sourceCol, sourceRow, length, drop, minDist, this._gv.isBatch);
-            //        // add drainage areas
-            //        data.drainArea = this._gv.topo.drainAreas[link];
-            //        var maxGridElev = -419;
-            //        var minGridElev = 8849;
-            //        // read data if necessary
-            //        if (elevationTopRow != elevationCurrentRow) {
-            //            if (this.fullHRUsWanted && lastHru > 0) {
-            //                // something has been written to hruRows
-            //                foreach (var rowNum in Enumerable.Range(0, n)) {
-            //                    shapes.addRow(hruRows[rowNum], elevationCurrentRow + rowNum);
-            //                }
-            //                hruRows.fill(-1);
-            //            }
-            //            elevationData = elevationBand.ReadAsArray(0, elevationTopRow, elevationNumberCols, Math.Min(elevationReadRows, elevationNumberRows - elevationTopRow));
-            //            elevationCurrentRow = elevationTopRow;
-            //        }
-            //        var topY = Topology.rowToY(elevationTopRow, elevationTransform);
-            //        var cropTopRow = cropRowFun(elevationTopRow, topY);
-            //        if (cropTopRow != cropCurrentRow) {
-            //            if (0 <= cropTopRow && cropTopRow <= cropNumberRows - cropReadRows) {
-            //                cropData = cropBand.ReadAsArray(0, cropTopRow, cropNumberCols, cropReadRows);
-            //                cropActReadRows = cropReadRows;
-            //                cropCurrentRow = cropTopRow;
-            //            } else if (cropNumberRows - cropTopRow < cropReadRows) {
-            //                // runnning off the bottom of crop map
-            //                cropActReadRows = cropNumberRows - cropTopRow;
-            //                if (cropActReadRows >= 1) {
-            //                    cropData = cropBand.ReadAsArray(0, cropTopRow, cropNumberCols, cropActReadRows);
-            //                    cropCurrentRow = cropTopRow;
-            //                }
-            //            } else {
-            //                cropActReadRows = 0;
-            //            }
-            //        }
-            //        var soilTopRow = soilRowFun(elevationTopRow, topY);
-            //        if (soilTopRow != soilCurrentRow) {
-            //            if (0 <= soilTopRow && soilTopRow <= soilNumberRows - soilReadRows) {
-            //                soilData = soilBand.ReadAsArray(0, soilTopRow, soilNumberCols, soilReadRows);
-            //                soilActReadRows = soilReadRows;
-            //                soilCurrentRow = soilTopRow;
-            //            } else if (soilNumberRows - soilTopRow < soilReadRows) {
-            //                // runnning off the bottom of soil map
-            //                soilActReadRows = soilNumberRows - soilTopRow;
-            //                if (soilActReadRows >= 1) {
-            //                    soilData = soilBand.ReadAsArray(0, soilTopRow, soilNumberCols, soilActReadRows);
-            //                    soilCurrentRow = soilTopRow;
-            //                }
-            //            } else {
-            //                soilActReadRows = 0;
-            //            }
-            //        }
-            //        var slopeTopRow = slopeRowFun(elevationTopRow, topY);
-            //        if (slopeTopRow != slopeCurrentRow) {
-            //            if (0 <= slopeTopRow && slopeTopRow <= slopeNumberRows - slopeReadRows) {
-            //                slopeData = slopeBand.ReadAsArray(0, slopeTopRow, slopeNumberCols, slopeReadRows);
-            //                slopeActReadRows = slopeReadRows;
-            //                slopeCurrentRow = slopeTopRow;
-            //            } else if (slopeNumberRows - slopeTopRow < slopeReadRows) {
-            //                // runnning off the bottom of slope map
-            //                slopeActReadRows = slopeNumberRows - slopeTopRow;
-            //                if (slopeActReadRows >= 1) {
-            //                    slopeData = slopeBand.ReadAsArray(0, slopeTopRow, slopeNumberCols, slopeActReadRows);
-            //                    slopeCurrentRow = slopeTopRow;
-            //                }
-            //            } else {
-            //                slopeActReadRows = 0;
-            //            }
-            //        }
-            //        foreach (var row in rowRange) {
-            //            y = Topology.rowToY(row, elevationTransform);
-            //            cropRow = cropRowFun(row, y);
-            //            soilRow = soilRowFun(row, y);
-            //            slopeRow = slopeRowFun(row, y);
-            //            foreach (var col in colRange) {
-            //                elevation = cast(float, elevationData[row - elevationTopRow,col]);
-            //                if (elevation != elevationNoData) {
-            //                    elevation = Convert.ToInt32(elevation * this._gv.verticalFactor);
-            //                    maxGridElev = Math.Max(maxGridElev, elevation);
-            //                    minGridElev = Math.Min(minGridElev, elevation);
-            //                    index = elevation - this.minElev;
-            //                    // can have index too large because Math.Max not calculated properly by gdal
-            //                    if (index >= elevMapSize) {
-            //                        extra = 1 + index - elevMapSize;
-            //                        this.elevMap += new List<int> {
-            //                            0
-            //                        } * extra;
-            //                        elevMapSize += extra;
-            //                    }
-            //                    this.elevMap[index] += 1;
-            //                    this.basinElevMap[basin][index] += 1;
-            //                }
-            //                if (this.fullHRUsWanted) {
-            //                    if (basinCropSoilSlopeNumbers.Contains(basin)) {
-            //                        cropSoilSlopeNumbers = basinCropSoilSlopeNumbers[basin];
-            //                    } else {
-            //                        cropSoilSlopeNumbers = new dict();
-            //                        basinCropSoilSlopeNumbers[basin] = cropSoilSlopeNumbers;
-            //                    }
-            //                }
-            //                x = Topology.colToX(col, elevationTransform);
-            //                dist = distNoData;
-            //                var _tmp_1 = cropRow - cropTopRow;
-            //                if (0 <= _tmp_1 && _tmp_1 < cropActReadRows) {
-            //                    cropCol = cropColFun(col, x);
-            //                    if (0 <= cropCol && cropCol < cropNumberCols) {
-            //                        crop = cast(@int, cropData[cropRow - cropTopRow,cropCol]);
-            //                        if (crop is null || math.isnan(crop)) {
-            //                            crop = cropNoData;
-            //                        }
-            //                    } else {
-            //                        crop = cropNoData;
-            //                    }
-            //                } else {
-            //                    crop = cropNoData;
-            //                }
-            //                if (crop == cropNoData) {
-            //                    landuseNoDataCount += 1;
-            //                    // when using grid model small amounts of
-            //                    // no data for crop, soil or slope could lose subbasin
-            //                    crop = this._gv.db.defaultLanduse;
-            //                } else {
-            //                    landuseCount += 1;
-            //                }
-            //                // use an equivalent landuse if any
-            //                crop = this._gv.db.translateLanduse(Convert.ToInt32(crop));
-            //                var _tmp_2 = soilRow - soilTopRow;
-            //                if (0 <= _tmp_2 && _tmp_2 < soilActReadRows) {
-            //                    soilCol = soilColFun(col, x);
-            //                    if (0 <= soilCol && soilCol < soilNumberCols) {
-            //                        soil = cast(@int, soilData[soilRow - soilTopRow,soilCol]);
-            //                        if (soil is null || math.isnan(soil)) {
-            //                            soil = soilNoData;
-            //                        }
-            //                    } else {
-            //                        soil = soilNoData;
-            //                    }
-            //                } else {
-            //                    soil = soilNoData;
-            //                }
-            //                if (soil == soilNoData) {
-            //                    soilIsNoData = true;
-            //                    // when using grid model small amounts of
-            //                    // no data for crop, soil or slope could lose subbasin
-            //                    soil = this._gv.db.defaultSoil;
-            //                } else {
-            //                    soilIsNoData = false;
-            //                }
-            //                // use an equivalent soil if any
-            //                (soil, OK) = this._gv.db.translateSoil(Convert.ToInt32(soil));
-            //                if (soilIsNoData) {
-            //                    soilNoDataCount += 1;
-            //                } else if (OK) {
-            //                    soilDefinedCount += 1;
-            //                } else {
-            //                    soilUndefinedCount += 1;
-            //                }
-            //                var isWater = false;
-            //                if (crop != cropNoData) {
-            //                    cropCode = this._gv.db.getLanduseCode(crop);
-            //                    isWater = cropCode == "WATR";
-            //                }
-            //                if (waterSoil > 0) {
-            //                    if (isWater) {
-            //                        soil = waterSoil;
-            //                    } else if (waterSoils.Contains(soil)) {
-            //                        isWater = true;
-            //                        soil = waterSoil;
-            //                        if (crop == cropNoData || !Parameters._TNCWATERLANDUSES.Contains(cropCode)) {
-            //                            crop = this._gv.db.getLanduseCat("WATR");
-            //                        }
-            //                    }
-            //                }
-            //                var _tmp_3 = slopeRow - slopeTopRow;
-            //                if (0 <= _tmp_3 && _tmp_3 < slopeActReadRows) {
-            //                    slopeCol = slopeColFun(col, x);
-            //                    if (0 <= slopeCol && slopeCol < slopeNumberCols) {
-            //                        slopeValue = cast(float, slopeData[slopeRow - slopeTopRow,slopeCol]);
-            //                    } else {
-            //                        slopeValue = slopeNoData;
-            //                    }
-            //                } else {
-            //                    slopeValue = slopeNoData;
-            //                }
-            //                if (slopeValue == slopeNoData) {
-            //                    // when using grid model small amounts of
-            //                    // no data for crop, soil or slope could lose subbasin
-            //                    slopeValue = Parameters._GRIDDEFAULTSLOPE;
-            //                } else if (this._gv.fromGRASS) {
-            //                    // GRASS slopes are percentages
-            //                    slopeValue /= 100;
-            //                }
-            //                if (crop == this._gv.db.getLanduseCat("RICE")) {
-            //                    slopeValue = Math.Min(slopeValue, Parameters._RICEMAXSLOPE);
-            //                }
-            //                slope = this._gv.db.slopeIndex(slopeValue * 100);
-            //                // set water or wetland pixels to have slope at most WATERMAXSLOPE
-            //                if (isWater || Parameters._TNCWATERLANDUSES.Contains(cropCode)) {
-            //                    slopeValue = Math.Min(slopeValue, Parameters._WATERMAXSLOPE);
-            //                    slope = 0;
-            //                }
-            //                data.addCell(crop, soil, slope, this._gv.cellArea, elevation, slopeValue, dist, this._gv);
-            //                if (!this._gv.isBig) {
-            //                    this.basins[basin] = data;
-            //                }
-            //                if (this.fullHRUsWanted) {
-            //                    if (crop != cropNoData && soil != soilNoData && slope != slopeNoData) {
-            //                        hru = BasinData.getHruNumber(cropSoilSlopeNumbers, lastHru, crop, soil, slope);
-            //                        if (hru > lastHru) {
-            //                            // new HRU number: store it
-            //                            lastHru = hru;
-            //                        }
-            //                        hruRows[row - elevationTopRow,col] = hru;
-            //                    }
-            //                }
-            //            }
-            //        }
-            //        data.setAreas(true);
-            //        if (this._gv.isBig) {
-            //            (oid, elevBandId) = this.writeWHUTables(oid, elevBandId, SWATBasin, basin, data, cursor, sql1, sql2, sql3, sql4, centroidll, this.basinElevMap[basin], minGridElev, maxGridElev);
-            //        }
-            //    }
-            //    if (this._gv.isBig) {
-            //        conn.commit();
-            //        WONKO_del(cursor);
-            //        WONKO_del(conn);
-            //        this.writeGridSubsFile();
-            //    }
-            //} else {
-            if (true) {
-                double[] basinData = new double[basinNumberCols];
-                int basinCurrentRow = -1;
-                double[] distData = new double[distNumberCols];
-                int distCurrentRow = -1;
-                // not grid model  
-                // tic = time.perf_counter()            
-                foreach (var row in Enumerable.Range(0, basinNumberRows)) {
-                    if (progressCount == fivePercent) {
-                        this._dlg.addProgressBar(5);
-                        progressCount = 1;
-                        // toc = time.perf_counter()
-                        // Utils.loginfo('Time to row {0}: {1:F1} seconds', row, toc-tic))
-                        // tic = toc
-                    } else {
-                        progressCount += 1;
+                catch {
+                    Utils.error(string.Format("Cannot open watershed grid {0}", this._gv.basinFile), this._gv.isBatch);
+                    return false;
+                }
+                basinBand = basinDs.CreateRaster([0]);
+                try {
+                    cropDs = cropStore.OpenDataset<RasterDataset>(Path.GetFileName(this._gv.landuseFile));
+                }
+                catch {
+                    Utils.error(string.Format("Cannot open landuse file {0}", this._gv.landuseFile), this._gv.isBatch);
+                    return false;
+                }
+                cropBand = cropDs.CreateRaster([0]);
+                try {
+                    soilDs = soilStore.OpenDataset<RasterDataset>(Path.GetFileName(this._gv.soilFile));
+                }
+                catch {
+                    Utils.error(string.Format("Cannot open soil file {0}", this._gv.soilFile), this._gv.isBatch);
+                    return false;
+                }
+                soilBand = soilDs.CreateRaster([0]);
+                try {
+                    slopeDs = slopeStore.OpenDataset<RasterDataset>(Path.GetFileName(this._gv.slopeFile));
+                }
+                catch {
+                    Utils.error(string.Format("Cannot open slope file {0}", this._gv.slopeFile), this._gv.isBatch);
+                    return false;
+                }
+                slopeBand = slopeDs.CreateRaster([0]);
+                if (!this._gv.existingWshed && !this._gv.useGridModel) {
+                    try {
+                        distDs = distStore.OpenDataset<RasterDataset>(Path.GetFileName(this._gv.distFile));
                     }
-                    if (row != basinCurrentRow) {
-                        basinBand.ReadRaster(0, row, basinNumberCols, 1, basinData, basinNumberCols, 1, 0, 0);
+                    catch {
+                        Utils.error(string.Format("Cannot open distance to outlets file {0}", this._gv.distFile), this._gv.isBatch);
+                        return false;
                     }
-                    y = Topology.rowToY(row, basinTransform);
-                    var distRow = 0;
+                    distBand = distDs.CreateRaster([0]);
+                }
+                var basinNumberRows = basinBand.GetHeight();
+                var basinNumberCols = basinBand.GetWidth();
+                var fivePercent = Convert.ToInt32(basinNumberRows / 20);
+                double basinNoData = (double)basinBand.GetNoDataValue();
+                // can have -128 as the nodata value while map read returns 128
+                basinNoData = Math.Abs(basinNoData);
+                var distNumberRows = 0;
+                var distNumberCols = 0;
+                // Loop reading grids is MUCH slower if these are not stored locally
+                if (!this._gv.existingWshed && !this._gv.useGridModel) {
+                    distNumberRows = distBand.GetHeight();
+                    distNumberCols = distBand.GetWidth();
+                }
+                var cropNumberRows = cropBand.GetHeight();
+                var cropNumberCols = cropBand.GetWidth();
+                var soilNumberRows = soilBand.GetHeight();
+                var soilNumberCols = soilBand.GetWidth();
+                var slopeNumberRows = slopeBand.GetHeight();
+                var slopeNumberCols = slopeBand.GetWidth();
+                var elevationNumberRows = elevationBand.GetHeight();
+                var elevationNumberCols = elevationBand.GetWidth();
+                // if rasters have same coords we can use (col, row) from one in another
+                Func<int, double, int> cropRowFun = null;
+                Func<int, double, int> cropColFun = null;
+                Func<int, double, int> soilRowFun = null;
+                Func<int, double, int> soilColFun = null;
+                Func<int, double, int> slopeRowFun = null;
+                Func<int, double, int> slopeColFun = null;
+                Func<int, double, int> distRowFun = null;
+                Func<int, double, int> distColFun = null;
+                Func<int, double, int> elevationRowFun = null;
+                Func<int, double, int> elevationColFun = null;
+                if (this._gv.useGridModel) {
+                    (cropRowFun, cropColFun) = Topology.translateCoords(elevationTransform, cropTransform, elevationNumberRows, elevationNumberCols);
+                    (soilRowFun, soilColFun) = Topology.translateCoords(elevationTransform, soilTransform, elevationNumberRows, elevationNumberCols);
+                    (slopeRowFun, slopeColFun) = Topology.translateCoords(elevationTransform, slopeTransform, elevationNumberRows, elevationNumberCols);
+                } else {
                     if (!this._gv.existingWshed) {
-                        distRow = distRowFun(row, y);
-                        if (0 <= distRow && distRow < distNumberRows && distRow != distCurrentRow) {
-                            distCurrentRow = distRow;
-                            distBand.ReadRaster(0, distRow, distNumberCols, 1, distData, distNumberCols, 1, 0, 0);
-                        }
+                        (distRowFun, distColFun) = Topology.translateCoords(basinTransform, distTransform, basinNumberRows, basinNumberCols);
                     }
-                    cropRow = cropRowFun(row, y);
-                    if (0 <= cropRow && cropRow < cropNumberRows && cropRow != cropCurrentRow) {
-                        cropCurrentRow = cropRow;
-                        cropBand.ReadRaster(0, cropRow, cropNumberCols, 1, cropData, cropNumberCols, 1, 0, 0);
-                    }
-                    soilRow = soilRowFun(row, y);
-                    if (0 <= soilRow && soilRow < soilNumberRows && soilRow != soilCurrentRow) {
-                        soilCurrentRow = soilRow;
-                        soilBand.ReadRaster(0, soilRow, soilNumberCols, 1, soilData, soilNumberCols, 1, 0, 0);
-                    }
-                    slopeRow = slopeRowFun(row, y);
-                    if (0 <= slopeRow && slopeRow < slopeNumberRows && slopeRow != slopeCurrentRow) {
-                        if (this._gv.db.slopeLimits.Count > 0 && (0 <= slopeCurrentRow && slopeCurrentRow < slopeNumberRows)) {
-                            // generate slope bands data and Write it before reading next row
-                            foreach (var i in Enumerable.Range(0, slopeNumberCols)) {
-                                slopeValue = slopeData[i];
-                                slopeData[i] = slopeValue != slopeNoData ? this._gv.db.slopeIndex(slopeValue * 100) : slopeBandsNoData;
+                    (cropRowFun, cropColFun) = Topology.translateCoords(basinTransform, cropTransform, basinNumberRows, basinNumberCols);
+                    (soilRowFun, soilColFun) = Topology.translateCoords(basinTransform, soilTransform, basinNumberRows, basinNumberCols);
+                    (slopeRowFun, slopeColFun) = Topology.translateCoords(basinTransform, slopeTransform, basinNumberRows, basinNumberCols);
+                    (elevationRowFun, elevationColFun) = Topology.translateCoords(basinTransform, elevationTransform, basinNumberRows, basinNumberCols);
+                }
+                double elevationNoData = (double)elevationBand.GetNoDataValue();
+                double distNoData;
+                if (this._gv.existingWshed || this._gv.useGridModel) {
+                    distNoData = elevationNoData;
+                } else {
+                    distNoData = (double)distBand.GetNoDataValue();
+                }
+                double cropNoData = cropBand.GetNoDataValue();
+                double soilNoData = soilBand.GetNoDataValue();
+                //var streamGeoms = new Dictionary<int, OSGeo.OGR.Geometry>();
+                //var basinStreamWaterData = new Dictionary<int, (OSGeo.OGR.Geometry, double, double)>();
+                //if (this._gv.isHUC || this._gv.isHAWQS) {
+                //    this._gv.db.SSURGOUndefined = (int)soilNoData;
+                //    // collect data basin -> stream buffer shape, buffer area, WATR area 
+                //    // map basin -> stream geometry
+                //    var streamDs = Ogr.Open(this._gv.streamFile, 0);
+                //    var streamLayer = streamDs.GetLayerByIndex(0);
+                //    var linkIndex = this._gv.topo.getIndex(streamLayer, Topology._LINKNO);
+                //    for (int i = 0; i < streamLayer.GetFeatureCount(1); i++) {
+                //        var stream = streamLayer.GetFeature(i);
+                //        link = stream.GetFieldAsInteger(linkIndex);
+                //        basin = this._gv.topo.linkToBasin[link];
+                //        streamGeoms[basin] = stream.GetGeometryRef();
+                //    }
+                //}
+                //if (this._gv.useGridModel && this._gv.topo.basinCentroids.Count == 0) {
+                //    // need to calculate centroids from wshedFile
+                //    var gridLayer = QgsVectorLayer(this._gv.wshedFile, "grid", "ogr");
+                //    var basinIndex = this._gv.topo.getIndex(gridLayer, Topology._POLYGONID);
+                //    foreach (var feature in gridLayer.getFeatures()) {
+                //        basin = feature[basinIndex];
+                //        var centroid = Utils.centreGridCell(feature);
+                //        this._gv.topo.basinCentroids[basin] = (centroid.x(), centroid.y());
+                //    }
+                //}
+                double slopeNoData = slopeBand.GetNoDataValue();
+                if (!this._gv.useGridModel) {
+                    this._gv.basinNoData = (int)basinNoData;
+                }
+                this._gv.distNoData = (int)distNoData;
+                this._gv.cropNoData = (int)cropNoData;
+                this._gv.soilNoData = (int)soilNoData;
+                this._gv.slopeNoData = (int)slopeNoData;
+                this._gv.elevationNoData = elevationNoData;
+                // counts to calculate landuse and soil overlaps with basins grid or watershed grid
+                var landuseCount = 0;
+                var landuseNoDataCount = 0;
+                var soilDefinedCount = 0;
+                var soilUndefinedCount = 0;
+                var soilNoDataCount = 0;
+                var slopeBandsNoData = 255;  // will use default 8-bit unsigned type for raster
+                RasterDataset slopeBandsDs = null;
+                Raster slopeBandsBand = null;
+                var hrusRasterNoData = -1;
+                RasterDataset hrusRasterDs = null;
+                Raster hrusRasterBand = null;
+                // prepare slope bands grid
+                // remove old one since may not be wanted: will be recalculated if it is needed
+                this._gv.slopeBandsFile = Path.ChangeExtension(this._gv.demFile, null) + "slope_bands.tif";
+                await Utils.removeLayerAndFiles(this._gv.slopeBandsFile);
+                if (!this._gv.useGridModel && this._gv.db.slopeLimits.Count > 0) {
+                    var dir = Path.GetDirectoryName(this._gv.slopeBandsFile);
+                    var fileName = Path.GetFileName(this._gv.slopeBandsFile);
+                    if (File.Exists(this._gv.slopeBandsFile)) {
+                        // failed to remove it - already open
+                        FileSystemConnectionPath slopeBandsPath =
+                            new FileSystemConnectionPath(new System.Uri(dir), FileSystemDatastoreType.Raster);
+                        FileSystemDatastore slopeBandsStore = new FileSystemDatastore(slopeBandsPath);
+                        slopeBandsDs = slopeBandsStore.OpenDataset<RasterDataset>(fileName);
+                    } else {
+                        var parms = Geoprocessing.MakeValueArray(dir, fileName, null, null, this._gv.proj, 1);
+                        var result = await Geoprocessing.ExecuteToolAsync("management.CreateRasterDataset", parms);
+                        if (result.ErrorCode != 0) {
+                            var msg = "Failed to create slope bands dataset: ";
+                            foreach (var err in result.ErrorMessages) {
+                                msg = msg + $@"{err.Text} ";
                             }
-                            slopeBandsBand.WriteRaster(0, slopeCurrentRow, slopeNumberCols, 1, slopeData, slopeNumberCols, 1, 0, 0);
+                            Utils.error(msg, this._gv.isBatch);
+                            return;
+                        } else {
+                            slopeBandsDs = result.Values[0];
                         }
-                        slopeCurrentRow = slopeRow;
-                        slopeBand.ReadRaster(0, slopeRow, slopeNumberCols, 1, slopeData, slopeNumberCols, 1, 0, 0);
                     }
-                    var elevationRow = elevationRowFun(row, y);
-                    if (0 <= elevationRow && elevationRow < elevationNumberRows && elevationRow != elevationCurrentRow) {
-                        elevationCurrentRow = elevationRow;
-                        elevationBand.ReadRaster(0, elevationRow, elevationNumberCols, 1, elevationData, elevationNumberCols, 1, 0, 0);
+                    slopeBandsBand = slopeBandsDs.CreateRaster([0]);
+                    slopeBandsBand.SetHeight(slopeNumberRows);
+                    slopeBandsBand.SetWidth(slopeNumberRows);
+                    slopeBandsBand.SetNoDataValue(slopeBandsNoData);
+                    Utils.copyPrj(this._gv.slopeFile, this._gv.slopeBandsFile);
+                }
+                // prepare HRUs raster
+                if (!this._gv.useGridModel) {
+                    var hrusRasterFile = Utils.join(this._gv.gridDir, Parameters._HRUSRASTER);
+                    await Utils.removeLayerAndFiles(hrusRasterFile);
+                    if (File.Exists(hrusRasterFile)) {
+                        // ArcGIS does not let go
+                        FileSystemConnectionPath hrusRasterPath =
+                            new FileSystemConnectionPath(new System.Uri(this._gv.gridDir), FileSystemDatastoreType.Raster);
+                        FileSystemDatastore hrusRasterStore = new FileSystemDatastore(hrusRasterPath);
+                        hrusRasterDs = hrusRasterStore.OpenDataset<RasterDataset>(Parameters._HRUSRASTER);
+                    } else {
+                        var parms = Geoprocessing.MakeValueArray(this._gv.gridDir, Parameters._HRUSRASTER, null, "32_BIT_SIGNED", this._gv.proj, 1);
+                        var result = await Geoprocessing.ExecuteToolAsync("management.CreateRasterDataset", parms);
+                        if (result.ErrorCode != 0) {
+                            var msg = "Failed to create hrus dataset: ";
+                            foreach (var err in result.ErrorMessages) {
+                                msg = msg + $@"{err.Text} ";
+                            }
+                            Utils.error(msg, this._gv.isBatch);
+                            return;
+                        } else {
+                            hrusRasterDs = result.Values[0];
+                        }
                     }
-                    foreach (var col in Enumerable.Range(0, basinNumberCols)) {
-                        basin = (int)basinData[col];
-                        //basinNoData was made absolute earlier
-                        if (Math.Abs(basin) != basinNoData && !this._gv.topo.isUpstreamBasin(basin)) {
-                            if (this.fullHRUsWanted || hrusRasterWanted) {
-                                if (basinCropSoilSlopeNumbers.Keys.Contains(basin)) {
-                                    cropSoilSlopeNumbers = basinCropSoilSlopeNumbers[basin];
-                                } else {
-                                    cropSoilSlopeNumbers = new Dictionary<int, Dictionary<int, Dictionary<int, int>>>();
-                                    basinCropSoilSlopeNumbers[basin] = cropSoilSlopeNumbers;
+                    hrusRasterBand = hrusRasterDs.CreateRaster([0]);
+                    hrusRasterBand.SetHeight(basinNumberRows);
+                    hrusRasterBand.SetWidth(basinNumberRows);
+                    hrusRasterBand.SetNoDataValue(hrusRasterNoData);
+                    Utils.copyPrj(this._gv.basinFile, hrusRasterFile);
+                }
+                var parms = Geoprocessing.MakeValueArray(elevationBand, "MINIMUM");
+                var result = await Geoprocessing.ExecuteToolAsync("management.GetRasterProperties", parms);
+                this.minElev = result.Values[0];
+                parms = Geoprocessing.MakeValueArray(elevationBand, "MAXIMUM");
+                result = await Geoprocessing.ExecuteToolAsync("management.GetRasterProperties", parms);
+                double maxElev = result.Values[0];
+                // convert to metres
+                this.minElev *= this._gv.verticalFactor;
+                maxElev *= this._gv.verticalFactor;
+                // have seen minInt for minElev, so let's assume metres and play safe
+                // else will get absurdly large list of elevations
+                var globalMinElev = -419;
+                var globalMaxElev = 8849;
+                if (this.minElev < globalMinElev) {
+                    this.minElev = globalMinElev;
+                } else {
+                    // make sure it is an integer
+                    this.minElev = Convert.ToInt32(this.minElev);
+                }
+                if (maxElev > globalMaxElev) {
+                    maxElev = globalMaxElev;
+                } else {
+                    maxElev = Convert.ToInt32(maxElev);
+                }
+                var elevMapSize = Convert.ToInt32(1 + maxElev - this.minElev);
+                this.elevMap = new List<int>();
+                for (var i = 0; i < elevMapSize; i++) {
+                    this.elevMap.Add(0);
+                }
+                // these are for the DEM in grid models, for the basins map otherwise (though probably the same)
+                var XYSizes = (0.0, 0.0)
+                Envelope extent = null;
+                // We read raster data in complete rows, using several rows for the grid model if necessary.
+                // Complete rows should be reasonably efficient, and for the grid model
+                // reading all rows necessary for each row of grid cells avoids rereading any row
+                if (this._gv.useGridModel) {
+                    XYSizes = elevationBand.GetMeanCellSize();
+                    extent = elevationBand.GetExtent()
+                        this._gv.cellArea = XYSizes.Item1 * XYSizes.Item2;
+                    // minimum flow distance is minimum of x and y cell dimensions
+                    minDist = Math.Min(XYSizes.Item1, XYSizes.Item2) * this._gv.topo.gridRows;
+                    elevationReadRows = this._gv.topo.gridRows;
+                    var elevationRowDepth = elevationReadRows * XYSizes.Item2;
+                    // we add an extra 2 rows since edges of rows may not
+                    // line up with elevation map.
+                    var cropXYSizes = cropBand.GetMeanCellSize();
+                    cropReadRows = Math.Max(1, Convert.ToInt32(elevationRowDepth / cropXYSizes.Item2 + 2));
+                    cropActReadRows = cropReadRows;
+                    var soilXYSizes = soilBand.GetMeanCellSize();
+                    soilReadRows = Math.Max(1, Convert.ToInt32(elevationRowDepth / soilXYSizes.Item2 + 2));
+                    soilActReadRows = soilReadRows;
+                    var slopeXYSizes = slopeBand.GetMeanCellSize();
+                    slopeReadRows = Math.Max(1, Convert.ToInt32(elevationRowDepth / slopeXYSizes.Item2 + 2));
+                    slopeActReadRows = slopeReadRows;
+                    basinReadRows = 1;
+                    Utils.loginfo(string.Format("{0}, {1}, {2} rows of landuse, soil and slope for each grid cell", cropReadRows, soilReadRows, slopeReadRows));
+                } else {
+                    XYSizes = basinBand.GetMeanCellSize();
+                    extent = basinBand.GetExtent();
+                    this._gv.cellArea = XYSizes.Item1 * XYSizes.Item2;
+                    // minimum flow distance is minimum of x and y cell dimensions
+                    minDist = Math.Min(XYSizes.Item1, XYSizes.Item2);
+                    elevationReadRows = 1;
+                    cropReadRows = 1;
+                    soilReadRows = 1;
+                    slopeReadRows = 1;
+                    basinReadRows = 1;
+                    //var distReadRows = 1;
+                    // create empty arrays to hold raster data when read
+                    // to avoid danger of allocating and deallocating with main loop
+                    // currentRow is the top row when using grid model
+                }
+                int[] hruRow = null;
+                int[] hruRows = null;
+                int[] hrusData = null;
+                Dictionary<int, Dictionary<int, Dictionary<int, Dictionary<int, int>>>> basinCropSoilSlopeNumbers = null;
+                var hrusRasterWanted = !this._gv.isHUC && !this._gv.forTNC;
+                Polygonize shapes = null;
+                if (this.fullHRUsWanted || hrusRasterWanted) {
+                    // last HRU number used
+                    lastHru = 0;
+                    basinCropSoilSlopeNumbers = new Dictionary<int, Dictionary<int, Dictionary<int, Dictionary<int, int>>>>();
+                    // grid models are based on the DEM raster, and non-grid models on the basins grid
+                    if (this._gv.useGridModel) {
+                        hruRows = new int[elevationNumberCols * elevationReadRows];
+                        for (int i = 0; i < elevationReadRows; i++) {
+                            for (int j = 0; j < elevationNumberCols; j++) {
+                                hruRows[i * elevationNumberCols + j] = -1;
+                            }
+                        }
+                    } else {
+                        hruRow = new int[basinNumberCols];
+                    }
+                    var pt = ArcGIS.Core.Geometry.MapPointBuilderEx.CreateMapPoint(extent.XMin, extent.YMax);
+                    shapes = new Polygonize(true, basinNumberCols, -1, pt, XYSizes.Item1, XYSizes.Item2);
+                    hrusData = new int[basinNumberCols * basinReadRows];
+                }
+                var cropCurrentRow = -1;
+                var cropData = cropBand.CreatePixelBlock(cropNumberCols, cropReadRows);
+                var soilCurrentRow = -1;
+                var soilData = soilBand.CreatePixelBlock(soilNumberCols, soilReadRows);
+                var slopeCurrentRow = -1;
+                var slopeData = slopeBand.CreatePixelBlock(slopeNumberCols, slopeReadRows);
+                var elevationCurrentRow = -1;
+                var elevationData = elevationBand.CreatePixelBlock(elevationNumberCols, elevationReadRows);
+                var progressCount = 0;
+                //if (this._gv.useGridModel) {
+                //    if (this._gv.soilTable == Parameters._TNCFAOLOOKUP) {
+                //        var waterSoil = Parameters._TNCFAOWATERSOIL;
+                //        var waterSoils = Parameters._TNCFAOWATERSOILS;
+                //    } else if (this._gv.soilTable == Parameters._TNCHWSDLOOKUP) {
+                //        waterSoil = Parameters._TNCHWSDWATERSOIL;
+                //        waterSoils = Parameters._TNCHWSDWATERSOILS;
+                //    } else {
+                //        waterSoil = -1;
+                //        waterSoils = new HashSet<object>();
+                //    }
+                //    if (this._gv.isBig) {
+                //        var conn = this._gv.db.connect();
+                //        var cursor = conn.cursor();
+                //        (sql1, sql2, sql3, sql4) = this._gv.db.initWHUTables(cursor);
+                //        var oid = 0;
+                //        var elevBandId = 0;
+                //    }
+                //    fivePercent = Convert.ToInt32(this._gv.topo.basinToSWATBasin.Count / 20);
+                //    var gridCount = 0;
+                //    foreach (var (link, basin) in this._gv.topo.linkToBasin) {
+                //        this.basinElevMap[basin] = new List<int> {
+                //            0
+                //        } * elevMapSize;
+                //        var SWATBasin = this._gv.topo.basinToSWATBasin.get(basin, 0);
+                //        if (SWATBasin == 0) {
+                //            continue;
+                //        }
+                //        if (progressCount == fivePercent) {
+                //            progressBar.setValue(progressBar.Value + 5);
+                //            if (this._gv.forTNC) {
+                //                Console.WriteLine(string.Format("Percentage of rasters read: {0} at {1}", progressBar.Value, datetime.now().ToString()));
+                //            }
+                //            progressCount = 1;
+                //        } else {
+                //            progressCount += 1;
+                //        }
+                //        gridCount += 1;
+                //        reachData = this._gv.topo.reachesData[link];
+                //        // centroid was taken from accumulation grid, but does not matter since in projected units
+                //        (centreX, centreY) = this._gv.topo.basinCentroids[basin];
+                //        var centroidll = this._gv.topo.pointToLatLong(QgsPointXY(centreX, centreY));
+                //        var n = elevationReadRows;
+                //        // each grid subbasin contains n x n DEM cells
+                //        if (n % 2 == 0) {
+                //            // even number of rows and columns - start half a row and column NW of centre
+                //            (centreCol, centreRow) = Topology.projToCell(centreX - elevationTransform[1] / 2.0, centreY - elevationTransform[5] / 2.0, elevationTransform);
+                //            elevationTopRow = centreRow - (n - 2) / 2;
+                //            // beware of rows or columns not dividing by n:
+                //            // last grid row or column may be short
+                //            rowRange = Enumerable.Range(elevationTopRow, Math.Min(centreRow + (n + 2) / 2, elevationNumberRows) - elevationTopRow);
+                //            colRange = Enumerable.Range(centreCol - (n - 2) / 2, Math.Min(centreCol + (n + 2) / 2, elevationNumberCols) - (centreCol - (n - 2) / 2));
+                //        } else {
+                //            // odd number of rows and columns
+                //            (centreCol, centreRow) = Topology.projToCell(centreX, centreY, elevationTransform);
+                //            elevationTopRow = centreRow - (n - 1) / 2;
+                //            // beware of rows or columns not dividing by n:
+                //            // last grid row or column may be short
+                //            rowRange = Enumerable.Range(elevationTopRow, Math.Min(centreRow + (n + 1) / 2, elevationNumberRows) - elevationTopRow);
+                //            colRange = Enumerable.Range(centreCol - (n - 1) / 2, Math.Min(centreCol + (n + 1) / 2, elevationNumberCols) - (centreCol - (n - 1) / 2));
+                //        }
+                //        (outletCol, outletRow) = Topology.projToCell(reachData.lowerX, reachData.lowerY, elevationTransform);
+                //        (sourceCol, sourceRow) = Topology.projToCell(reachData.upperX, reachData.upperY, elevationTransform);
+                //        // Utils.loginfo('Outlet at ({0:.0F},{1:.0F}) for source at ({2:.0F},{3:.0F})', reachData.lowerX, reachData.lowerY, reachData.upperX, reachData.upperY))
+                //        outletElev = reachData.lowerZ;
+                //        // allow for upper < lower in case unfilled dem is used
+                //        drop = reachData.upperZ < outletElev ? 0 : reachData.upperZ - outletElev;
+                //        length = this._gv.topo.streamLengths[link];
+                //        if (length == 0) {
+                //            // is zero for outlet grid cells
+                //            length = elevationTransform[1];
+                //        }
+                //        data = BasinData(outletCol, outletRow, outletElev, sourceCol, sourceRow, length, drop, minDist, this._gv.isBatch);
+                //        // add drainage areas
+                //        data.drainArea = this._gv.topo.drainAreas[link];
+                //        var maxGridElev = -419;
+                //        var minGridElev = 8849;
+                //        // read data if necessary
+                //        if (elevationTopRow != elevationCurrentRow) {
+                //            if (this.fullHRUsWanted && lastHru > 0) {
+                //                // something has been written to hruRows
+                //                foreach (var rowNum in Enumerable.Range(0, n)) {
+                //                    shapes.addRow(hruRows[rowNum], elevationCurrentRow + rowNum);
+                //                }
+                //                hruRows.fill(-1);
+                //            }
+                //            elevationData = elevationBand.ReadAsArray(0, elevationTopRow, elevationNumberCols, Math.Min(elevationReadRows, elevationNumberRows - elevationTopRow));
+                //            elevationCurrentRow = elevationTopRow;
+                //        }
+                //        var topY = Topology.rowToY(elevationTopRow, elevationTransform);
+                //        var cropTopRow = cropRowFun(elevationTopRow, topY);
+                //        if (cropTopRow != cropCurrentRow) {
+                //            if (0 <= cropTopRow && cropTopRow <= cropNumberRows - cropReadRows) {
+                //                cropData = cropBand.ReadAsArray(0, cropTopRow, cropNumberCols, cropReadRows);
+                //                cropActReadRows = cropReadRows;
+                //                cropCurrentRow = cropTopRow;
+                //            } else if (cropNumberRows - cropTopRow < cropReadRows) {
+                //                // runnning off the bottom of crop map
+                //                cropActReadRows = cropNumberRows - cropTopRow;
+                //                if (cropActReadRows >= 1) {
+                //                    cropData = cropBand.ReadAsArray(0, cropTopRow, cropNumberCols, cropActReadRows);
+                //                    cropCurrentRow = cropTopRow;
+                //                }
+                //            } else {
+                //                cropActReadRows = 0;
+                //            }
+                //        }
+                //        var soilTopRow = soilRowFun(elevationTopRow, topY);
+                //        if (soilTopRow != soilCurrentRow) {
+                //            if (0 <= soilTopRow && soilTopRow <= soilNumberRows - soilReadRows) {
+                //                soilData = soilBand.ReadAsArray(0, soilTopRow, soilNumberCols, soilReadRows);
+                //                soilActReadRows = soilReadRows;
+                //                soilCurrentRow = soilTopRow;
+                //            } else if (soilNumberRows - soilTopRow < soilReadRows) {
+                //                // runnning off the bottom of soil map
+                //                soilActReadRows = soilNumberRows - soilTopRow;
+                //                if (soilActReadRows >= 1) {
+                //                    soilData = soilBand.ReadAsArray(0, soilTopRow, soilNumberCols, soilActReadRows);
+                //                    soilCurrentRow = soilTopRow;
+                //                }
+                //            } else {
+                //                soilActReadRows = 0;
+                //            }
+                //        }
+                //        var slopeTopRow = slopeRowFun(elevationTopRow, topY);
+                //        if (slopeTopRow != slopeCurrentRow) {
+                //            if (0 <= slopeTopRow && slopeTopRow <= slopeNumberRows - slopeReadRows) {
+                //                slopeData = slopeBand.ReadAsArray(0, slopeTopRow, slopeNumberCols, slopeReadRows);
+                //                slopeActReadRows = slopeReadRows;
+                //                slopeCurrentRow = slopeTopRow;
+                //            } else if (slopeNumberRows - slopeTopRow < slopeReadRows) {
+                //                // runnning off the bottom of slope map
+                //                slopeActReadRows = slopeNumberRows - slopeTopRow;
+                //                if (slopeActReadRows >= 1) {
+                //                    slopeData = slopeBand.ReadAsArray(0, slopeTopRow, slopeNumberCols, slopeActReadRows);
+                //                    slopeCurrentRow = slopeTopRow;
+                //                }
+                //            } else {
+                //                slopeActReadRows = 0;
+                //            }
+                //        }
+                //        foreach (var row in rowRange) {
+                //            y = Topology.rowToY(row, elevationTransform);
+                //            cropRow = cropRowFun(row, y);
+                //            soilRow = soilRowFun(row, y);
+                //            slopeRow = slopeRowFun(row, y);
+                //            foreach (var col in colRange) {
+                //                elevation = cast(float, elevationData[row - elevationTopRow,col]);
+                //                if (elevation != elevationNoData) {
+                //                    elevation = Convert.ToInt32(elevation * this._gv.verticalFactor);
+                //                    maxGridElev = Math.Max(maxGridElev, elevation);
+                //                    minGridElev = Math.Min(minGridElev, elevation);
+                //                    index = elevation - this.minElev;
+                //                    // can have index too large because Math.Max not calculated properly by gdal
+                //                    if (index >= elevMapSize) {
+                //                        extra = 1 + index - elevMapSize;
+                //                        this.elevMap += new List<int> {
+                //                            0
+                //                        } * extra;
+                //                        elevMapSize += extra;
+                //                    }
+                //                    this.elevMap[index] += 1;
+                //                    this.basinElevMap[basin][index] += 1;
+                //                }
+                //                if (this.fullHRUsWanted) {
+                //                    if (basinCropSoilSlopeNumbers.Contains(basin)) {
+                //                        cropSoilSlopeNumbers = basinCropSoilSlopeNumbers[basin];
+                //                    } else {
+                //                        cropSoilSlopeNumbers = new dict();
+                //                        basinCropSoilSlopeNumbers[basin] = cropSoilSlopeNumbers;
+                //                    }
+                //                }
+                //                x = Topology.colToX(col, elevationTransform);
+                //                dist = distNoData;
+                //                var _tmp_1 = cropRow - cropTopRow;
+                //                if (0 <= _tmp_1 && _tmp_1 < cropActReadRows) {
+                //                    cropCol = cropColFun(col, x);
+                //                    if (0 <= cropCol && cropCol < cropNumberCols) {
+                //                        crop = cast(@int, cropData[cropRow - cropTopRow,cropCol]);
+                //                        if (crop is null || math.isnan(crop)) {
+                //                            crop = cropNoData;
+                //                        }
+                //                    } else {
+                //                        crop = cropNoData;
+                //                    }
+                //                } else {
+                //                    crop = cropNoData;
+                //                }
+                //                if (crop == cropNoData) {
+                //                    landuseNoDataCount += 1;
+                //                    // when using grid model small amounts of
+                //                    // no data for crop, soil or slope could lose subbasin
+                //                    crop = this._gv.db.defaultLanduse;
+                //                } else {
+                //                    landuseCount += 1;
+                //                }
+                //                // use an equivalent landuse if any
+                //                crop = this._gv.db.translateLanduse(Convert.ToInt32(crop));
+                //                var _tmp_2 = soilRow - soilTopRow;
+                //                if (0 <= _tmp_2 && _tmp_2 < soilActReadRows) {
+                //                    soilCol = soilColFun(col, x);
+                //                    if (0 <= soilCol && soilCol < soilNumberCols) {
+                //                        soil = cast(@int, soilData[soilRow - soilTopRow,soilCol]);
+                //                        if (soil is null || math.isnan(soil)) {
+                //                            soil = soilNoData;
+                //                        }
+                //                    } else {
+                //                        soil = soilNoData;
+                //                    }
+                //                } else {
+                //                    soil = soilNoData;
+                //                }
+                //                if (soil == soilNoData) {
+                //                    soilIsNoData = true;
+                //                    // when using grid model small amounts of
+                //                    // no data for crop, soil or slope could lose subbasin
+                //                    soil = this._gv.db.defaultSoil;
+                //                } else {
+                //                    soilIsNoData = false;
+                //                }
+                //                // use an equivalent soil if any
+                //                (soil, OK) = this._gv.db.translateSoil(Convert.ToInt32(soil));
+                //                if (soilIsNoData) {
+                //                    soilNoDataCount += 1;
+                //                } else if (OK) {
+                //                    soilDefinedCount += 1;
+                //                } else {
+                //                    soilUndefinedCount += 1;
+                //                }
+                //                var isWater = false;
+                //                if (crop != cropNoData) {
+                //                    cropCode = this._gv.db.getLanduseCode(crop);
+                //                    isWater = cropCode == "WATR";
+                //                }
+                //                if (waterSoil > 0) {
+                //                    if (isWater) {
+                //                        soil = waterSoil;
+                //                    } else if (waterSoils.Contains(soil)) {
+                //                        isWater = true;
+                //                        soil = waterSoil;
+                //                        if (crop == cropNoData || !Parameters._TNCWATERLANDUSES.Contains(cropCode)) {
+                //                            crop = this._gv.db.getLanduseCat("WATR");
+                //                        }
+                //                    }
+                //                }
+                //                var _tmp_3 = slopeRow - slopeTopRow;
+                //                if (0 <= _tmp_3 && _tmp_3 < slopeActReadRows) {
+                //                    slopeCol = slopeColFun(col, x);
+                //                    if (0 <= slopeCol && slopeCol < slopeNumberCols) {
+                //                        slopeValue = cast(float, slopeData[slopeRow - slopeTopRow,slopeCol]);
+                //                    } else {
+                //                        slopeValue = slopeNoData;
+                //                    }
+                //                } else {
+                //                    slopeValue = slopeNoData;
+                //                }
+                //                if (slopeValue == slopeNoData) {
+                //                    // when using grid model small amounts of
+                //                    // no data for crop, soil or slope could lose subbasin
+                //                    slopeValue = Parameters._GRIDDEFAULTSLOPE;
+                //                } else if (this._gv.fromGRASS) {
+                //                    // GRASS slopes are percentages
+                //                    slopeValue /= 100;
+                //                }
+                //                if (crop == this._gv.db.getLanduseCat("RICE")) {
+                //                    slopeValue = Math.Min(slopeValue, Parameters._RICEMAXSLOPE);
+                //                }
+                //                slope = this._gv.db.slopeIndex(slopeValue * 100);
+                //                // set water or wetland pixels to have slope at most WATERMAXSLOPE
+                //                if (isWater || Parameters._TNCWATERLANDUSES.Contains(cropCode)) {
+                //                    slopeValue = Math.Min(slopeValue, Parameters._WATERMAXSLOPE);
+                //                    slope = 0;
+                //                }
+                //                data.addCell(crop, soil, slope, this._gv.cellArea, elevation, slopeValue, dist, this._gv);
+                //                if (!this._gv.isBig) {
+                //                    this.basins[basin] = data;
+                //                }
+                //                if (this.fullHRUsWanted) {
+                //                    if (crop != cropNoData && soil != soilNoData && slope != slopeNoData) {
+                //                        hru = BasinData.getHruNumber(cropSoilSlopeNumbers, lastHru, crop, soil, slope);
+                //                        if (hru > lastHru) {
+                //                            // new HRU number: store it
+                //                            lastHru = hru;
+                //                        }
+                //                        hruRows[row - elevationTopRow,col] = hru;
+                //                    }
+                //                }
+                //            }
+                //        }
+                //        data.setAreas(true);
+                //        if (this._gv.isBig) {
+                //            (oid, elevBandId) = this.writeWHUTables(oid, elevBandId, SWATBasin, basin, data, cursor, sql1, sql2, sql3, sql4, centroidll, this.basinElevMap[basin], minGridElev, maxGridElev);
+                //        }
+                //    }
+                //    if (this._gv.isBig) {
+                //        conn.commit();
+                //        WONKO_del(cursor);
+                //        WONKO_del(conn);
+                //        this.writeGridSubsFile();
+                //    }
+                //} else {
+                var basinData = basinBand.CreatePixelBlock(basinNumberCols, basinReadRows);
+                int basinCurrentRow = -1;
+                var distData = distBand.CreatePixelBlock(distNumberCols, distReadRows);
+                int distCurrentRow = -1;
+                if (true) {
+                    // not grid model  
+                    // tic = time.perf_counter()            
+                    foreach (var row in Enumerable.Range(0, basinNumberRows)) {
+                        if (progressCount == fivePercent) {
+                            this._dlg.addProgressBar(5);
+                            progressCount = 1;
+                            // toc = time.perf_counter()
+                            // Utils.loginfo('Time to row {0}: {1:F1} seconds', row, toc-tic))
+                            // tic = toc
+                        } else {
+                            progressCount += 1;
+                        }
+                        if (row != basinCurrentRow) {
+                            basinBand.Read(0, row, basinData);
+                        }
+                        (x, y) = basinBand.PixelToMap(0, row);
+                        var distRow = 0;
+                        if (!this._gv.existingWshed) {
+                            distRow = distBand.MapToPixel(x, y).Item2;
+                            if (0 <= distRow && distRow < distNumberRows && distRow != distCurrentRow) {
+                                distCurrentRow = distRow;
+                                distBand.Read(0, distRow, distData);
+                            }
+                        }
+                        cropRow = cropBand.MapToPixel(x, y).Item2;
+                        if (0 <= cropRow && cropRow < cropNumberRows && cropRow != cropCurrentRow) {
+                            cropCurrentRow = cropRow;
+                            cropBand.Read(0, cropRow, cropData);
+                        }
+                        soilRow = soilBand.MapToPixel(x, y).Item2;
+                        if (0 <= soilRow && soilRow < soilNumberRows && soilRow != soilCurrentRow) {
+                            soilCurrentRow = soilRow;
+                            soilBand.Read(0, soilRow, soilData);
+                        }
+                        slopeRow = slopeBand.MapToPixel(x, y).Item2;
+                        if (0 <= slopeRow && slopeRow < slopeNumberRows && slopeRow != slopeCurrentRow) {
+                            if (this._gv.db.slopeLimits.Count > 0 && (0 <= slopeCurrentRow && slopeCurrentRow < slopeNumberRows)) {
+                                // generate slope bands data and Write it before reading next row
+                                Array slopes = slopeData.GetPixelData(0, true);
+                                foreach (var i in Enumerable.Range(0, slopeData.GetWidth())) {
+                                    if (Convert.ToByte(slopeData.GetNoDataMaskValue(0, i, 0)) == 1) {
+                                        slopeValue = Convert.ToByte(slopes.GetValue(i, 0));
+                                        slopeBandValue = this._gv.db.slopeIndex(slopeValue * 100);
+                                    } else {
+                                        slopeValue = slopeNoData;
+                                        slopeBandValue = slopeBandsNoData;
+                                    }
+                                    slopes.SetValue(slopeBandValue, i, 0);
+                                }
+                                slopeData.SetPixelData(0, slopes);
+                                slopeBandsBand.Write(0, slopeCurrentRow, slopeData);
+                            }
+                            slopeCurrentRow = slopeRow;
+                            slopeBand.Read(0, slopeRow, slopeData);
+                        }
+                        var elevationRow = elevationRowFun(row, y);
+                        if (0 <= elevationRow && elevationRow < elevationNumberRows && elevationRow != elevationCurrentRow) {
+                            elevationCurrentRow = elevationRow;
+                            elevationBand.Read(0, elevationRow, elevationData);
+                        }
+                        Array basins = basinData.GetPixelData(0, false);
+                        Array dists = null;
+                        if (!this._gv.existingWshed) {
+                            dists = distBand.GetPixelData(0, false);
+                        }
+                        Array crops = cropData.GetPixelData(0, false);
+                        Array soils = soilData.GetPixelData(0, false);
+                        Array elevations = elevationData.GetPixelData(0, false);
+                        foreach (var col in Enumerable.Range(0, basinData.GetWidth())) {
+                            basin = (int)basinData.GetValue(col, 0);
+                            //basinNoData was made absolute earlier
+                            if (Math.Abs(basin) != basinNoData && !this._gv.topo.isUpstreamBasin(basin)) {
+                                if (this.fullHRUsWanted || hrusRasterWanted) {
+                                    if (basinCropSoilSlopeNumbers.Keys.Contains(basin)) {
+                                        cropSoilSlopeNumbers = basinCropSoilSlopeNumbers[basin];
+                                    } else {
+                                        cropSoilSlopeNumbers = new Dictionary<int, Dictionary<int, Dictionary<int, int>>>();
+                                        basinCropSoilSlopeNumbers[basin] = cropSoilSlopeNumbers;
+                                    }
                                 }
                             }
-                            x = Topology.colToX(col, basinTransform);
+                            (x, y) = basinBand.PixelToMap(col, row)
                             if (!this._gv.existingWshed) {
-                                var distCol = distColFun(col, x);
+                                var distCol = distBand.MapToPixel(x, y).Item1;
                                 if (0 <= distCol && distCol < distNumberCols && (0 <= distRow && distRow < distNumberRows)) {
-                                    // coerce dist to float else considered by Access to be a numpy float
-                                    dist = distData[distCol];
+                                    dist = (int)dists.GetValue(distCol, 0);
                                 } else {
                                     dist = distNoData;
                                 }
                             } else {
                                 dist = distNoData;
                             }
-                            cropCol = cropColFun(col, x);
+                            cropCol = cropBand.MapToPixel(x, y).Item1;
                             if (0 <= cropCol && cropCol < cropNumberCols && (0 <= cropRow && cropRow < cropNumberRows)) {
-                                crop = cropData[cropCol];
+                                crop = (int)crops.GetValue(cropCol, 0);
                             } else {
                                 crop = (int)cropNoData;
                             }
@@ -1996,10 +2032,10 @@ namespace ArcSWAT3 {
                                 // use an equivalent landuse if any
                                 crop = this._gv.db.translateLanduse(Convert.ToInt32(crop));
                             }
-                            soilCol = soilColFun(col, x);
+                            soilCol = soilBand.MapToPixel(x, y).Item1;
                             bool OK = true;
                             if (0 <= soilCol && soilCol < soilNumberCols && (0 <= soilRow && soilRow < soilNumberRows)) {
-                                soil = soilData[soilCol];
+                                soil = (int)soils.GetValue(soilCol, 0);
                             } else {
                                 soil = (int)soilNoData;
                             }
@@ -2034,9 +2070,9 @@ namespace ArcSWAT3 {
                                     }
                                 }
                             }
-                            slopeCol = slopeColFun(col, x);
+                            slopeCol = slopeBand.MapToPixel(x, y).Item1;
                             if (0 <= slopeCol && slopeCol < slopeNumberCols && (0 <= slopeRow && slopeRow < slopeNumberRows)) {
-                                slopeValue = slopeData[slopeCol];
+                                slopeValue = (double)slopes.GetValue(slopeCol, 0);
                             } else {
                                 slopeValue = slopeNoData;
                             }
@@ -2062,9 +2098,9 @@ namespace ArcSWAT3 {
                             } else {
                                 slope = -1;
                             }
-                            var elevationCol = elevationColFun(col, x);
+                            var elevationCol = elevationBand.MapToPixel(x, y).Item1;
                             if (0 <= elevationCol && elevationCol < elevationNumberCols && (0 <= elevationRow && elevationRow < elevationNumberRows)) {
-                                elevation = elevationData[elevationCol];
+                                elevation = (double)elevations.GetValue(elevationCol, 0);
                             } else {
                                 elevation = elevationNoData;
                             }
@@ -2130,7 +2166,7 @@ namespace ArcSWAT3 {
                             }
                             if (elevation != elevationNoData) {
                                 index = Convert.ToInt32(elevation - this.minElev);
-                                // can have index too large because Math.Max not calculated properly by gdal
+                                // can have index too large because Math.Max not calculated properly
                                 if (index >= elevMapSize) {
                                     extra = 1 + index - elevMapSize;
                                     for (int i = 0; i < extra; i++) {
@@ -2177,16 +2213,23 @@ namespace ArcSWAT3 {
                 }
                 if (!this._gv.useGridModel && this._gv.db.slopeLimits.Count > 0 && (0 <= slopeCurrentRow && slopeCurrentRow < slopeNumberRows)) {
                     // Write final slope bands row
-                    foreach (var i in Enumerable.Range(0, slopeNumberCols)) {
-                        slopeValue = slopeData[i];
-                        slopeData[i] = slopeValue != slopeNoData ? this._gv.db.slopeIndex(slopeValue * 100) : slopeBandsNoData;
+                    foreach (var i in Enumerable.Range(0, slopeData.GetWidth())) {
+                        if (Convert.ToByte(slopeData.GetNoDataMaskValue(0, i, 0)) == 1) {
+                            slopeValue = Convert.ToByte(slopes.GetValue(i, 0));
+                            slopeBandValue = this._gv.db.slopeIndex(slopeValue * 100);
+                        } else {
+                            slopeValue = slopeNoData;
+                            slopeBandValue = slopeBandsNoData;
+                        }
+                        slopes.SetValue(slopeBandValue, i, 0);
                     }
-                    slopeBandsBand.WriteRaster(0, slopeCurrentRow, slopeNumberCols, 1, slopeData, slopeNumberCols, 1, 0, 0);
-                    // flush and release memor
-                    slopeBandsBand = null;
-                    slopeBandsDs = null;
+                    slopeData.SetPixelData(0, slopes);
+                    slopeBandsBand.Write(0, slopeCurrentRow, slopeData);
                 }
-            }
+                // flush and release memory
+                slopeBandsBand = null;
+                slopeBandsDs = null;
+            });
             if (hrusRasterWanted) {
                 hrusRasterDs = null;
             }
@@ -3109,7 +3152,7 @@ namespace ArcSWAT3 {
         //         
         public virtual double minMaxCropVal(bool useArea) {
             double val;
-            var minMax = useArea ? double.PositiveInfinity : 100.0;
+            var minMax = useArea ? Int32.MaxValue : 100.0;
             foreach (var kvp in this.basins) {
                 var basin = kvp.Key;
                 var basinData = kvp.Value;

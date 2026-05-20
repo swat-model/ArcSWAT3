@@ -383,6 +383,8 @@ namespace ArcSWAT3 {
             var pathProBin = Path.GetDirectoryName(new System.Uri(Assembly.GetEntryAssembly().Location).AbsolutePath);
             var pathPro = Uri.UnescapeDataString(Directory.GetParent(pathProBin).FullName);
             procStartInfo.EnvironmentVariables["PROJ_LIB"] = Path.Combine(pathPro, @"Resources\pedata\gdaldata");
+            // prevent complaints about failing to load drivers from gdalplugins
+            procStartInfo.EnvironmentVariables["GDAL_DRIVER_PATH"] = "disable";
             procStartInfo.RedirectStandardOutput = true;
             procStartInfo.RedirectStandardError = true;
             procStartInfo.UseShellExecute = false;

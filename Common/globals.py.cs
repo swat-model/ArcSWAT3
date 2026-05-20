@@ -660,8 +660,6 @@ namespace ArcSWAT3
                     string sql = "UPDATE " + table + String.Format(" SET SoilOption='{0}',NumLuClasses={1},DoneWSDDel={2},DoneSoilLand={3}", soilOption, numLUs, doneDelinNum, doneSoilLandNum);
                     this.db.execNonQuery(sql);
                 } else {
-                    reader.Close();
-                    reader.Dispose();
                     if (doneDelin == -1) {
                         doneDelinNum = 0;
                     } else {
@@ -703,11 +701,8 @@ namespace ArcSWAT3
             }
             string table = "MasterProgress";
             using (var reader = DBUtils.getReader(this.db.conn, DBUtils.sqlSelect(table, "DoneWSDDel", "", ""))) {
-                if (!reader.HasRows) return false;
-                //object[] vals = new object[20];
+                if (!reader.HasRows) { return false; }
                 reader.Read();
-                //reader.GetValues(vals);
-                //return (short)vals[0] == 1;
                 return Convert.ToInt32(reader.GetValue(0)) == 1;
             }
         }

@@ -12,13 +12,15 @@ using ArcGIS.Desktop.Framework.Threading.Tasks;
 using ArcGIS.Desktop.Layouts;
 using ArcGIS.Desktop.Mapping;
 using System;
+using System.IO;
 using System.Windows.Forms;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
-using MaxRev.Gdal.Core;
+//using MaxRev.Gdal.Core;
+using OSGeo.GDAL;
 
 namespace ArcSWAT3
 {
@@ -31,7 +33,33 @@ namespace ArcSWAT3
                 // Inform user that add-in is about to call Python script.
                 // ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show("Click OK to start script, and wait for completion messagebox.", "Info");
                 // Create and format path to Project
-                GdalBase.ConfigureAll();
+
+                // With some versions of MaxRev the two MaxRev dlls are not found.
+                // Best way to avoid this problem is to load them using their
+                // paths in AssemblyCache.  Attempts to do this by adding this folder to PATH
+                // environment variable were not successul, so we use Windows mechansim not to load the same
+                // assembly twice.
+
+                //if (!Utils.LoadAssembly("MaxRev.Gdal.WindowsRuntime.Minimal")) {
+                //    Utils.error("Failed to load MaxRev.Gdal.WindowsRuntime.Minimal.dll", false);
+                //}
+                //if (!Utils.LoadAssembly("MaxRev.Gdal.Core")) {
+                //    Utils.error("Failed to load MaxRev.Gdal.Core.dll", false);
+                //}
+                //var asm = Assembly.Load("MaxRev.Gdal.WindowsRuntime.Minimal");
+                //Utils.information("Location is " + asm.Location, false);
+                //var exe = Assembly.GetExecutingAssembly().Location;
+                //var exeInfo = AssemblyName.GetAssemblyName(exe);
+                //var asm = Assembly.Load("MaxRev.Gdal.WindowsRuntime.Minimal");
+                //var minInfo = AssemblyName.GetAssemblyName(asm.Location);
+                //var wrap = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + "/gdal_wrap.dll";
+                //var wrap = "C:\\Users\\chris\\.nuget\\packages\\maxrev.gdal.windowsruntime.minimal\\3.12.0.427\\runtimes\\win-x64\\native\\gdal_wrap.dll";
+                //var wrap = "C:\\Users\\chris\\.nuget\\packages\\maxrev.gdal.windowsruntime.minimal\\3.7.0.100\\runtimes\\win-x64\\native\\gdal_wrap.dll";
+                //var wrapAsm = Assembly.LoadFrom(wrap);
+                //var gdal = Assembly.Load(wrap);
+
+                //GdalBase.ConfigureAll("");
+                Gdal.AllRegister();
                 MaxRev.Gdal.Core.Proj.Configure();
                 var arcSWATProj = new ArcSWAT();
                 await arcSWATProj.run();

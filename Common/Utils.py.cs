@@ -2,64 +2,55 @@
 
 
 
-using System.Collections.Generic;
-
-using System.Diagnostics;
-
-using System.Linq;
-
+using ArcGIS.Core.CIM;
+using ArcGIS.Core.Data;
+using ArcGIS.Core.Data.Raster;
+using ArcGIS.Core.Data.UtilityNetwork.Trace;
+using ArcGIS.Core.Geometry;
+using ArcGIS.Core.Internal.CIM;
+using ArcGIS.Desktop.Catalog;
+using ArcGIS.Desktop.Core;
+using ArcGIS.Desktop.Core.Geoprocessing;
+using ArcGIS.Desktop.Framework.Threading.Tasks;
+using ArcGIS.Desktop.Internal.Catalog.PropertyPages.ParcelDataset;
+using ArcGIS.Desktop.Internal.Mapping.CommonControls;
+using ArcGIS.Desktop.Mapping;
+using ArcSWAT3;
+using Microsoft.Extensions.FileSystemGlobbing;
+using Microsoft.VisualBasic.Logging;
+using Microsoft.Win32;
+using OSGeo.OGR;
 using System;
-
+using System.Collections.Generic;
+//using System.Data.Entity.Migrations.Sql;
+using System.Diagnostics;
 using System.IO;
-using Path = System.IO.Path;
-using System.Windows;
-using System.Threading;
-using System.Windows.Forms;
-using OpenFileDialog = System.Windows.Forms.OpenFileDialog;
+using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
-
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.ComTypes;
+using System.Security.Policy;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Forms;
+using System.Windows.Interop;
+using System.Windows.Media.Animation;
+using Envelope = ArcGIS.Core.Geometry.Envelope;
 //using ArcGIS.Desktop.Framework.Utilities;
 using EventLog = ArcGIS.Desktop.Framework.Utilities.EventLog;
-
-using ArcGIS.Desktop.Mapping;
-using ArcGIS.Core.Data;
-using QueryFilter = ArcGIS.Core.Data.QueryFilter;
-using ArcGIS.Core.CIM;
-using ArcGIS.Core.Geometry;
+using Feature = ArcGIS.Core.Data.Feature;
+using Layer = ArcGIS.Desktop.Mapping.Layer;
 using LinearUnit = ArcGIS.Core.Geometry.LinearUnit;
-using Envelope = ArcGIS.Core.Geometry.Envelope;
-using SpatialReference = ArcGIS.Core.Geometry.SpatialReference;
-using Polygon = ArcGIS.Core.Geometry.Polygon;
 //using ArcGIS.Desktop.Framework.Dialogs;
 using MessageBox = ArcGIS.Desktop.Framework.Dialogs.MessageBox;
-using ArcGIS.Desktop.Core.Geoprocessing;
-using ArcGIS.Desktop.Catalog;
-
-using Microsoft.Extensions.FileSystemGlobbing;
-
-using ArcGIS.Desktop.Framework.Threading.Tasks;
-
-using System.Security.Policy;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices.ComTypes;
-using System.Threading.Tasks;
-using System.Windows.Interop;
-using Microsoft.Win32;
-using ArcGIS.Desktop.Internal.Mapping.CommonControls;
-using ArcGIS.Desktop.Core;
-using ArcGIS.Core.Internal.CIM;
-using ArcGIS.Core.Data.Raster;
-using System.Windows.Media.Animation;
-using OSGeo.OGR;
-
-using Layer = ArcGIS.Desktop.Mapping.Layer;
-using Feature = ArcGIS.Core.Data.Feature;
-using System.Data.Entity.Migrations.Sql;
-using Microsoft.VisualBasic.Logging;
-using ArcGIS.Desktop.Internal.Catalog.PropertyPages.ParcelDataset;
-using ArcGIS.Core.Data.UtilityNetwork.Trace;
-using System.Runtime.InteropServices;
-using System.Linq.Expressions;
+using OpenFileDialog = System.Windows.Forms.OpenFileDialog;
+using Path = System.IO.Path;
+using Polygon = ArcGIS.Core.Geometry.Polygon;
+using QueryFilter = ArcGIS.Core.Data.QueryFilter;
+using SpatialReference = ArcGIS.Core.Geometry.SpatialReference;
 
 namespace ArcSWAT3
 {
@@ -313,10 +304,26 @@ namespace ArcSWAT3
             }
         }
 
+        public static string AddinAssemblyLocation() {
+            var asm = System.Reflection.Assembly.GetExecutingAssembly();
+            return System.IO.Path.GetDirectoryName(
+                              Uri.UnescapeDataString(
+                                      new Uri(asm.Location).LocalPath));
+        }
+
+        public static bool LoadAssembly(string assemblyName) {
+            try {
+                var asm = Assembly.LoadFrom(Utils.join(AddinAssemblyLocation(), assemblyName + ".dll"));
+                return asm != null;
+            } catch (Exception ex) {
+                Utils.error("Loading assembly " + assemblyName + " threw exception " + ex.Message, false);
+                return false;
+            }
+        }
+
         // 
         //         Copy .prj file, if it exists, from inFile to .prj file of outFile,
-        //         unless outFile is .dat.
-        //         
+        //    
 
         public static void copyPrj(string inFile, string outFile) {
             string outSuffix = Path.GetExtension(outFile);
@@ -377,7 +384,7 @@ namespace ArcSWAT3
             return new FileInfo(path);
         }
 
-        // Return path of raster layer.
+        // Return path of raster or vector layer.
         public static async Task<string> layerFilename(Layer layer) {
             CIMStandardDataConnection connection = null;
             await QueuedTask.Run(() => {
@@ -1092,23 +1099,31 @@ namespace ArcSWAT3
         //    Utils.loginfo(String.Format("{0}: map layers: {1}", n, repr(mapLayers)));
         //}
 
-        public static string runPython(string script, IReadOnlyList<string> parms, GlobalVars gv)
-        {
-            var pathProExe = System.IO.Path.GetDirectoryName(new System.Uri(Assembly.GetEntryAssembly().Location).AbsolutePath);
+        public static string runPython(string script, IReadOnlyList<string> parms, GlobalVars gv) {
+            string pathProExe = null;
+            // python environment with pyqt added no longer used: too big
+            // need Python envirmnment with PyQt included.  Try local copy first
+            //string pathProExeArcSWAT = System.IO.Path.Combine(Parameters._HOMEDIR, @"SWATPlus\ArcGIS\arcgispro-py3-ArcSWAT");
+            //if (!Directory.Exists(pathProExeArcSWAT)) {
+            //    pathProExe = System.IO.Path.GetDirectoryName(new System.Uri(Assembly.GetEntryAssembly().Location).AbsolutePath);
+            //    if (pathProExe == null) return "";
+            //    pathProExe = Uri.UnescapeDataString(pathProExe);
+            //    pathProExeArcSWAT = System.IO.Path.Combine(pathProExe, @"Python\envs\arcgispro-py3-ArcSWAT");
+            //}
+            //if (!Directory.Exists(pathProExeArcSWAT)) {
+            //    Utils.loginfo("ArcSWAT python environment does not seem to be installed.  Using default, which will not work for some scripts, including visualisation plotting.", EventLog.EventType.Warning);
+            //    pathProExeArcSWAT = System.IO.Path.Combine(pathProExe, @"Python\envs\arcgispro-py3");
+            //}
+            pathProExe = System.IO.Path.GetDirectoryName(new System.Uri(Assembly.GetEntryAssembly().Location).AbsolutePath);
             if (pathProExe == null) return "";
             pathProExe = Uri.UnescapeDataString(pathProExe);
-            //pathProExe = System.IO.Path.Combine(pathProExe, @"Python\envs\arcswat_env3");
-            pathProExe = System.IO.Path.Combine(pathProExe, @"Python\envs\arcgispro-py3");
+            string pathProExeArcSWAT = System.IO.Path.Combine(pathProExe, @"Python\envs\arcgispro-py3");
             // Create and format process command string.
-            // NOTE:  Path to Python script is below, "K:\Users\Public\QSWAT3\QSWAT3\runArcSWAT.py", which can be kept or updated based on the location you place it.
-            //var myCommand = String.Format(@"/c """"{0}"" ""{1}""""",
-            //    System.IO.Path.Combine(pathProExe, "python.exe"),
-            //    System.IO.Path.Combine(pathPython, script));
             // Create process start info, with instruction settings
-            var procStartInfo = new System.Diagnostics.ProcessStartInfo("cmd.exe") { 
+            var procStartInfo = new System.Diagnostics.ProcessStartInfo("cmd.exe") {
                 ArgumentList = {
                     "/c",
-                    System.IO.Path.Combine(pathProExe, "python.exe"),
+                    System.IO.Path.Combine(pathProExeArcSWAT, "python.exe"),
                     System.IO.Path.Combine(gv.addinPath, script)
                 }
             };
@@ -1123,8 +1138,7 @@ namespace ArcSWAT3
             System.Diagnostics.Process proc = new System.Diagnostics.Process();
             proc.StartInfo = procStartInfo;
             string result;
-            using (new CursorWait())
-            {
+            using (new CursorWait()) {
                 proc.Start();
                 // Create and format result string
                 result = proc.StandardOutput.ReadToEnd();
@@ -1187,7 +1201,7 @@ namespace ArcSWAT3
                 };
                 bool? ok = dlg.ShowDialog();
                 if (ok == true) {
-                    await QueuedTask.Run(() => {
+                    //await QueuedTask.Run(() => {
                         Item item = dlg.Items.First();
                         itemName = Path.ChangeExtension(item.Name, null);
                         inFileName = item.Path;
@@ -1196,7 +1210,7 @@ namespace ArcSWAT3
                             typeID.EndsWith("_fgdb") ||
                             typeID.StartsWith("egdb_") ||
                             typeID.EndsWith("_egdb");
-                    });
+                    //});
                 }
 
                 //using (OpenFileDialog dlg = new OpenFileDialog()) {

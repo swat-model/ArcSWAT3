@@ -39,7 +39,8 @@ using ArcGIS.Core.Data.Realtime;
 using ArcGIS.Desktop.Internal.Core;
 using ArcGIS.Desktop.Internal.Mapping.Locate.Controls;
 
-using MaxRev.Gdal.Core;
+//using MaxRev.Gdal.Core;
+using OSGeo.GDAL;
 using OSGeo.OGR;
 // Disambiguate ArcGIS and GDAL
 using Layer = ArcGIS.Desktop.Mapping.Layer;
@@ -264,8 +265,8 @@ namespace ArcSWAT3
             // Prevent annoying "error 4 .shp not recognised" messages.
             // These should become exceptions but instead just disappear.
             // Safer in any case to raise exceptions if something goes wrong.
-            //gdal.UseExceptions();
-            //ogr.UseExceptions();
+            Gdal.UseExceptions();
+            Ogr.UseExceptions();
         }
 
         // Allow merging of subbasins and 
@@ -3019,7 +3020,7 @@ namespace ArcSWAT3
             Utils.copyPrj(wFile, wshedFile);
             // use GDAL to rename gridcode to PolygonId and add Area and Subbasin
             using (var wshedDs = Ogr.Open(wshedFile, 1)) {
-                Driver drv = wshedDs.GetDriver();
+                OSGeo.OGR.Driver drv = wshedDs.GetDriver();
                 if (drv is null) {
                     Utils.error("Cannot get GDAL driver for watershed file", this._gv.isBatch);
                     return;
@@ -3035,7 +3036,7 @@ namespace ArcSWAT3
                     return;
                 }
                 FeatureDefn def = layer.GetLayerDefn();
-                // add PolygonId as a copy of Id field rather than trying to cahnge field name
+                // add PolygonId as a copy of Id field rather than trying to change field name
                 var gridcodeIndex = def.GetFieldIndex("gridcode");
                 var polyFieldDef = new OSGeo.OGR.FieldDefn(Topology._POLYGONID, OSGeo.OGR.FieldType.OFTInteger);
                 layer.AlterFieldDefn(gridcodeIndex, polyFieldDef, 1);
@@ -3917,7 +3918,7 @@ namespace ArcSWAT3
                         Utils.error(string.Format("Cannot open snap file {0}", snapFile), this._gv.isBatch);
                         return false;
                     }
-                    Driver drv = snapDs.GetDriver();
+                    OSGeo.OGR.Driver drv = snapDs.GetDriver();
                     if (drv is null) {
                         Utils.error("Cannot get GDAL driver for snap file", this._gv.isBatch);
                         return false;

@@ -26,7 +26,7 @@ using ArcGIS.Desktop.Core.Geoprocessing;
 using ArcGIS.Core.CIM;
 using ArcGIS.Desktop.Core;
 
-using MaxRev.Gdal.Core;
+//using MaxRev.Gdal.Core;
 using OSGeo.GDAL;
 using OSGeo.OGR;
 using OSGeo.OSR;
@@ -391,10 +391,12 @@ namespace ArcSWAT3 {
             Utils.loginfo(String.Format("Factor is {0}, cell width is {1}, cell depth is {2}", factor, this.dx, this.dy));
             this.demExtent = await QueuedTask.Run(() => demLayer.QueryExtent());
             this.verticalFactor = verticalFactor;
-            Ogr.RegisterAll();
-            var pathProBin = Path.GetDirectoryName(new System.Uri(Assembly.GetEntryAssembly().Location).AbsolutePath);
-            var pathPro = Uri.UnescapeDataString(Directory.GetParent(pathProBin).FullName);
-            Osr.SetPROJSearchPath(Path.Combine(pathPro, @"Resources\pedata\gdaldata"));
+            // |Ogr was registered earlier by GdalBase.ConfigureAll
+            //Ogr.RegisterAll();
+            //MaxRev sets up proj.db and using ArcGIS one causes version conflict
+            //var pathProBin = Path.GetDirectoryName(new System.Uri(Assembly.GetEntryAssembly().Location).AbsolutePath);
+            //var pathPro = Uri.UnescapeDataString(Directory.GetParent(pathProBin).FullName);
+            //Osr.SetPROJSearchPath(Path.Combine(pathPro, @"Resources\pedata\gdaldata"));
             using (var streamDs = Ogr.Open(streamFile, 0)) {
                 if (streamDs is null) {
                     Utils.error(string.Format("Failed to open stream file {0}", streamFile), this.isBatch);
@@ -863,8 +865,13 @@ namespace ArcSWAT3 {
             // now recolour wshed shapefile using subbasin value to distinguish upstream subbasins
             var arcWshedLayer = (await Utils.getLayerByFilename(wshedFile, FileTypes._WATERSHED, gv, null, null)).Item1 as FeatureLayer;
             await FileTypes.colourWatershed(arcWshedLayer, gv);
+            var label = arcWshedLayer.LabelClasses.FirstOrDefault();
             await QueuedTask.Run(() => {
-                arcWshedLayer.SetLabelVisibility(true);
+                if (label != null)
+                {
+                    label.SetExpression("$feature.Subbasin");
+                    arcWshedLayer.SetLabelVisibility(true);
+                }
                 arcWshedLayer.SetExpanded(true);
             });
             return true;
@@ -2025,38 +2032,38 @@ namespace ArcSWAT3 {
                 // calculate statistics for ad8File
                 var parms = Geoprocessing.MakeValueArray(ad8File);
                 Utils.runPython("runStatistics.py", parms, gv);
-                RasterDataset ad8Ds = dataStore.OpenDataset<RasterDataset>(Path.GetFileName(ad8File));
-                Raster ad8 = ad8Ds.CreateFullRaster();
-                foreach (var outlet in this.outlets.Values) {
-                    int contrib = Convert.ToInt32(Math.Round(Topology.valueAtPoint(outlet, ad8)));
-                    // assume ad8nodata is negative
-                    if (contrib >= 0) {
-                        maxContrib = Math.Max(maxContrib, contrib);
+                using (RasterDataset ad8Ds = dataStore.OpenDataset<RasterDataset>(Path.GetFileName(ad8File)))
+                using (Raster ad8 = ad8Ds.CreateFullRaster()) {
+                    foreach (var outlet in this.outlets.Values) {
+                        int contrib = Convert.ToInt32(Math.Round(Topology.valueAtPoint(outlet, ad8)));
+                        // assume ad8nodata is negative
+                        if (contrib >= 0) {
+                            maxContrib = Math.Max(maxContrib, contrib);
+                        }
                     }
                 }
                 threshold = Convert.ToInt32(2 * maxContrib);
                 //// copy ad8 to hd8_temp and then set outlet point values to threshold
                 File.Copy(ad8File, hd8_temp, true);
                 Utils.copyPrj(ad8File, gv.hd8File);
-                RasterDataset hd8Ds = dataStore.OpenDataset<RasterDataset>(Path.GetFileName(hd8_temp));
-                Raster hd8 = hd8Ds.CreateFullRaster();
-                // seems like a kludge to create 1x1 pixel blocks, but seems easiest way to write a few points
-                PixelBlock block = hd8.CreatePixelBlock(1, 1);
-                foreach (var outlet in this.outlets.Values) {
-                    var pixel = hd8.MapToPixel(outlet.X, outlet.Y);
-                    hd8.Read(pixel.Item1, pixel.Item2, block);
-                    // change value to threshold
-                    // don't know about what planes there are - should be just one, as one band - but can safely change all
-                    for (int plane = 0; plane < block.GetPlaneCount(); plane++) {
-                        Array sourcePixels = block.GetPixelData(plane, false);
-                        sourcePixels.SetValue(threshold, 0, 0);
-                        block.SetPixelData(plane, sourcePixels);
+                using (RasterDataset hd8Ds = dataStore.OpenDataset<RasterDataset>(Path.GetFileName(hd8_temp)))
+                using (Raster hd8 = hd8Ds.CreateFullRaster()) {
+                    // seems like a kludge to create 1x1 pixel blocks, but seems easiest way to write a few points
+                    PixelBlock block = hd8.CreatePixelBlock(1, 1);
+                    foreach (var outlet in this.outlets.Values) {
+                        var pixel = hd8.MapToPixel(outlet.X, outlet.Y);
+                        hd8.Read(pixel.Item1, pixel.Item2, block);
+                        // change value to threshold
+                        // don't know about what planes there are - should be just one, as one band - but can safely change all
+                        for (int plane = 0; plane < block.GetPlaneCount(); plane++) {
+                            Array sourcePixels = block.GetPixelData(plane, false);
+                            sourcePixels.SetValue(threshold, 0, 0);
+                            block.SetPixelData(plane, sourcePixels);
+                        }
+                        hd8.Write(pixel.Item1, pixel.Item2, block);
                     }
-                    hd8.Write(pixel.Item1, pixel.Item2, block);
+                    hd8.SaveAs(Path.GetFileName(gv.hd8File), dataStore, "TIFF", new RasterStorageDef());
                 }
-                hd8.SaveAs(Path.GetFileName(gv.hd8File), dataStore, "TIFF", new RasterStorageDef());
-                hd8.Dispose();
-                hd8Ds.Dispose();
             });
             File.Delete(hd8_temp);
             return threshold;

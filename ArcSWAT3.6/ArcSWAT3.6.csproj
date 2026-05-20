@@ -1,0 +1,255 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+		<UseWindowsForms>true</UseWindowsForms>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <NoWarn>CA1416</NoWarn>
+		<Platforms>AnyCPU;x64</Platforms>
+		<PlatformTarget>x64</PlatformTarget>
+		<ErrorReport>none</ErrorReport>
+		<RootNamespace>ArcSWAT3</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Content Include="Config.daml" />    
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Properties\launchSettings.json" />
+  </ItemGroup>
+	<ItemGroup>
+	  <Compile Include="..\Common\AboutForm.cs" Link="AboutForm.cs" />
+	  <Compile Include="..\Common\AboutForm.Designer.cs" Link="AboutForm.Designer.cs" />
+	  <Compile Include="..\Common\AddPoints.cs" Link="AddPoints.cs" />
+	  <Compile Include="..\Common\arcswat.py.cs" Link="arcswat.py.cs" />
+	  <Compile Include="..\Common\BufferedLineToolOptionsViewModel.cs" Link="BufferedLineToolOptionsViewModel.cs" />
+	  <Compile Include="..\Common\ChoosePointsFile.cs" Link="ChoosePointsFile.cs" />
+	  <Compile Include="..\Common\ChoosePointsFile.Designer.cs" Link="ChoosePointsFile.Designer.cs" />
+	  <Compile Include="..\Common\CompareScenariosForm.cs" Link="CompareScenariosForm.cs" />
+	  <Compile Include="..\Common\CompareScenariosForm.Designer.cs" Link="CompareScenariosForm.Designer.cs" />
+	  <Compile Include="..\Common\Data.py.cs" Link="Data.py.cs" />
+	  <Compile Include="..\Common\DBUtils.py.cs" Link="DBUtils.py.cs" />
+	  <Compile Include="..\Common\DelinForm.cs" Link="DelinForm.cs" />
+	  <Compile Include="..\Common\DelinForm.Designer.cs" Link="DelinForm.Designer.cs" />
+	  <Compile Include="..\Common\ElevationBandsForm.cs" Link="ElevationBandsForm.cs" />
+	  <Compile Include="..\Common\ElevationBandsForm.Designer.cs" Link="ElevationBandsForm.Designer.cs" />
+	  <Compile Include="..\Common\ExemptForm.cs" Link="ExemptForm.cs" />
+	  <Compile Include="..\Common\ExemptForm.Designer.cs" Link="ExemptForm.Designer.cs" />
+	  <Compile Include="..\Common\globals.py.cs" Link="globals.py.cs" />
+	  <Compile Include="..\Common\hrus.py.cs" Link="hrus.py.cs" />
+	  <Compile Include="..\Common\HRUsForm.cs" Link="HRUsForm.cs" />
+	  <Compile Include="..\Common\HRUsForm.Designer.cs" Link="HRUsForm.Designer.cs" />
+	  <Compile Include="..\Common\JenksFisher.cs" Link="JenksFisher.cs" />
+	  <Compile Include="..\Common\MainForm.cs" Link="MainForm.cs" />
+	  <Compile Include="..\Common\MainForm.Designer.cs" Link="MainForm.Designer.cs" />
+	  <Compile Include="..\Common\Module1.cs" Link="Module1.cs" />
+	  <Compile Include="..\Common\OutletForm.cs" Link="OutletForm.cs" />
+	  <Compile Include="..\Common\OutletForm.Designer.cs" Link="OutletForm.Designer.cs" />
+	  <Compile Include="..\Common\parameters.py.cs" Link="parameters.py.cs" />
+	  <Compile Include="..\Common\ParamForm.cs" Link="ParamForm.cs" />
+	  <Compile Include="..\Common\ParamForm.Designer.cs" Link="ParamForm.Designer.cs" />
+	  <Compile Include="..\Common\PointTool.cs" Link="PointTool.cs" />
+	  <Compile Include="..\Common\polygonize.cs" Link="polygonize.cs" />
+	  <Compile Include="..\Common\PolygonTool .cs" Link="PolygonTool .cs" />
+	  <Compile Include="..\Common\SelectLuForm.cs" Link="SelectLuForm.cs" />
+	  <Compile Include="..\Common\SelectLuForm.Designer.cs" Link="SelectLuForm.Designer.cs" />
+	  <Compile Include="..\Common\SelectPoint.cs" Link="SelectPoint.cs" />
+	  <Compile Include="..\Common\SelectPoint.Designer.cs" Link="SelectPoint.Designer.cs" />
+	  <Compile Include="..\Common\SelectPointsTool.cs" Link="SelectPointsTool.cs" />
+	  <Compile Include="..\Common\SelectPointViewModel.cs" Link="SelectPointViewModel.cs" />
+	  <Compile Include="..\Common\SelectResSubbasin.cs" Link="SelectResSubbasin.cs" />
+	  <Compile Include="..\Common\SelectResSubbasin.Designer.cs" Link="SelectResSubbasin.Designer.cs" />
+	  <Compile Include="..\Common\SelectSubbasin.cs" Link="SelectSubbasin.cs" />
+	  <Compile Include="..\Common\SelectSubbasin.Designer.cs" Link="SelectSubbasin.Designer.cs" />
+	  <Compile Include="..\Common\SplitForm.cs" Link="SplitForm.cs" />
+	  <Compile Include="..\Common\SplitForm.Designer.cs" Link="SplitForm.Designer.cs" />
+	  <Compile Include="..\Common\TauDEMUtils.py.cs" Link="TauDEMUtils.py.cs" />
+	  <Compile Include="..\Common\topology.py.cs" Link="topology.py.cs" />
+	  <Compile Include="..\Common\Utils.py.cs" Link="Utils.py.cs" />
+	  <Compile Include="..\Common\visualise.py.cs" Link="visualise.py.cs" />
+	  <Compile Include="..\Common\VisualiseForm.cs" Link="VisualiseForm.cs" />
+	  <Compile Include="..\Common\VisualiseForm.Designer.cs" Link="VisualiseForm.Designer.cs" />
+	</ItemGroup>
+	<ItemGroup>
+		<Content Include="..\Common\Images\AddInDesktop16.png" Link="AddInDesktop16.png">
+		  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+		<Content Include="..\Common\Images\AddInDesktop32.png" Link="AddInDesktop32.png">
+		  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+		<Content Include="..\Common\Images\QSWAT-Icon-SWAT-16.ico" Link="QSWAT-Icon-SWAT-16.ico">
+		  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+		<Content Include="..\Common\Images\QSWAT16.png" Link="QSWAT16.png">
+		  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+		<Content Include="..\Common\Images\QSWAT32.png" Link="QSWAT32.png">
+		  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+		<Content Include="Config.daml">
+		  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+		<EmbeddedResource Include="..\Common\AboutForm.resx" Link="AboutForm.resx" />
+		<EmbeddedResource Include="..\Common\ChoosePointsFile.resx" Link="ChoosePointsFile.resx" />
+		<EmbeddedResource Include="..\Common\CompareScenariosForm.resx" Link="CompareScenariosForm.resx" />
+		<EmbeddedResource Include="..\Common\DelinForm.resx" Link="DelinForm.resx" />
+		<EmbeddedResource Include="..\Common\ElevationBandsForm.resx" Link="ElevationBandsForm.resx" />
+		<EmbeddedResource Include="..\Common\ExemptForm.resx" Link="ExemptForm.resx" />
+		<EmbeddedResource Include="..\Common\HRUsForm.resx" Link="HRUsForm.resx" />
+		<EmbeddedResource Include="..\Common\MainForm.resx" Link="MainForm.resx" />
+		<EmbeddedResource Include="..\Common\OutletForm.resx" Link="OutletForm.resx" />
+		<EmbeddedResource Include="..\Common\ParamForm.resx" Link="ParamForm.resx" />
+		<EmbeddedResource Include="..\Common\SelectLuForm.resx" Link="SelectLuForm.resx" />
+		<EmbeddedResource Include="..\Common\SelectPoint.resx" Link="SelectPoint.resx" />
+		<EmbeddedResource Include="..\Common\SelectResSubbasin.resx" Link="SelectResSubbasin.resx" />
+		<EmbeddedResource Include="..\Common\SelectSubbasin.resx" Link="SelectSubbasin.resx" />
+		<EmbeddedResource Include="..\Common\SplitForm.resx" Link="SplitForm.resx" />
+		<EmbeddedResource Include="..\Common\VisualiseForm.resx" Link="VisualiseForm.resx" />
+	</ItemGroup>
+	<ItemGroup>
+	  <None Include="..\Common\addRivsFields.py" Link="addRivsFields.py">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Include="..\Common\ArcSWAT3.stylx" Link="ArcSWAT3.stylx">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Include="..\Common\LayoutTemplates\LayoutTemplate1Landscape.pagx" Link="LayoutTemplate1Landscape.pagx">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Include="..\Common\LayoutTemplates\LayoutTemplate1Portrait.pagx" Link="LayoutTemplate1Portrait.pagx">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Include="..\Common\LayoutTemplates\LayoutTemplate2Landscape.pagx" Link="LayoutTemplate2Landscape.pagx">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Include="..\Common\LayoutTemplates\LayoutTemplate2Portrait.pagx" Link="LayoutTemplate2Portrait.pagx">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Include="..\Common\LayoutTemplates\LayoutTemplate3Landscape.pagx" Link="LayoutTemplate3Landscape.pagx">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Include="..\Common\LayoutTemplates\LayoutTemplate3Portrait.pagx" Link="LayoutTemplate3Portrait.pagx">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Include="..\Common\LayoutTemplates\LayoutTemplate4Landscape.pagx" Link="LayoutTemplate4Landscape.pagx">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Include="..\Common\LayoutTemplates\LayoutTemplate4Portrait.pagx" Link="LayoutTemplate4Portrait.pagx">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Include="..\Common\LayoutTemplates\LayoutTemplate6Landscape.pagx" Link="LayoutTemplate6Landscape.pagx">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Include="..\Common\LayoutTemplates\LayoutTemplate6Portrait.pagx" Link="LayoutTemplate6Portrait.pagx">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Include="..\Common\runAddField.py" Link="runAddField.py">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Include="..\Common\runBuildRasterAttributes.py" Link="runBuildRasterAttributes.py">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Include="..\Common\runBurnIn.py" Link="runBurnIn.py">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Include="..\Common\runConversion.py" Link="runConversion.py">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Include="..\Common\runCopyFeatures.py" Link="runCopyFeatures.py">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Include="..\Common\runCopyRaster.py" Link="runCopyRaster.py">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Include="..\Common\runCreateFeatureclass.py" Link="runCreateFeatureclass.py">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Include="..\Common\runCreateGdb.py" Link="runCreateGdb.py">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Include="..\Common\runCreateOutletFile.py" Link="runCreateOutletFile.py">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Include="..\Common\runCreateSubs1File.py" Link="runCreateSubs1File.py">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Include="..\Common\runCreateSubsFile.py" Link="runCreateSubsFile.py">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Include="..\Common\runCreateWshedFile.py" Link="runCreateWshedFile.py">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Include="..\Common\runDefineProjection.py" Link="runDefineProjection.py">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Include="..\Common\runDeleteFeatures.py" Link="runDeleteFeatures.py">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Include="..\Common\runDeleteField.py" Link="runDeleteField.py">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Include="..\Common\runFeaturesToShapefile.py" Link="runFeaturesToShapefile.py">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Include="..\Common\runFeatureToRaster.py" Link="runFeatureToRaster.py">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Include="..\Common\runMakeFeatureLayer.py" Link="runMakeFeatureLayer.py">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Include="..\Common\runMakeSelection.py" Link="runMakeSelection.py">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Include="..\Common\runRasterize.py" Link="runRasterize.py">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Include="..\Common\runRasterToPolygon.py" Link="runRasterToPolygon.py">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Include="..\Common\runStatistics.py" Link="runStatistics.py">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Include="..\Common\runSWATGraph.bat" Link="runSWATGraph.bat">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	</ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Esri.ArcGISPro.Extensions30" Version="3.3.3.52636" />
+		<PackageReference Include="Esri.ArcGISPro.Gdal" Version="3.6.0" />
+		<PackageReference Include="Magick.NET-Q16-AnyCPU" Version="14.13.1" />
+		<PackageReference Include="Magick.NET.Core" Version="14.13.1" />
+		<PackageReference Include="Microsoft.Extensions.FileSystemGlobbing" Version="10.0.8" />
+		<PackageReference Include="System.Data.OleDb" Version="10.0.8" />
+		<PackageReference Include="System.Data.SQLite" Version="2.0.3" />
+	</ItemGroup>
+	<ItemGroup>
+		<Compile Update="Properties\Resources.Designer.cs">
+			<DesignTime>True</DesignTime>
+			<AutoGen>True</AutoGen>
+			<DependentUpon>Resources.resx</DependentUpon>
+		</Compile>
+		<Compile Update="Properties\Settings.Designer.cs">
+		  <DesignTimeSharedInput>True</DesignTimeSharedInput>
+		  <AutoGen>True</AutoGen>
+		  <DependentUpon>Settings.settings</DependentUpon>
+		</Compile>
+		<Compile Update="SelectResSubbasin.cs" />
+	</ItemGroup>
+	<ItemGroup>
+		<EmbeddedResource Update="Properties\Resources.resx">
+			<Generator>ResXFileCodeGenerator</Generator>
+			<LastGenOutput>Resources.Designer.cs</LastGenOutput>
+		</EmbeddedResource>
+	</ItemGroup>
+	<ItemGroup>
+		<None Update="ArcSWAT3.stylx">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</None>
+		<None Update="Properties\Settings.settings">
+		  <Generator>SettingsSingleFileGenerator</Generator>
+		  <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+		</None>
+	</ItemGroup>
+   <Import Project="C:\Program Files\ArcGIS\Pro\bin\Esri.ProApp.SDK.Desktop.targets" Condition="Exists('C:\Program Files\ArcGIS\Pro\bin\Esri.ProApp.SDK.Desktop.targets') AND !Exists('Esri.ArcGISPro.Extensions.targets')" />
+</Project>

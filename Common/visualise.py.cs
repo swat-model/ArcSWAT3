@@ -21,7 +21,7 @@ using Layer = ArcGIS.Desktop.Mapping.Layer;
 using OSGeo.GDAL;
 using OSGeo.OGR;
 using FieldType = OSGeo.OGR.FieldType;
-using System.Data.Entity;
+//using System.Data.Entity;
 using System.Security.Cryptography;
 using System.Windows.Documents;
 using ArcGIS.Core.Data.UtilityNetwork.Trace;
@@ -575,25 +575,31 @@ namespace ArcSWAT3 {
             var slopeGroup = Utils.getGroupLayerByName(Utils._SLOPE_GROUP_NAME);
             if (slopeGroup is not null) {
                 foreach (var layer in slopeGroup.GetLayersAsFlattenedList()) {
-                    await QueuedTask.Run(() => {
-                        layer.SetVisibility(false);
-                    });
+                    if (layer is not null) {
+                        await QueuedTask.Run(() => {
+                            layer.SetVisibility(false);
+                        });
+                    }
                 }
             }
             var soilGroup = Utils.getGroupLayerByName(Utils._SOIL_GROUP_NAME);
             if (soilGroup is not null) {
                 foreach (var layer in soilGroup.GetLayersAsFlattenedList()) {
-                    await QueuedTask.Run(() => {
-                        layer.SetVisibility(false);
-                    });
+                    if (layer is not null) {
+                        await QueuedTask.Run(() => {
+                            layer.SetVisibility(false);
+                        });
+                    }
                 }
             }
             var landuseGroup = Utils.getGroupLayerByName(Utils._LANDUSE_GROUP_NAME);
             if (landuseGroup is not null) {
                 foreach (var layer in landuseGroup.GetLayersAsFlattenedList()) {
-                    await QueuedTask.Run(() => {
-                        layer.SetVisibility(false);
-                    });
+                    if (layer is not null) {
+                        await QueuedTask.Run(() => {
+                            layer.SetVisibility(false);
+                        });
+                    }
                 }
             }
             // laod HRUS if necessary
@@ -958,9 +964,9 @@ namespace ArcSWAT3 {
         // Append item to variableList.
         public virtual void addClick() {
             this.resultsFileUpToDate = false;
-            var @var = this._dlg.PvariableCombo.SelectedItem.ToString();
-            var index = this._dlg.PvariableList.Items.IndexOf(@var);
-            if (index < 0) {
+            var index = this._dlg.PvariableCombo.SelectedIndex;
+            if (index != -1) {
+                var @var = this._dlg.PvariableCombo.SelectedItem.ToString();
                 this._dlg.PvariableList.Items.Add(@var);
             }
         }
@@ -1873,16 +1879,33 @@ namespace ArcSWAT3 {
             await QueuedTask.Run(() => 
                 resultsMap = MapFactory.Instance.CreateMap(legend, MapType.Map, MapViewingMode.Map, Basemap.None)
             );
-            Layer backLayer = null;
+            // backlayer is made from subbasins file, but don't use subs1 as it makes locks from results maps
+            // that will prevent subs1 being adited if the project is rerun
+            FeatureLayer backLayer = null;
             var subs1File = Utils.join(this._gv.shapesDir, Parameters._SUBS1 + ".shp");
             if (File.Exists(subs1File)) {
+                var subs2File = Utils.join(this._gv.shapesDir, Parameters._SUBS2 + ".shp");
+                if (!File.Exists(subs2File)) {
+                    Utils.copyShapefile(subs1File, Parameters._SUBS2, this._gv.shapesDir);
+                }
                 backLayer = await QueuedTask.Run(() =>
-                    LayerFactory.Instance.CreateLayer(new Uri(subs1File), resultsMap, 0, Utils._SUBBASINSLEGEND)
+                    LayerFactory.Instance.CreateLayer(new Uri(subs2File), resultsMap, 0, Utils._SUBBASINSLEGEND) as FeatureLayer
                     );
                 var ft = FileTypes._SUBBASINS;
-                await FileTypes.ApplySymbolToFeatureLayerAsync((FeatureLayer)backLayer, ft, this._gv);
-                await Utils.setMapTip((FeatureLayer)backLayer, ft);
-            } 
+                await FileTypes.ApplySymbolToFeatureLayerAsync(backLayer, ft, this._gv);
+                await Utils.setMapTip(backLayer, ft);
+                // add subbasin labels
+                var label = backLayer.LabelClasses.FirstOrDefault();
+                await QueuedTask.Run(() =>
+                {
+                    if (label != null)
+                    {
+                        label.SetExpression("$feature.Subbasin");
+                        backLayer.SetLabelVisibility(true);
+                    }
+                    backLayer.SetExpanded(false);
+                });
+            }
             this.currentResultsLayer = await QueuedTask.Run(() => 
                 LayerFactory.Instance.CreateLayer(new Uri(this.resultsFile),
                         resultsMap, 0, legend) as FeatureLayer);
@@ -3547,7 +3570,7 @@ namespace ArcSWAT3 {
                 Utils.error(string.Format("There are layout templates only for 1, 2, 3, 4 or 6 result maps, not for {0}", count), this._gv.isBatch);
                 return;
             }
-            var templateIn = Utils.join(this._gv.addinPath, "LayoutTemplates/LayoutTemplate" + templ);
+            var templateIn = Utils.join(this._gv.addinPath, "LayoutTemplate" + templ);
             await QueuedTask.Run(() => {
                 IProjectItem pagx = ItemFactory.Instance.Create(templateIn) as IProjectItem;
                 Project.Current.AddItem(pagx);

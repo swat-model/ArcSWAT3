@@ -1,6 +1,6 @@
 {
   "profiles": {
-    "ArcSWAT3.3": {
+    "ArcSWAT3.5": {
       "commandName": "Executable",
       "executablePath": "C:\\Program Files\\ArcGIS\\Pro\\bin\\ArcGISPro.exe"
     }

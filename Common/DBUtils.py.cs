@@ -505,7 +505,7 @@ namespace ArcSWAT3
         // return reader for sql based on tye of connection conn
         public static DbDataReader getReader(DbConnection conn, string sql)
         {
-            if (conn.State != System.Data.ConnectionState.Open) conn.Open();
+            if (conn.State != System.Data.ConnectionState.Open) { conn.Open(); }
             if (conn is SQLiteConnection) {
                 var cmd = new SQLiteCommand(sql, (SQLiteConnection)conn);
                 return cmd.ExecuteReader() as SQLiteDataReader;
@@ -641,25 +641,20 @@ namespace ArcSWAT3
             var urbanId = -1;
             var OK = true;
             var isUrban = landuseCode.StartsWith("U");
-            DbDataReader reader = null;
             if (isUrban) {
                 table = "urban";
                 sql2 = sqlSelect(table, "IUNUM, OV_N", "", String.Format("URBNAME='{0}'", landuseCode));
                 try {
-                    reader = getReader(this.connRef, sql2);
-                    if (reader.HasRows)
-                    {
-                        reader.Read();
-                        urbanId = Convert.ToInt32(reader.GetValue(0));
-                        landuseOVN = Convert.ToDouble(reader.GetValue(1));
+                    using (DbDataReader reader = getReader(this.connRef, sql2)) {
+                        if (reader.HasRows) {
+                            reader.Read();
+                            urbanId = Convert.ToInt32(reader.GetValue(0));
+                            landuseOVN = Convert.ToDouble(reader.GetValue(1));
+                        }
                     }
                 } catch (Exception ex) {
                     Utils.error(String.Format("Could not read table {0} in reference database {1}: {2}", table, this.dbRefFile, ex.Message), this.isBatch);
                     return false;
-                } finally {
-                    reader.Close();
-                    reader.Dispose();
-                    reader = null;
                 }
             }
             if (urbanId < 0) {
@@ -667,46 +662,32 @@ namespace ArcSWAT3
                 table = "crop";
                 sql2 = sqlSelect(table, "ICNUM, IDC, OV_N", "", String.Format("CPNM='{0}'", landuseCode));
                 try {
-                    reader = getReader(this.connRef, sql2);
-                    if (reader.HasRows)
-                    {
-                        reader.Read();
-                        urbanId = Convert.ToInt32(reader.GetValue(0));
-                        landuseIDC = Convert.ToInt32(reader.GetValue(1));
-                        landuseOVN = reader.GetDouble(2);
-                    }
-                    else
-                    {
-                        if (isUrban)
-                        {
-                            if (this.landuseErrorReported)
-                            {
-                                Utils.loginfo(String.Format("No data for landuse {0} in reference database tables urban or {1}", landuseCode, table));
-                            }
-                            else
-                            {
-                                Utils.error(String.Format("No data for landuse {0} (and perhaps others) in reference database tables urban or {1}", landuseCode, table), this.isBatch);
+                    using (DbDataReader reader = getReader(this.connRef, sql2)) {
+                        if (reader.HasRows) {
+                            reader.Read();
+                            urbanId = Convert.ToInt32(reader.GetValue(0));
+                            landuseIDC = Convert.ToInt32(reader.GetValue(1));
+                            landuseOVN = reader.GetDouble(2);
+                        } else {
+                            if (isUrban) {
+                                if (this.landuseErrorReported) {
+                                    Utils.loginfo(String.Format("No data for landuse {0} in reference database tables urban or {1}", landuseCode, table));
+                                } else {
+                                    Utils.error(String.Format("No data for landuse {0} (and perhaps others) in reference database tables urban or {1}", landuseCode, table), this.isBatch);
+                                    this.landuseErrorReported = true;
+                                }
+                            } else if (this.landuseErrorReported) {
+                                Utils.loginfo(String.Format("No data for landuse {0} in reference database table {1}", landuseCode, table));
+                            } else {
+                                Utils.error(String.Format("No data for landuse {0} (and perhaps others) in reference database table {1}", landuseCode, table), this.isBatch);
                                 this.landuseErrorReported = true;
+                                //OK = False
                             }
-                        }
-                        else if (this.landuseErrorReported)
-                        {
-                            Utils.loginfo(String.Format("No data for landuse {0} in reference database table {1}", landuseCode, table));
-                        }
-                        else
-                        {
-                            Utils.error(String.Format("No data for landuse {0} (and perhaps others) in reference database table {1}", landuseCode, table), this.isBatch);
-                            this.landuseErrorReported = true;
-                            //OK = False
                         }
                     }
                 } catch (Exception ex) {
                     Utils.error(String.Format("Could not read table {0} in reference database {1}: {2}", table, this.dbRefFile, ex.Message), this.isBatch);
                     return false;
-                } finally {
-                    reader.Close();
-                    reader.Dispose();
-                    reader = null;
                 }
             }
             this.landuseCodes[landuseCat] = landuseCode;
@@ -844,17 +825,17 @@ namespace ArcSWAT3
         public bool checkSoilsDefined() {
             var sql = sqlSelect(this.usersoil, "SNAM", "", "SNAM='{0}'");
             var errorReported = false;
-            DbDataReader reader = null;
             foreach (var soilName in this.soilNames.Values) {
                 try {
                     var sql2 = String.Format(sql, soilName);
-                    reader = getReader(this.connRef, sql2);
-                    if (!reader.HasRows) {
-                        if (!errorReported) {
-                            Utils.error(String.Format("Soil name {0} (and perhaps others) not defined in {1} table in database {2}.", soilName, this.usersoil, this.dbRefFile), this.isBatch);
-                            errorReported = true;
-                        } else {
-                            Utils.loginfo(String.Format("Soil name {0} not defined.", soilName));
+                    using (DbDataReader reader = getReader(this.connRef, sql2)) {
+                        if (!reader.HasRows) {
+                            if (!errorReported) {
+                                Utils.error(String.Format("Soil name {0} (and perhaps others) not defined in {1} table in database {2}.", soilName, this.usersoil, this.dbRefFile), this.isBatch);
+                                errorReported = true;
+                            } else {
+                                Utils.loginfo(String.Format("Soil name {0} not defined.", soilName));
+                            }
                         }
                     }
                 }
@@ -862,10 +843,6 @@ namespace ArcSWAT3
                 {
                     Utils.error(String.Format("Could not read {0} table in database {1}: {2}", this.usersoil, this.dbRefFile, ex.Message), this.isBatch);
                     return false;
-                } finally {
-                    reader.Close();
-                    reader.Dispose();
-                    reader = null;
                 }
             }
             return true;
@@ -1164,8 +1141,6 @@ namespace ArcSWAT3
         // change to clear tables to avoid lock problems
         // Create BASINSDATA1 and 2 tables in project database.
         public (string, string) createBasinsDataTables() {
-            string createSQL;
-            string dropSQL;
             this.connect();
             SQLiteCommand sqliteCmd = new SQLiteCommand();
             OleDbCommand oleDbCmd = new OleDbCommand();
@@ -1173,7 +1148,7 @@ namespace ArcSWAT3
             if (this._allTableNames.Contains(table)) {
                 //    this.clearTable(table);
                 //}
-                dropSQL = "DROP TABLE " + table;
+                string dropSQL = "DROP TABLE " + table;
                 try {
                     execNonQuery(dropSQL);
                 } catch (Exception) {
@@ -1188,10 +1163,11 @@ namespace ArcSWAT3
                     }
                 }
             }
+            string createSQL = "CREATE TABLE " + table + " ";
             if (this.isHUC || this.isHAWQS) {
-                createSQL = "CREATE TABLE " + table + " " + DBUtils._BASINSDATA1TABLEHUC;
+                createSQL += DBUtils._BASINSDATA1TABLEHUC;
             } else {
-                createSQL = "CREATE TABLE " + table + " " + DBUtils._BASINSDATA1TABLE;
+                createSQL += DBUtils._BASINSDATA1TABLE;
             }
             try {
                 execNonQuery(createSQL);
@@ -1200,28 +1176,28 @@ namespace ArcSWAT3
                 Utils.error(String.Format("Could not create table {0} in project database {1}: {2}", table, this.dbFile, ex.Message), this.isBatch);
                 return (null, null);
             }
-            string sql1, sql2;
+            string sql1 = "INSERT INTO " + table;
             if (this.isHUC || this.isHAWQS) {
-                sql1 = "INSERT INTO " + table + " VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+                sql1 += " VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
             } else { 
-                sql1 = "INSERT INTO " + table + " VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+                sql1 += " VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
             }
             table = DBUtils._BASINSDATA2;
             if (this._allTableNames.Contains(table)) {
             //    this.clearTable(table);
             //}
-                dropSQL = "DROP TABLE " + table;
+                string dropSQL2 = "DROP TABLE " + table;
                 try {
-                    execNonQuery(dropSQL);
+                    execNonQuery(dropSQL2);
                 }
                 catch (Exception ex) {
                     Utils.error(String.Format("Could not drop table {0} from project database {1}: {2}", table, this.dbFile, ex.Message), this.isBatch);
                     return (null, null);
                 }
             }
-            createSQL = "CREATE TABLE " + table + " " + DBUtils._BASINSDATA2TABLE;
+            string createSQL2 = "CREATE TABLE " + table + " " + DBUtils._BASINSDATA2TABLE;
             try {
-                execNonQuery(createSQL);
+                execNonQuery(createSQL2);
             } catch (Exception ex) {
                     Utils.error(String.Format("Could not create table {0} in project database {1}: {2}", table, this.dbFile, ex.Message), this.isBatch);
                     return (null, null);
@@ -1233,7 +1209,7 @@ namespace ArcSWAT3
                 Utils.error(String.Format("Failed to create index on table {0} in project database {1}: {2}", table, this.dbFile, ex.Message), this.isBatch);
                 return (null, null);
             }
-            sql2 = "INSERT INTO " + table + " VALUES(?,?,?,?,?,?,?,?,?)";
+            string sql2 = "INSERT INTO " + table + " VALUES(?,?,?,?,?,?,?,?,?)";
             return (sql1, sql2);
         }
         
@@ -1918,7 +1894,6 @@ namespace ArcSWAT3
                             var errRes = reader.GetValue(0);
                             var typ = errRes.GetType();
                         }
-                        reader.Close();
                         if (string.IsNullOrEmpty(result)) {
                             return Tuple.Create(deflt, false);
                         }
@@ -1927,7 +1902,6 @@ namespace ArcSWAT3
                         }
                         return Tuple.Create(result, true);
                     } else {
-                        reader.Close();
                         return Tuple.Create(deflt, false);
                     }
                 }
@@ -1989,7 +1963,9 @@ namespace ArcSWAT3
             try {
                 this.gv.db.execNonQuery(sql);
             }
-            catch {; }
+            catch (Exception ex) { 
+                Utils.error(String.Format("Failed to write string entry '{0}' to {1}: {2}", val, path, ex.Message), gv.isBatch); 
+            }
         }
 
         // imitation of QGIS writeNumEntry
@@ -2002,7 +1978,9 @@ namespace ArcSWAT3
             try {
                 gv.db.execNonQuery(sql);
             }
-            catch {; }
+            catch (Exception ex) {
+                Utils.error(String.Format("Failed to write numeric entry {0} to {1}: {2}", val, path, ex.Message), gv.isBatch);
+            }
         }
 
         // imitation of QGIS writeEntryBool
@@ -2015,7 +1993,10 @@ namespace ArcSWAT3
             try {
                 gv.db.execNonQuery(sql);
             }
-            catch {; }
+            catch (Exception ex) 
+            {
+                Utils.error(String.Format("Failed to write Boolean entry {0} to {1}: {2}", val, path, ex.Message), gv.isBatch); 
+            }
         }
     }
 }
